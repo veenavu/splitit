@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:splitit/DatabaseHelper/hive_services.dart';
 import 'package:splitit/modelClass/models.dart';
@@ -61,12 +60,10 @@ class _GroupPageState extends State<GroupPage> {
                 itemCount: groups.length,
                 itemBuilder: (context, index) {
                   final groupItem = groups[index];
-                  final status = groupItem.getGroupStatus(null);
+                  // final status = groupItem.getGroupStatus(null);
                   return GestureDetector(
                     onTap: () {
-                      Get.to(() => GroupDetails(
-                            groupItem: groupItem,
-                          ));
+                      Navigator.push(context, MaterialPageRoute(builder: (context)=> GroupDetails(groupItem: groupItem,)));
                     },
                     child: ExpenseListItem(
                       title: groupItem.groupName,
