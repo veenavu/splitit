@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:splitit/screens/demo.dart';
-import 'package:splitit/screens/setProfile.dart';
+import 'package:splitit/screens/login_page.dart';
+import 'package:splitit/screens/profile_creation.dart';
 
 class GetStartedPage extends StatelessWidget {
+  const GetStartedPage({super.key});
+
   @override
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
@@ -60,7 +62,8 @@ class GetStartedPage extends StatelessWidget {
               ),
               child: ElevatedButton(
                 onPressed: () {
-                  SetProfile();
+                  //Navigate to the SetProfile screen
+                  Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const LoginPage()));
                 },
                 style: ElevatedButton.styleFrom(
                   shape: RoundedRectangleBorder(

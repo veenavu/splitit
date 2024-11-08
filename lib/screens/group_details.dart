@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:splitit/modelClass/models.dart';
 
 
-class ExpenseScreen extends StatelessWidget {
+class GroupDetails extends StatelessWidget {
+  final Group groupItem;
+  const GroupDetails({super.key, required this.groupItem});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Group One'),
+        title:  Text(groupItem.groupName),
         actions: [
           IconButton(
-            icon: Icon(Icons.settings),
+            icon: const Icon(Icons.settings),
             onPressed: () {},
           ),
         ],
@@ -17,7 +21,7 @@ class ExpenseScreen extends StatelessWidget {
       body: Column(
         children: [
           Container(
-            padding: EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -50,7 +54,7 @@ class ExpenseScreen extends StatelessWidget {
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
-        items: [
+        items: const [
           BottomNavigationBarItem(icon: Icon(Icons.group), label: 'Groups'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Friends'),
           BottomNavigationBarItem(icon: Icon(Icons.history), label: 'Activity'),
@@ -81,7 +85,7 @@ class ExpenseScreen extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       child: Text(
         date,
-        style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey),
+        style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey),
       ),
     );
   }
@@ -89,8 +93,8 @@ class ExpenseScreen extends StatelessWidget {
   Widget _buildTransactionTile(
       String title, String subtitle, String status, String amount, Color statusColor) {
     return ListTile(
-      leading: Icon(Icons.receipt, color: Colors.black54),
-      title: Text(title, style: TextStyle(fontWeight: FontWeight.bold)),
+      leading: const Icon(Icons.receipt, color: Colors.black54),
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
       subtitle: Text(subtitle),
       trailing: Column(
         crossAxisAlignment: CrossAxisAlignment.end,
@@ -111,7 +115,7 @@ class ExpenseScreen extends StatelessWidget {
 
   Widget _buildGroupTransaction(String text) {
     return ListTile(
-      leading: Icon(Icons.group, color: Colors.green),
+      leading: const Icon(Icons.group, color: Colors.green),
       title: Text(text),
       tileColor: Colors.grey.shade200,
     );

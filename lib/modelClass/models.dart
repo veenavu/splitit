@@ -53,7 +53,7 @@ class Member extends HiveObject {
     this.groupsIncluded,
     this.totalAmountOwedByMe = 0.0,
     DateTime? createdAt,
-  }) : this.createdAt = createdAt ?? DateTime.now();
+  }) : createdAt = createdAt ?? DateTime.now();
 
   // Helper method to get member's expenses in a specific group
   List<Expense> getExpensesInGroup(Group group) {
@@ -65,7 +65,7 @@ class Member extends HiveObject {
   // Helper method to get total amount spent in a group
   double getTotalSpentInGroup(Group group) {
     return group.expenses
-        .where((expense) => expense.paidByMember.key == this.key)
+        .where((expense) => expense.paidByMember.key == key)
         .fold(0.0, (sum, expense) => sum + expense.totalAmount);
   }
 }
@@ -102,23 +102,23 @@ class Group extends HiveObject {
     List<Expense>? expenses,
     this.categories,
     DateTime? createdAt,
-  })  : this.expenses = expenses ?? [],
-        this.createdAt = createdAt ?? DateTime.now();
+  })  : expenses = expenses ?? [],
+        createdAt = createdAt ?? DateTime.now();
 
   // Helper method to get total group expenses
   double get totalExpenses =>
       expenses.fold(0.0, (sum, expense) => sum + expense.totalAmount);
 
   // Helper method to get member's balance in the group
-  double getMemberBalance(Member member) {
+  double getMemberBalance(Member? member) {
     double paid = expenses
-        .where((e) => e.paidByMember.key == member.key)
+        .where((e) => e.paidByMember.key == member?.key)
         .fold(0.0, (sum, e) => sum + e.totalAmount);
 
     double owed = expenses.fold(0.0, (sum, expense) {
       var memberSplit = expense.splits
-          .firstWhere((split) => split.member.key == member.key,
-          orElse: () => ExpenseSplit(member: member, amount: 0))
+          .firstWhere((split) => split.member.key == member?.key,
+          orElse: () => ExpenseSplit(member: member!, amount: 0))
           .amount;
       return sum + memberSplit;
     });
@@ -135,7 +135,7 @@ class Group extends HiveObject {
   }
 
   // Method to categorize the group's expense status
-  String getGroupStatus(Member member) {
+  String getGroupStatus(Member? member) {
     if (expenses.isEmpty) {
       return "No Expense"; // No transactions in the group
     }
@@ -229,7 +229,7 @@ class Expense extends HiveObject {
     this.note,
     this.attachments,
     DateTime? createdAt,
-  }) : this.createdAt = createdAt ?? DateTime.now();
+  }) : createdAt = createdAt ?? DateTime.now();
 
   // Helper method to calculate amounts based on percentages
   void calculateSplitsByPercentage() {

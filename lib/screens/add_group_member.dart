@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 
 class MemberAdding extends StatefulWidget {
-  const MemberAdding({Key? key}) : super(key: key);
+  const MemberAdding({super.key});
 
   @override
   State<MemberAdding> createState() => _MemberAddingState();

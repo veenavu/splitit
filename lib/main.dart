@@ -1,20 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:splitit/screens/Addgroup.dart';
-import 'package:splitit/screens/GroupMainPage.dart';
-import 'package:splitit/screens/addGroupMembers.dart';
-import 'package:splitit/screens/setProfile.dart';
-import 'package:splitit/screens/demo.dart';
-import 'package:splitit/screens/getStarted.dart';
-import 'package:splitit/screens/groupDetails.dart';
-import 'package:splitit/screens/setProfile.dart';
-import 'package:hive/hive.dart';
-import 'package:hive_flutter/hive_flutter.dart';
+import 'package:get/get.dart';
+import 'package:splitit/DatabaseHelper/hive_services.dart';
+import 'package:splitit/screens/get_started.dart';
 
 
 
-void main(){
-
+Future<void> main()async{
+  WidgetsFlutterBinding.ensureInitialized();
+  await ExpenseManagerService.initHive();
   runApp(const MyApp());
 
 }
@@ -24,12 +17,9 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return GetMaterialApp(
       title: 'SplitIt',
-      home:
-
-      AuthCheck(),
-
+      home: const GetStartedPage(),
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primaryColor: const Color(0xff5f0967),
@@ -38,23 +28,6 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-class AuthCheck extends StatelessWidget {
-  Future<bool> _checkLoginStatus() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.getBool('isLoggedIn') ?? false;
-  }
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<bool>(
-      future: _checkLoginStatus(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Container();
-        }
-        return snapshot.data == true ? GroupsScreen() : GetStartedPage();
-      },
-    );
-  }
-}
+
 
 

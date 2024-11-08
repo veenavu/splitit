@@ -11,6 +11,7 @@ class ExpenseManagerService {
   static const String groupBoxName = 'groups';
   static const String memberBoxName = 'members';
   static const String expenseBoxName = 'expenses';
+  static const String normalBox = 'normalBox';
 
   // Initialize Hive and Register Adapters
   static Future<void> initHive() async {
@@ -29,6 +30,7 @@ class ExpenseManagerService {
     await Hive.openBox<Group>(groupBoxName);
     await Hive.openBox<Member>(memberBoxName);
     await Hive.openBox<Expense>(expenseBoxName);
+    await Hive.openBox(normalBox);
   }
 
   // PROFILE OPERATIONS
@@ -41,7 +43,19 @@ class ExpenseManagerService {
     final box = Hive.box<Profile>(profileBoxName);
     return box.isNotEmpty ? box.getAt(0) : null;
   }
+  static Profile? getProfileByPhone(String phone) {
+    final box = Hive.box<Profile>(profileBoxName);
 
+    // Search through all profiles in the box
+    for (int i = 0; i < box.length; i++) {
+      final profile = box.getAt(i);
+      if (profile?.phone == phone) {
+        return profile;
+      }
+    }
+
+    return null; // Return null if no profile found with given phone number
+  }
   static Future<void> updateProfile(Profile profile) async {
     await profile.save();
   }
