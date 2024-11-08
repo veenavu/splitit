@@ -83,16 +83,19 @@ class _LoginPageState extends State<LoginPage> {
                         child: Builder(
                           builder: (context) => ElevatedButton(
                             onPressed: () {
-                              Profile? userProfile = ExpenseManagerService.getProfileByPhone(_phoneController.text);
-                              if(userProfile != null) {
-                                final box = Hive.box(ExpenseManagerService.normalBox);
-                                box.put("mobile", _phoneController.text);
-                                Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const GroupPage()));
-                              }else{
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('User not found, please sign up.')),
-                                );
+                              if (_formKey.currentState!.validate()) {
+                                Profile? userProfile = ExpenseManagerService.getProfileByPhone(_phoneController.text);
+                                if(userProfile != null) {
+                                  final box = Hive.box(ExpenseManagerService.normalBox);
+                                  box.put("mobile", _phoneController.text);
+                                  Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const GroupPage()));
+                                }else{
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('User not found, please sign up.')),
+                                  );
+                                }
                               }
+
                               // _submitForm();
                             },
                             child: const Text(
