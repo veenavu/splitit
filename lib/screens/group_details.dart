@@ -58,7 +58,7 @@ class GroupDetails extends StatelessWidget {
           BottomNavigationBarItem(icon: Icon(Icons.history), label: 'Activity'),
           BottomNavigationBarItem(icon: Icon(Icons.account_circle), label: 'Account'),
         ],
-        selectedItemColor: Colors.purple,
+        selectedItemColor: Color(0xff5f0967),
         unselectedItemColor: Colors.grey,
       ),
     );

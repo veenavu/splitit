@@ -217,8 +217,8 @@ class BottomActions extends StatelessWidget {
                 onStartGroupComplete.call();
               }, context);
             },
-            icon: const Icon(Icons.group_add),
-            label: const Text("Start a new group"),
+            icon: const Icon(Icons.group_add,color: Color(0xff5f0967),),
+            label: const Text("Start a new group", style: TextStyle(color: Color(0xff5f0967)),),
           ),
           FloatingActionButton.extended(
             onPressed: () {},
