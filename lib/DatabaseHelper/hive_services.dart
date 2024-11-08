@@ -1,5 +1,3 @@
-
-
 import 'dart:math';
 
 import 'package:hive_flutter/hive_flutter.dart';
@@ -32,6 +30,7 @@ class ExpenseManagerService {
   static Future<void> saveProfile(Profile profile) async {
     final box = Hive.box<Profile>(profileBoxName);
     await box.add(profile);
+
   }
 
   static Profile? getProfile() {
@@ -71,11 +70,7 @@ class ExpenseManagerService {
   }
 
   static Future<void> deleteGroup(Group group) async {
-    // Delete all expenses associated with this group first
-    // final expenses = getExpensesByGroup(group);
-    // for (var expense in expenses) {
-    //   await deleteExpense(expense);
-    // }
+
     await group.delete();
   }
 
@@ -104,11 +99,7 @@ class ExpenseManagerService {
       }
     }
 
-    // // Handle expenses involving this member
-    // final expenses = getExpensesByMember(member);
-    // for (var expense in expenses) {
-    //   await deleteExpense(expense);
-    // }
+
 
     await member.delete();
   }

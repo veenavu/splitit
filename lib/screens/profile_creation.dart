@@ -62,8 +62,12 @@ class _SignUpPageState extends State<SignUpPage> {
                       onTap: _pickImage,
                       child: CircleAvatar(
                         radius: 50,
-                        backgroundImage: _imagePath != null ? FileImage(File(_imagePath!)) : null,
-                        child: _imagePath == null ? const Icon(Icons.add_a_photo, size: 50) : null,
+                        backgroundImage: _imagePath != null
+                            ? FileImage(File(_imagePath!))
+                            : null,
+                        child: _imagePath == null
+                            ? const Icon(Icons.add_a_photo, size: 50)
+                            : null,
                       ),
                     ),
                     const SizedBox(height: 40.0),
@@ -76,7 +80,8 @@ class _SignUpPageState extends State<SignUpPage> {
                         prefixIcon: const Icon(Icons.person),
                         fillColor: const Color(0xFFD9D9D9),
                         filled: true,
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(25)),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(25)),
                       ),
                       keyboardType: TextInputType.name,
                       validator: (value) {
@@ -96,18 +101,24 @@ class _SignUpPageState extends State<SignUpPage> {
                         hintText: 'Email',
                         fillColor: const Color(0xFFD9D9D9),
                         filled: true,
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(25)),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(25)),
                       ),
                       keyboardType: TextInputType.emailAddress,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Please enter your email';
                         }
-                        String pattern = r'\w+@\w+\.\w+';
+
+                        // Updated regex for a more accurate email validation
+                        String pattern =
+                            r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$';
                         RegExp regex = RegExp(pattern);
+
                         if (!regex.hasMatch(value)) {
                           return 'Enter a valid email address';
                         }
+
                         return null;
                       },
                     ),
@@ -121,9 +132,13 @@ class _SignUpPageState extends State<SignUpPage> {
                         prefixIcon: const Icon(Icons.phone),
                         fillColor: const Color(0xFFD9D9D9),
                         filled: true,
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(25)),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(25)),
                       ),
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(10)],
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(10)
+                      ],
                       keyboardType: TextInputType.phone,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
@@ -172,7 +187,8 @@ class _SignUpPageState extends State<SignUpPage> {
 
   Future<void> _pickImage() async {
     try {
-      final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
+      final pickedFile =
+          await ImagePicker().pickImage(source: ImageSource.gallery);
       if (pickedFile != null) {
         setState(() {
           _imagePath = pickedFile.path;
@@ -183,13 +199,15 @@ class _SignUpPageState extends State<SignUpPage> {
     }
   }
 
+
   Future<void> _saveProfileImage() async {
     if (_imagePath == null) return;
 
     try {
       final directory = await getApplicationDocumentsDirectory();
       final fileName = 'profile_${DateTime.now().millisecondsSinceEpoch}.jpg';
-      final savedImage = await File(_imagePath!).copy('${directory.path}/$fileName');
+      final savedImage =
+          await File(_imagePath!).copy('${directory.path}/$fileName');
 
       SharedPreferences prefs = await SharedPreferences.getInstance();
       await prefs.setString('profileImagePath', savedImage.path);
@@ -237,12 +255,14 @@ class _SignUpPageState extends State<SignUpPage> {
 
         // Navigate to GroupsScreen
         log("Navigating to GroupsScreen...");
-        await Future.delayed(const Duration(milliseconds: 500)); // Brief delay for snackbar to be visible
+        await Future.delayed(const Duration(
+            milliseconds: 500)); // Brief delay for snackbar to be visible
 
         if (mounted) {
           final box = Hive.box(ExpenseManagerService.normalBox);
           box.put("mobile", _phoneController.text);
-          Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const GroupPage()));
+          Navigator.pushReplacement(context,
+              MaterialPageRoute(builder: (context) => const GroupPage()));
         }
       } catch (e) {
         // Hide loading indicator if showing

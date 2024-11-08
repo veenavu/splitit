@@ -220,10 +220,11 @@ class BottomActions extends StatelessWidget {
             icon: const Icon(Icons.group_add),
             label: const Text("Start a new group"),
           ),
-          FloatingActionButton(
+          FloatingActionButton.extended(
             onPressed: () {},
             tooltip: "Add Expense",
-            child: const Icon(Icons.add),
+            icon: const Icon(Icons.add),
+            label: const Text("Add Expense"),
           ),
         ],
       ),

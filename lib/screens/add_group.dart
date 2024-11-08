@@ -107,16 +107,7 @@ class _AddNewGroupPageState extends State<AddNewGroupPage> {
     await ExpenseManagerService.saveTheGroup(group);
     print("Navigating to GroupsScreen...");
     Navigator.pop(context);
-    // Navigator.push(
-    //   context,
-    //   MaterialPageRoute(builder: (context) => GroupsScreen()), // Replace with your target screen widget
-    // );
 
-    // ScaffoldMessenger.of(context).showSnackBar(
-    //   const SnackBar(content: Text("Group saved successfully!")),
-    // );
-    //
-    // Navigator.pop(context);
   }
 
   Widget _buildGroupTypeButton(String type) {

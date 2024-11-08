@@ -84,26 +84,26 @@ class GetStartedPage extends StatelessWidget {
               ),
             ),
             SizedBox(height: screenHeight * 0.03), // Responsive spacing
-            if (!isMobile) ...[
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.check, size: screenWidth * 0.07, color: Colors.white),
-                  SizedBox(width: screenWidth * 0.02),
-                  Text(
-                    'Feature 1',
-                    style: TextStyle(fontSize: screenWidth * 0.04, color: Colors.white),
-                  ),
-                  SizedBox(width: screenWidth * 0.05),
-                  Icon(Icons.check, size: screenWidth * 0.07, color: Colors.white),
-                  SizedBox(width: screenWidth * 0.02),
-                  Text(
-                    'Feature 2',
-                    style: TextStyle(fontSize: screenWidth * 0.04, color: Colors.white),
-                  ),
-                ],
-              ),
-            ],
+            // if (!isMobile) ...[
+            //   Row(
+            //     mainAxisAlignment: MainAxisAlignment.center,
+            //     children: [
+            //       Icon(Icons.check, size: screenWidth * 0.07, color: Colors.white),
+            //       SizedBox(width: screenWidth * 0.02),
+            //       Text(
+            //         'Feature 1',
+            //         style: TextStyle(fontSize: screenWidth * 0.04, color: Colors.white),
+            //       ),
+            //       SizedBox(width: screenWidth * 0.05),
+            //       Icon(Icons.check, size: screenWidth * 0.07, color: Colors.white),
+            //       SizedBox(width: screenWidth * 0.02),
+            //       Text(
+            //         'Feature 2',
+            //         style: TextStyle(fontSize: screenWidth * 0.04, color: Colors.white),
+            //       ),
+            //     ],
+            //   ),
+            // ],
           ],
         ),
       ),
