@@ -17,7 +17,7 @@ class GroupPage extends StatefulWidget {
 class _GroupPageState extends State<GroupPage> {
   List<Group> groups = List.empty(growable: true);
   int selectedIndex = 0;
-  late Profile userProfile;
+   Profile? userProfile;
 
   Future<void> _loadGroups() async {
     final allGroups = ExpenseManagerService.getAllGroups();
@@ -29,8 +29,10 @@ class _GroupPageState extends State<GroupPage> {
   _getProfile() async {
     final box = Hive.box(ExpenseManagerService.normalBox);
     final phone = box.get("mobile");
-    userProfile =
-        ExpenseManagerService.getProfileByPhone(phone) ?? Profile(name: "User", email: "noob", phone: "2173123");
+
+    setState(() {
+      userProfile = ExpenseManagerService.getProfileByPhone(phone) ?? Profile(name: "User", email: "noob", phone: "2173123");
+    });
   }
 
   @override
@@ -40,11 +42,18 @@ class _GroupPageState extends State<GroupPage> {
     super.initState();
   }
 
+
+  @override
+  void didChangeDependencies() {
+
+    super.didChangeDependencies();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Welcome ${userProfile.name}'),
+        title: Text('Welcome ${userProfile?.name}'),
         actions: [
           IconButton(icon: const Icon(Icons.search), onPressed: () {}),
           IconButton(icon: const Icon(Icons.group), onPressed: () {}),
@@ -63,7 +72,7 @@ class _GroupPageState extends State<GroupPage> {
                   // final status = groupItem.getGroupStatus(null);
                   return GestureDetector(
                     onTap: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context)=> GroupDetails(groupItem: groupItem,)));
+                      Navigator.push(context, MaterialPageRoute(builder: (context)=> GroupDetails(groupItem: groupItem,))).then((value) => _loadGroups());
                     },
                     child: ExpenseListItem(
                       title: groupItem.groupName,

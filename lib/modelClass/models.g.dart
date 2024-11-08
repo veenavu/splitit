@@ -113,16 +113,15 @@ class GroupAdapter extends TypeAdapter<Group> {
       groupImage: fields[1] as String,
       category: fields[2] as String?,
       members: (fields[3] as List).cast<Member>(),
-      expenses: (fields[4] as List?)?.cast<Expense>(),
       categories: (fields[6] as List?)?.cast<String>(),
-      createdAt: fields[5] as DateTime?,
+      createdAt: fields[4] as DateTime?,
     );
   }
 
   @override
   void write(BinaryWriter writer, Group obj) {
     writer
-      ..writeByte(7)
+      ..writeByte(6)
       ..writeByte(0)
       ..write(obj.groupName)
       ..writeByte(1)
@@ -132,8 +131,6 @@ class GroupAdapter extends TypeAdapter<Group> {
       ..writeByte(3)
       ..write(obj.members)
       ..writeByte(4)
-      ..write(obj.expenses)
-      ..writeByte(5)
       ..write(obj.createdAt)
       ..writeByte(6)
       ..write(obj.categories);
@@ -146,107 +143,6 @@ class GroupAdapter extends TypeAdapter<Group> {
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is GroupAdapter &&
-          runtimeType == other.runtimeType &&
-          typeId == other.typeId;
-}
-
-class ExpenseSplitAdapter extends TypeAdapter<ExpenseSplit> {
-  @override
-  final int typeId = 4;
-
-  @override
-  ExpenseSplit read(BinaryReader reader) {
-    final numOfFields = reader.readByte();
-    final fields = <int, dynamic>{
-      for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
-    };
-    return ExpenseSplit(
-      member: fields[0] as Member,
-      amount: fields[1] as double,
-      percentage: fields[2] as double?,
-    );
-  }
-
-  @override
-  void write(BinaryWriter writer, ExpenseSplit obj) {
-    writer
-      ..writeByte(3)
-      ..writeByte(0)
-      ..write(obj.member)
-      ..writeByte(1)
-      ..write(obj.amount)
-      ..writeByte(2)
-      ..write(obj.percentage);
-  }
-
-  @override
-  int get hashCode => typeId.hashCode;
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is ExpenseSplitAdapter &&
-          runtimeType == other.runtimeType &&
-          typeId == other.typeId;
-}
-
-class ExpenseAdapter extends TypeAdapter<Expense> {
-  @override
-  final int typeId = 5;
-
-  @override
-  Expense read(BinaryReader reader) {
-    final numOfFields = reader.readByte();
-    final fields = <int, dynamic>{
-      for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
-    };
-    return Expense(
-      totalAmount: fields[0] as double,
-      divisionMethod: fields[1] as DivisionMethod,
-      paidByMember: fields[2] as Member,
-      splits: (fields[3] as List).cast<ExpenseSplit>(),
-      group: fields[4] as Group?,
-      description: fields[5] as String,
-      category: fields[7] as String?,
-      note: fields[8] as String?,
-      attachments: (fields[9] as List?)?.cast<String>(),
-      createdAt: fields[6] as DateTime?,
-    );
-  }
-
-  @override
-  void write(BinaryWriter writer, Expense obj) {
-    writer
-      ..writeByte(10)
-      ..writeByte(0)
-      ..write(obj.totalAmount)
-      ..writeByte(1)
-      ..write(obj.divisionMethod)
-      ..writeByte(2)
-      ..write(obj.paidByMember)
-      ..writeByte(3)
-      ..write(obj.splits)
-      ..writeByte(4)
-      ..write(obj.group)
-      ..writeByte(5)
-      ..write(obj.description)
-      ..writeByte(6)
-      ..write(obj.createdAt)
-      ..writeByte(7)
-      ..write(obj.category)
-      ..writeByte(8)
-      ..write(obj.note)
-      ..writeByte(9)
-      ..write(obj.attachments);
-  }
-
-  @override
-  int get hashCode => typeId.hashCode;
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is ExpenseAdapter &&
           runtimeType == other.runtimeType &&
           typeId == other.typeId;
 }

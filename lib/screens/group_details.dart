@@ -1,20 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:splitit/modelClass/models.dart';
-
+import 'package:splitit/screens/group_settings.dart';
 
 class GroupDetails extends StatelessWidget {
   final Group groupItem;
+
   const GroupDetails({super.key, required this.groupItem});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title:  Text(groupItem.groupName),
+        title: Text(groupItem.groupName),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings),
-            onPressed: () {},
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (context) => GroupSettings(group: groupItem)));
+            },
           ),
         ],
       ),
@@ -35,19 +38,14 @@ class GroupDetails extends StatelessWidget {
             child: ListView(
               children: [
                 _buildDateHeader('September 2024'),
-                _buildTransactionTile(
-                    'Grocery', 'Ameena paid ₹500.00', 'You borrowed', '₹100.00', Colors.red),
-                _buildTransactionTile(
-                    'Vegetables', 'Sinitha paid ₹2300.00', 'You borrowed', '₹230.00', Colors.red),
-                _buildTransactionTile(
-                    'Water can', 'You paid ₹620.00', 'You lent', '₹62.00', Colors.green),
-                _buildTransactionTile(
-                    'Breakfast', 'Saba paid ₹480.00', 'You borrowed', '₹160.00', Colors.red),
+                _buildTransactionTile('Grocery', 'Ameena paid ₹500.00', 'You borrowed', '₹100.00', Colors.red),
+                _buildTransactionTile('Vegetables', 'Sinitha paid ₹2300.00', 'You borrowed', '₹230.00', Colors.red),
+                _buildTransactionTile('Water can', 'You paid ₹620.00', 'You lent', '₹62.00', Colors.green),
+                _buildTransactionTile('Breakfast', 'Saba paid ₹480.00', 'You borrowed', '₹160.00', Colors.red),
                 _buildGroupTransaction('Sabu paid Riswan ₹4,580.00'),
                 _buildGroupTransaction('Sabu paid Aleena ₹5,200.00'),
                 _buildDateHeader('August 2024'),
-                _buildTransactionTile(
-                    'Uber', 'Saba paid ₹300.00', 'You borrowed', '₹150.00', Colors.red),
+                _buildTransactionTile('Uber', 'Saba paid ₹300.00', 'You borrowed', '₹150.00', Colors.red),
               ],
             ),
           ),
@@ -72,7 +70,7 @@ class GroupDetails extends StatelessWidget {
       child: Text(text),
       style: ElevatedButton.styleFrom(
         //primary: color,
-       // onPrimary: Colors.black,
+        // onPrimary: Colors.black,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
         ),
@@ -90,8 +88,7 @@ class GroupDetails extends StatelessWidget {
     );
   }
 
-  Widget _buildTransactionTile(
-      String title, String subtitle, String status, String amount, Color statusColor) {
+  Widget _buildTransactionTile(String title, String subtitle, String status, String amount, Color statusColor) {
     return ListTile(
       leading: const Icon(Icons.receipt, color: Colors.black54),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
@@ -105,8 +102,7 @@ class GroupDetails extends StatelessWidget {
           ),
           Text(
             amount,
-            style: TextStyle(
-                color: statusColor, fontWeight: FontWeight.bold),
+            style: TextStyle(color: statusColor, fontWeight: FontWeight.bold),
           ),
         ],
       ),

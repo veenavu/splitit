@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:hive/hive.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -239,6 +240,8 @@ class _SignUpPageState extends State<SignUpPage> {
         await Future.delayed(const Duration(milliseconds: 500)); // Brief delay for snackbar to be visible
 
         if (mounted) {
+          final box = Hive.box(ExpenseManagerService.normalBox);
+          box.put("mobile", _phoneController.text);
           Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const GroupPage()));
         }
       } catch (e) {

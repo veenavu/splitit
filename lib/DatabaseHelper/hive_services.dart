@@ -10,7 +10,6 @@ class ExpenseManagerService {
   static const String profileBoxName = 'profiles';
   static const String groupBoxName = 'groups';
   static const String memberBoxName = 'members';
-  static const String expenseBoxName = 'expenses';
   static const String normalBox = 'normalBox';
 
   // Initialize Hive and Register Adapters
@@ -21,15 +20,11 @@ class ExpenseManagerService {
     Hive.registerAdapter(ProfileAdapter());
     Hive.registerAdapter(GroupAdapter());
     Hive.registerAdapter(MemberAdapter());
-    Hive.registerAdapter(DivisionMethodAdapter());
-    Hive.registerAdapter(ExpenseAdapter());
-    Hive.registerAdapter(ExpenseSplitAdapter());
 
     // Open Boxes
     await Hive.openBox<Profile>(profileBoxName);
     await Hive.openBox<Group>(groupBoxName);
     await Hive.openBox<Member>(memberBoxName);
-    await Hive.openBox<Expense>(expenseBoxName);
     await Hive.openBox(normalBox);
   }
 
@@ -77,10 +72,10 @@ class ExpenseManagerService {
 
   static Future<void> deleteGroup(Group group) async {
     // Delete all expenses associated with this group first
-    final expenses = getExpensesByGroup(group);
-    for (var expense in expenses) {
-      await deleteExpense(expense);
-    }
+    // final expenses = getExpensesByGroup(group);
+    // for (var expense in expenses) {
+    //   await deleteExpense(expense);
+    // }
     await group.delete();
   }
 
@@ -109,311 +104,16 @@ class ExpenseManagerService {
       }
     }
 
-    // Handle expenses involving this member
-    final expenses = getExpensesByMember(member);
-    for (var expense in expenses) {
-      await deleteExpense(expense);
-    }
+    // // Handle expenses involving this member
+    // final expenses = getExpensesByMember(member);
+    // for (var expense in expenses) {
+    //   await deleteExpense(expense);
+    // }
 
     await member.delete();
   }
 
-  // EXPENSE OPERATIONS
-  static Future<void> createExpense({
-    required double totalAmount,
-    required DivisionMethod divisionMethod,
-    required Member paidByMember,
-    required List<Member> involvedMembers,
-    required String description,
-    Group? group,
-    List<double>? customAmounts,
-    List<double>? percentages,
-  }) async {
-    List<ExpenseSplit> splits;
-
-    switch (divisionMethod) {
-      case DivisionMethod.equal:
-        splits = _splitEqually(totalAmount, involvedMembers);
-        break;
-      case DivisionMethod.unequal:
-        if (customAmounts == null || customAmounts.length != involvedMembers.length) {
-          throw Exception('Custom amounts must be provided for unequal split');
-        }
-        splits = _splitByAmount(involvedMembers, customAmounts);
-        break;
-      case DivisionMethod.percentage:
-        if (percentages == null || percentages.length != involvedMembers.length) {
-          throw Exception('Percentages must be provided for percentage split');
-        }
-        splits = _splitByPercentage(totalAmount, involvedMembers, percentages);
-        break;
-    }
-
-    final expense = Expense(
-      totalAmount: totalAmount,
-      divisionMethod: divisionMethod,
-      paidByMember: paidByMember,
-      splits: splits,
-      group: group,
-      description: description,
-    );
-
-    if (_validateSplits(expense)) {
-      final box = Hive.box<Expense>(expenseBoxName);
-      await box.add(expense);
-      await _updateMemberBalances(expense);
-    } else {
-      throw Exception('Invalid splits: Total of splits does not match expense amount');
-    }
-  }
-
-  static List<Expense> getAllExpenses() {
-    final box = Hive.box<Expense>(expenseBoxName);
-    return box.values.toList();
-  }
-
-  static List<Expense> getExpensesByGroup(Group group) {
-    final box = Hive.box<Expense>(expenseBoxName);
-    return box.values.where((expense) => expense.group?.key == group.key).toList();
-  }
-
-  static List<Expense> getExpensesByMember(Member member) {
-    final box = Hive.box<Expense>(expenseBoxName);
-    return box.values
-        .where((expense) => expense.isMemberInvolved(member))
-        .toList();
-  }
-
-  static Future<void> deleteExpense(Expense expense) async {
-    // Reverse the member balance updates
-    await _reverseMemberBalances(expense);
-    await expense.delete();
-  }
-
-  // EXPENSE SPLITTING HELPERS
-  static List<ExpenseSplit> _splitEqually(
-      double totalAmount,
-      List<Member> members,
-      ) {
-    final perPersonAmount = totalAmount / members.length;
-    return members
-        .map((member) => ExpenseSplit(
-      member: member,
-      amount: perPersonAmount,
-      percentage: 100 / members.length,
-    ))
-        .toList();
-  }
-
-  static List<ExpenseSplit> _splitByAmount(
-      List<Member> members,
-      List<double> amounts,
-      ) {
-    return List.generate(
-      members.length,
-          (i) => ExpenseSplit(
-        member: members[i],
-        amount: amounts[i],
-        percentage: null,
-      ),
-    );
-  }
-
-  static List<ExpenseSplit> _splitByPercentage(
-      double totalAmount,
-      List<Member> members,
-      List<double> percentages,
-      ) {
-    return List.generate(
-      members.length,
-          (i) => ExpenseSplit(
-        member: members[i],
-        amount: (totalAmount * percentages[i]) / 100,
-        percentage: percentages[i],
-      ),
-    );
-  }
-
-  static bool _validateSplits(Expense expense) {
-    double totalSplitAmount = expense.splits.fold(0, (sum, split) => sum + split.amount);
-    return (totalSplitAmount - expense.totalAmount).abs() < 0.01;
-  }
-
-  static Future<void> _updateMemberBalances(Expense expense) async {
-    for (var split in expense.splits) {
-      if (split.member.key != expense.paidByMember.key) {
-        split.member.totalAmountOwedByMe += split.amount;
-        await split.member.save();
-      }
-    }
-    // Update payer's record
-    expense.paidByMember.totalAmountOwedByMe -= expense.totalAmount;
-    await expense.paidByMember.save();
-  }
-
-  static Future<void> _reverseMemberBalances(Expense expense) async {
-    for (var split in expense.splits) {
-      if (split.member.key != expense.paidByMember.key) {
-        split.member.totalAmountOwedByMe -= split.amount;
-        await split.member.save();
-      }
-    }
-    expense.paidByMember.totalAmountOwedByMe += expense.totalAmount;
-    await expense.paidByMember.save();
-  }
-
-  // SETTLEMENT CALCULATIONS
-  static List<SettlementTransaction> calculateSettlements(List<Member> members) {
-    Map<String, double> balances = {};
-    final expenses = getAllExpenses();
-
-    // Calculate net balances for each member
-    for (var expense in expenses) {
-      String payerKey = expense.paidByMember.key.toString();
-      balances[payerKey] = (balances[payerKey] ?? 0) + expense.totalAmount;
-
-      for (var split in expense.splits) {
-        String memberKey = split.member.key.toString();
-        balances[memberKey] = (balances[memberKey] ?? 0) - split.amount;
-      }
-    }
-
-    List<SettlementTransaction> settlements = [];
-    var memberBalances = balances.entries.toList();
-
-    while (memberBalances.length >= 2) {
-      memberBalances.sort((a, b) => b.value.compareTo(a.value));
-
-      var creditor = memberBalances.first;
-      var debtor = memberBalances.last;
-
-      double amount = min(-debtor.value, creditor.value);
-      if (amount > 0.01) {
-        settlements.add(SettlementTransaction(
-          from: Hive.box<Member>(memberBoxName).get(int.parse(debtor.key))!,
-          to: Hive.box<Member>(memberBoxName).get(int.parse(creditor.key))!,
-          amount: amount,
-        ));
-      }
-
-      if ((creditor.value - amount).abs() < 0.01) {
-        memberBalances.removeAt(0);
-      } else {
-        memberBalances[0] = MapEntry(creditor.key, creditor.value - amount);
-      }
-
-      if ((debtor.value + amount).abs() < 0.01) {
-        memberBalances.removeLast();
-      } else {
-        memberBalances[memberBalances.length - 1] =
-            MapEntry(debtor.key, debtor.value + amount);
-      }
-    }
-
-    return settlements;
-  }
-
-  // Get member balance summary
-  static Map<Member, double> getMemberBalances() {
-    final members = getAllMembers();
-    Map<Member, double> balances = {};
-
-    for (var member in members) {
-      balances[member] = member.totalAmountOwedByMe;
-    }
-
-    return balances;
-  }
-
-  // Get group expense summary
-  static Map<String, dynamic> getGroupExpenseSummary(Group group) {
-    final expenses = getExpensesByGroup(group);
-    double totalExpenses = 0;
-    Map<Member, double> memberContributions = {};
-
-    for (var expense in expenses) {
-      totalExpenses += expense.totalAmount;
-      memberContributions[expense.paidByMember] =
-          (memberContributions[expense.paidByMember] ?? 0) + expense.totalAmount;
-    }
-
-    return {
-      'totalExpenses': totalExpenses,
-      'memberContributions': memberContributions,
-    };
-  }
-
-
 
 
 }
 
-// Settlement Transaction class
-class SettlementTransaction {
-  final Member from;
-  final Member to;
-  final double amount;
-
-  SettlementTransaction({
-    required this.from,
-    required this.to,
-    required this.amount,
-  });
-}
-// Additional Classes for Analytics
-
-class MemberStatistics {
-  double totalPaid;
-  double totalOwed;
-  int expensesPaid;
-  int expensesParticipated;
-
-  MemberStatistics({
-    this.totalPaid = 0,
-    this.totalOwed = 0,
-    this.expensesPaid = 0,
-    this.expensesParticipated = 0,
-  });
-
-  double get netBalance => totalPaid - totalOwed;
-}
-
-class GroupStatistics {
-  final double totalExpenses;
-  final double averageExpenseAmount;
-  final Map<DateTime, double> monthlyExpenses;
-  final Map<String, double> categoryExpenses;
-  final Map<Member, MemberStatistics> memberStatistics;
-  final int expenseCount;
-  final int activeMembers;
-  final String mostActiveCategory;
-  final Member mostActivePayer;
-
-  GroupStatistics({
-    required this.totalExpenses,
-    required this.averageExpenseAmount,
-    required this.monthlyExpenses,
-    required this.categoryExpenses,
-    required this.memberStatistics,
-    required this.expenseCount,
-    required this.activeMembers,
-    required this.mostActiveCategory,
-    required this.mostActivePayer,
-  });
-}
-
-class ExpenseReminder {
-  final Expense expense;
-  final double amount;
-  final Member toMember;
-  final Member fromMember;
-  final DateTime date;
-
-  ExpenseReminder({
-    required this.expense,
-    required this.amount,
-    required this.toMember,
-    required this.fromMember,
-    required this.date,
-  });
-}
