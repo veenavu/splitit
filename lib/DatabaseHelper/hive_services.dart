@@ -65,6 +65,16 @@ class ExpenseManagerService {
     return box.values.toList();
   }
 
+  static Group? getGroupByName(String groupName) {
+    final box = Hive.box<Group>(groupBoxName);
+    for (var group in box.values) {
+      if (group.groupName == groupName) {
+        return group;
+      }
+    }
+    return null;
+  }
+
   static Future<void> updateGroup(Group group) async {
     await group.save();
   }
@@ -98,13 +108,7 @@ class ExpenseManagerService {
         await group.save();
       }
     }
-
-
-
     await member.delete();
   }
-
-
-
 }
 

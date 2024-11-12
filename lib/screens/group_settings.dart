@@ -3,11 +3,12 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:splitit/DatabaseHelper/hive_services.dart';
 import 'package:splitit/modelClass/models.dart';
-
+import 'package:splitit/screens/group_editpage.dart';
+import 'package:splitit/screens/group_page.dart';
 class GroupSettings extends StatefulWidget {
-  final Group group;
+     Group group;
 
-  const GroupSettings({super.key, required this.group});
+   GroupSettings({super.key, required this.group});
 
   @override
   State<GroupSettings> createState() => _GroupSettingsState();
@@ -20,11 +21,36 @@ class _GroupSettingsState extends State<GroupSettings> {
       appBar: AppBar(
         title: const Text("Group Settings"),
         actions:  [
+          IconButton(
+            icon: const Icon(Icons.edit),
+            onPressed: () async {
+              // Wait for the result from GroupEditPage
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => GroupEditPage(groups: widget.group),
+                ),
+              );
+
+              // If the result is true, fetch the updated group and update the UI
+              if (result == true) {
+                final updatedGroup =
+                await ExpenseManagerService.getGroupByName(widget.group.groupName);
+
+                if (updatedGroup != null) {
+                  setState(() {
+                    widget.group = updatedGroup;
+                  });
+                }
+              }
+            },
+          ),
           IconButton(icon: const Icon(Icons.delete_outline), onPressed: (){
             ExpenseManagerService.deleteGroup(widget.group);
             Navigator.pop(context);
             Navigator.pop(context);
           }),
+          
         ],
       ),
       body: Padding(

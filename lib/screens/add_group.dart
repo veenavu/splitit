@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:splitit/DatabaseHelper/hive_services.dart';
 import 'package:splitit/modelClass/models.dart' as custom;
+import 'package:splitit/utils/common_functions.dart';
 
 class AddNewGroupPage extends StatefulWidget {
   const AddNewGroupPage({super.key});
@@ -44,26 +45,7 @@ class _AddNewGroupPageState extends State<AddNewGroupPage> {
     }
   }
 
-  void _showMemberAddingBottomSheet() async {
-    final result = await showModalBottomSheet<List<Contact>>(
-      context: context,
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.96,
-      ),
-      isScrollControlled: true,
-      builder: (context) => MemberAdding(
-        onContactsSelected: (contacts) {
-          Navigator.pop(context, contacts);
-        },
-      ),
-    );
 
-    if (result != null) {
-      setState(() {
-        selectedContacts = result;
-      });
-    }
-  }
 
   Future<List<custom.Member>> _getMembersFromContacts() async {
     return await Future.wait(selectedContacts.map((contact) async {
@@ -240,7 +222,20 @@ class _AddNewGroupPageState extends State<AddNewGroupPage> {
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: _showMemberAddingBottomSheet,
+        onPressed: (){
+          showMemberAddingBottomSheet(
+            context: context,
+             onContactsSelected: (contacts) {
+              setState(() {
+                if (contacts != null) {
+                  setState(() {
+                    selectedContacts = contacts;
+                  });
+                }
+              });
+            },
+          );
+        },
         label: const Row(
           children: [
             Icon(Icons.person_add, color: Colors.white),

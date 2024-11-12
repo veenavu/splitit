@@ -11,7 +11,7 @@ class MemberAdding extends StatefulWidget {
 class _MemberAddingState extends State<MemberAdding> {
   List<Contact> contacts = [];
   final Set<int> selectedIndices = {}; // Track selected contact indices
-
+  final List<String> _groupTypes = ['Trip', 'Home', 'Couple', 'Others'];
   @override
   void initState() {
     super.initState();
