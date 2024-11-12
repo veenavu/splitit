@@ -1,0 +1,211 @@
+import 'dart:io';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:image_picker/image_picker.dart';
+
+//import '../modelClass/datamodels.dart';
+
+class SetProfile extends StatefulWidget {
+  const SetProfile({super.key});
+
+  @override
+  State<SetProfile> createState() => _SetProfileState();
+}
+
+class _SetProfileState extends State<SetProfile> {
+  final _formKey = GlobalKey<FormState>();
+
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
+  String? _imagePath;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _phoneController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickImage() async {
+    final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _imagePath = pickedFile.path;
+      });
+    }
+  }
+
+  // Future<void> _saveProfile() async {
+  //   var box = await Hive.openBox<Profile>('profileBox');
+  //   var profile = Profile(
+  //     pname: _nameController.text,
+  //     email: _emailController.text,
+  //     phone: _phoneController.text,
+  //     pimage: _imagePath ?? '',
+  //   );
+  //   await box.add(profile);
+  // }
+
+  void _submitForm() {
+    if (_formKey.currentState!.validate()) {
+      //_saveProfile();
+      ScaffoldMessenger.of(context).showSnackBar(
+        //var s=getName();
+        const SnackBar(content: Text('Profile saved successfully!')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Container(
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage("lib/assets/background.jpg"),
+            fit: BoxFit.cover,
+          ),
+        ),
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const SizedBox(height: 40.0),
+                  Text(
+                    'Split It',
+                    style: GoogleFonts.lato(
+                      textStyle: Theme.of(context).textTheme.displayLarge,
+                      fontSize: 48,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                  const SizedBox(height: 40.0),
+                  GestureDetector(
+                    onTap: _pickImage,
+                    child: CircleAvatar(
+                      radius: 50,
+                      backgroundImage: _imagePath != null ? FileImage(File(_imagePath!)) : null,
+                      child: _imagePath == null
+                          ? const Icon(Icons.add_a_photo, size: 50, color: Colors.white)
+                          : null,
+                    ),
+                  ),
+                  const SizedBox(height: 40.0),
+
+                  // Name Input Field
+                  TextFormField(
+                    controller: _nameController,
+                    decoration: InputDecoration(
+                      labelText: 'Name',
+                      prefixIcon: const Icon(Icons.person),
+                      fillColor: const Color(0xFFD9D9D9),
+                      filled: true,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(25),
+                      ),
+                    ),
+                    keyboardType: TextInputType.name,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your name';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16.0),
+
+                  // Email Input Field
+                  TextFormField(
+                    controller: _emailController,
+                    decoration: InputDecoration(
+                      labelText: 'Email',
+                      prefixIcon: const Icon(Icons.email_outlined),
+                      fillColor: const Color(0xFFD9D9D9),
+                      filled: true,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(25),
+                      ),
+                    ),
+                    keyboardType: TextInputType.emailAddress,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your email';
+                      }
+                      String pattern = r'\w+@\w+\.\w+';
+                      RegExp regex = RegExp(pattern);
+                      if (!regex.hasMatch(value)) {
+                        return 'Enter a valid email address';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16.0),
+
+                  // Phone Input Field
+                  TextFormField(
+                    controller: _phoneController,
+                    decoration: InputDecoration(
+                      labelText: 'Phone Number',
+                      prefixIcon: const Icon(Icons.phone),
+                      fillColor: const Color(0xFFD9D9D9),
+                      filled: true,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(25),
+                      ),
+                    ),
+                    keyboardType: TextInputType.phone,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your phone number';
+                      }
+                      if (value.length < 11) {
+                        return 'Phone number must be at least 11 characters long';
+                      }
+                      if (!RegExp(r'^\+?\d+$').hasMatch(value)) {
+                        return 'Enter a valid phone number (digits only, optional + at start)';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 40.0),
+
+                  // Submit Button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: _submitForm,
+                      child: const Text(
+                        'Submit',
+                        style: TextStyle(
+                          color: Color(0xff5F0967),
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20), // Extra space to prevent overflow
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

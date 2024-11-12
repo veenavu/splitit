@@ -7,6 +7,8 @@ import 'package:splitit/modelClass/models.dart';
 import 'package:splitit/screens/add_group.dart';
 import 'package:splitit/screens/group_details.dart';
 
+import 'add_expense_page.dart';
+
 class GroupPage extends StatefulWidget {
   const GroupPage({super.key});
 
@@ -208,7 +210,7 @@ class BottomActions extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12.0),
-      child: Row(
+      child: Column(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           ElevatedButton.icon(
@@ -217,14 +219,38 @@ class BottomActions extends StatelessWidget {
                 onStartGroupComplete.call();
               }, context);
             },
-            icon: const Icon(Icons.group_add,color: Color(0xff5f0967),),
-            label: const Text("Start a new group", style: TextStyle(color: Color(0xff5f0967)),),
+            icon: const Icon(
+              Icons.group_add,
+              color: Color(0xff5f0967),
+            ),
+            label: const Text(
+              "Start a new group",
+              style: TextStyle(color: Color(0xff5f0967),fontSize: 16),
+            ),
+            style: ElevatedButton.styleFrom(
+
+              backgroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: const BorderSide(
+                  color: Color(0xff5f0967), // Border color
+                  width: 1, // Border width
+                ),
+              ),
+            ),
           ),
+
+          SizedBox(height: 10,),
           FloatingActionButton.extended(
-            onPressed: () {},
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => AddExpensePage()),
+              );
+            },
             tooltip: "Add Expense",
             icon: const Icon(Icons.add),
-            label: const Text("Add Expense"),
+            label: const Text("Add Expense",style: TextStyle(fontSize: 16),),
           ),
         ],
       ),
