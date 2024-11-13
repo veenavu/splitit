@@ -282,11 +282,22 @@ class _AddExpensePageState extends State<AddExpensePage> {
     );
   }
   Widget _buildTrailingWidget(String selectedOption,bool isSelected){
-
-
-    return isSelected
-        ? Icon(Icons.check_circle, color: Colors.green) // Show check icon if selected
-        : Icon(Icons.check_circle_outline, color: Colors.grey);
+    if (selectedOption == 'Equally') {
+      return isSelected
+          ? Icon(Icons.check_circle, color: Colors.green) // Show check icon if selected
+          : Icon(Icons.check_circle_outline, color: Colors.grey);
+  }
+    else{
+      return TextField(
+        controller: _amountControllerOnMember,
+        keyboardType: TextInputType.numberWithOptions(decimal: true),
+        decoration: const InputDecoration(
+          labelText: 'Enter Amount',
+          hintText: 'e.g., 100.00',
+          border: OutlineInputBorder(),
+        ),
+      );
+    }
 
   }
 }
