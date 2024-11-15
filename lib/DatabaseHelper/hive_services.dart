@@ -171,6 +171,56 @@ class ExpenseManagerService {
     }
   }
 
+  static Future<void> updateExpense({
+    required Expense expense,
+    required double totalAmount,
+    required DivisionMethod divisionMethod,
+    required Member paidByMember,
+    required List<Member> involvedMembers,
+    required String description,
+    Group? group,
+    List<double>? customAmounts,
+    List<double>? percentages,
+  }) async {
+    // Reverse the previous balance updates
+    await _reverseMemberBalances(expense);
+
+    List<ExpenseSplit> splits;
+    switch (divisionMethod) {
+      case DivisionMethod.equal:
+        splits = _splitEqually(totalAmount, involvedMembers);
+        break;
+      case DivisionMethod.unequal:
+        if (customAmounts == null || customAmounts.length != involvedMembers.length) {
+          throw Exception('Custom amounts must be provided for unequal split');
+        }
+        splits = _splitByAmount(involvedMembers, customAmounts);
+        break;
+      case DivisionMethod.percentage:
+        if (percentages == null || percentages.length != involvedMembers.length) {
+          throw Exception('Percentages must be provided for percentage split');
+        }
+        splits = _splitByPercentage(totalAmount, involvedMembers, percentages);
+        break;
+    }
+
+    // Update expense properties
+    expense
+      ..totalAmount = totalAmount
+      ..divisionMethod = divisionMethod
+      ..paidByMember = paidByMember
+      ..splits = splits
+      ..group = group
+      ..description = description;
+
+    if (_validateSplits(expense)) {
+      await expense.save();
+      await _updateMemberBalances(expense);
+    } else {
+      throw Exception('Invalid splits: Total of splits does not match expense amount');
+    }
+  }
+
   static List<Expense> getAllExpenses() {
     final box = Hive.box<Expense>(expenseBoxName);
     return box.values.toList();
@@ -178,7 +228,7 @@ class ExpenseManagerService {
 
   static List<Expense> getExpensesByGroup(Group group) {
     final box = Hive.box<Expense>(expenseBoxName);
-    return box.values.where((expense) => expense.group?.key == group.key).toList();
+    return box.values.where((expense) => expense.group?.groupName == group.groupName).toList();
   }
 
   static List<Expense> getExpensesByMember(Member member) {
@@ -190,6 +240,37 @@ class ExpenseManagerService {
     // Reverse the member balance updates
     await _reverseMemberBalances(expense);
     await expense.delete();
+  }
+
+  static String getGroupBalanceText(Member member, Group group) {
+    double totalLent = 0.0;
+    double totalOwed = 0.0;
+    final expenses = getExpensesByGroup(group);
+
+    for (var expense in expenses) {
+      if (expense.paidByMember.phone == member.phone) {
+        totalLent += expense.splits
+            .where((split) => split.member.phone != member.phone)
+            .fold(0.0, (sum, split) => sum + split.amount);
+      }
+
+      var memberSplit = expense.splits
+          .where((split) => split.member.phone == member.phone)
+          .firstOrNull;
+      if (memberSplit != null && expense.paidByMember.phone != member.phone) {
+        totalOwed += memberSplit.amount;
+      }
+    }
+
+    final netAmount = totalLent - totalOwed;
+
+    if (netAmount > 0) {
+      return 'you lent ₹${netAmount.toStringAsFixed(1)}';
+    } else if (netAmount < 0) {
+      return 'you owe ₹${(-netAmount).toStringAsFixed(1)}';
+    } else {
+      return 'all settled up';
+    }
   }
 
   // EXPENSE SPLITTING HELPERS
@@ -207,6 +288,38 @@ class ExpenseManagerService {
         .toList();
   }
 
+  static String getBalanceText(Member member) {
+    double totalLent = 0.0;
+    double totalOwed = 0.0;
+    final expenses = getAllExpenses();
+
+    for (var expense in expenses) {
+      // If member is the payer
+      if (expense.paidByMember.phone == member.phone) {
+        totalLent += expense.splits
+            .where((split) => split.member.phone != member.phone)
+            .fold(0.0, (sum, split) => sum + split.amount);
+      }
+
+      // If member owes money
+      var memberSplit = expense.splits
+          .where((split) => split.member.phone == member.phone)
+          .firstOrNull;
+      if (memberSplit != null && expense.paidByMember.phone != member.phone) {
+        totalOwed += memberSplit.amount;
+      }
+    }
+
+    final netAmount = totalLent - totalOwed;
+
+    if (netAmount > 0) {
+      return 'you lent ₹${netAmount.toStringAsFixed(1)}';
+    } else if (netAmount < 0) {
+      return 'you owe ₹${(-netAmount).toStringAsFixed(1)}';
+    } else {
+      return 'all settled up';
+    }
+  }
   static List<ExpenseSplit> _splitByAmount(
     List<Member> members,
     List<double> amounts,

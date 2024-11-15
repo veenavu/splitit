@@ -6,7 +6,8 @@ import 'package:splitit/modelClass/models.dart';
 
 class AddExpensePage extends StatefulWidget {
   final Expense? expense;
-  const AddExpensePage({super.key, this.expense});
+  final Group? group;
+  const AddExpensePage({super.key, this.expense, this.group});
 
   @override
   State<AddExpensePage> createState() => _AddExpensePageState();
@@ -15,10 +16,11 @@ class AddExpensePage extends StatefulWidget {
 class _AddExpensePageState extends State<AddExpensePage> {
   final _descriptionController = TextEditingController();
   final _amountController = TextEditingController();
-  final _amountControllerOnMember = TextEditingController();
+
   List<Member> members = [];
   List<Member> selectedMembers = [];
   List<Group> groups = [];
+
   Group? selectedGroup;
   Member? selectedPayer;
   String selectedSplitOption = 'Equally';
@@ -28,6 +30,7 @@ class _AddExpensePageState extends State<AddExpensePage> {
   void initState() {
     super.initState();
     _fetchGroups();
+    _initializeExpenseData();
   }
 
   @override
@@ -36,6 +39,44 @@ class _AddExpensePageState extends State<AddExpensePage> {
     super.dispose();
   }
 
+  void _initializeExpenseData() {
+    if (widget.expense != null) {
+      List<Member> involvedMembers = [];
+
+      widget.expense?.splits.forEach((sp){
+        involvedMembers.add(sp.member);
+      });
+      _descriptionController.text = widget.expense!.description;
+      _amountController.text = widget.expense!.totalAmount.toString();
+      selectedGroup = widget.expense!.group;
+      selectedPayer = widget.expense!.paidByMember;
+      selectedMembers = involvedMembers.toList();
+      selectedSplitOption = widget.expense!.divisionMethod == DivisionMethod.equal ? 'Equally' : 'By Amount';
+      members = widget.expense!.group!.members;
+      if (selectedSplitOption == 'By Amount') {
+        _initializeMemberControllersWithCustomAmounts();
+      }
+    }
+  }
+
+  void _initializeMemberControllersWithCustomAmounts() {
+    _memberAmountControllers.forEach((_, controller) => controller.dispose());
+    _memberAmountControllers.clear();
+    List<Member> involvedMembers = [];
+    List<double> amounts = [];
+
+    widget.expense?.splits.forEach((sp){
+      involvedMembers.add(sp.member);
+      amounts.add(sp.amount);
+    });
+
+    for (var i = 0; i <involvedMembers.length; i++) {
+      var member =involvedMembers[i];
+      _memberAmountControllers[member.name] = TextEditingController(
+          text: amounts[i].toString() ?? '0.0'
+      );
+    }
+  }
   void _initializeMemberControllers() {
     // Clear existing controllers
     _memberAmountControllers.forEach((_, controller) => controller.dispose());
@@ -50,6 +91,12 @@ class _AddExpensePageState extends State<AddExpensePage> {
     List<Group> fetchedGroups = await ExpenseManagerService.getAllGroups();
     setState(() {
       groups = fetchedGroups;
+      if(widget.group!= null){
+        selectedGroup = widget.group;
+        members = selectedGroup!.members.toList();
+        selectedPayer = null;
+      }
+
     });
   }
 
@@ -85,7 +132,7 @@ class _AddExpensePageState extends State<AddExpensePage> {
           TextButton.icon(
             onPressed: () {
               if(_amountController.text.isEmpty) return;
-              if(selectedMembers.isEmpty) return;
+              // if(selectedMembers.isEmpty) return;
               if(selectedGroup == null) return;
               if(selectedPayer == null) return;
               if(_descriptionController.text.isEmpty) return;
@@ -94,14 +141,40 @@ class _AddExpensePageState extends State<AddExpensePage> {
                 List<double> customAmounts = selectedMembers.map((member) {
                   return double.tryParse(_memberAmountControllers[member.name]?.text ?? '0') ?? 0.0;
                 }).toList();
-                ExpenseManagerService.createExpense(
+
+                if(widget.expense!=null){
+                  ExpenseManagerService.updateExpense(
+                      expense: widget.expense!,
+                      totalAmount: double.tryParse(_amountController.text) ?? 0.0,
+                      divisionMethod: DivisionMethod.unequal,
+                      paidByMember: selectedPayer!,
+                      involvedMembers: selectedMembers,
+                      description: _descriptionController.text,
+                    customAmounts: customAmounts,
+                    group: selectedGroup,
+                  );
+                }else{
+                  ExpenseManagerService.createExpense(
+                      totalAmount: double.tryParse(_amountController.text) ?? 0.0,
+                      divisionMethod:  DivisionMethod.unequal,
+                      paidByMember: selectedPayer!,
+                      involvedMembers: selectedMembers,
+                      group: selectedGroup,
+                      customAmounts:customAmounts,
+                      description: _descriptionController.text
+                  );
+                }
+
+              }else{
+              if(widget.expense!=null){
+                ExpenseManagerService.updateExpense(
                     totalAmount: double.tryParse(_amountController.text) ?? 0.0,
-                    divisionMethod:  DivisionMethod.unequal,
+                    divisionMethod: DivisionMethod.equal,
                     paidByMember: selectedPayer!,
                     involvedMembers: selectedMembers,
                     group: selectedGroup,
-                    customAmounts:customAmounts,
-                    description: _descriptionController.text
+                    description: _descriptionController.text,
+                  expense: widget.expense!,
                 );
               }else{
                 ExpenseManagerService.createExpense(
@@ -112,6 +185,7 @@ class _AddExpensePageState extends State<AddExpensePage> {
                     group: selectedGroup,
                     description: _descriptionController.text
                 );
+              }
               }
               //Adding Expense
 

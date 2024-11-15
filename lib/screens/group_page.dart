@@ -19,7 +19,7 @@ class GroupPage extends StatefulWidget {
 class _GroupPageState extends State<GroupPage> {
   List<Group> groups = List.empty(growable: true);
   int selectedIndex = 0;
-   Profile? userProfile;
+  Profile? userProfile;
 
   Future<void> _loadGroups() async {
     final allGroups = ExpenseManagerService.getAllGroups();
@@ -33,7 +33,8 @@ class _GroupPageState extends State<GroupPage> {
     final phone = box.get("mobile");
 
     setState(() {
-      userProfile = ExpenseManagerService.getProfileByPhone(phone) ?? Profile(name: "User", email: "noob", phone: "2173123");
+      userProfile =
+          ExpenseManagerService.getProfileByPhone(phone) ?? Profile(name: "User", email: "noob", phone: "2173123");
     });
   }
 
@@ -44,10 +45,8 @@ class _GroupPageState extends State<GroupPage> {
     super.initState();
   }
 
-
   @override
   void didChangeDependencies() {
-
     super.didChangeDependencies();
   }
 
@@ -65,7 +64,9 @@ class _GroupPageState extends State<GroupPage> {
         padding: const EdgeInsets.all(8.0),
         child: Column(
           children: [
-            const TotalOwed(amount: "₹8,654.00"),
+            TotalOwed(
+                amount:
+                    ExpenseManagerService.getBalanceText(Member(name: userProfile!.name, phone: userProfile!.phone))),
             Expanded(
               child: ListView.builder(
                 itemCount: groups.length,
@@ -74,15 +75,23 @@ class _GroupPageState extends State<GroupPage> {
                   // final status = groupItem.getGroupStatus(null);
                   return GestureDetector(
                     onTap: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context)=> GroupDetails(groupItem: groupItem,))).then((value) => _loadGroups());
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => GroupDetails(
+                                    groupItem: groupItem,
+                                  ))).then((value) {
+                        _loadGroups();
+                      });
                     },
                     child: ExpenseListItem(
                       title: groupItem.groupName,
-                      subtitle: 'you are owed ₹17.38',
+                      subtitle: ExpenseManagerService.getGroupBalanceText(
+                          Member(name: userProfile!.name, phone: userProfile!.phone), groupItem),
                       showGroupImage: index % 2 == 0 ? false : true,
                       details: const [
-                        'Abdul R. owes you ₹12.00',
-                        'Jishna R. owes you ₹5.38',
+                        // 'Abdul R. owes you ₹12.00',
+                        // 'Jishna R. owes you ₹5.38',
                       ],
                       icon: Icons.article,
                       iconColor: Colors.red[700]!,
@@ -163,8 +172,8 @@ class TotalOwed extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
         children: [
-          const Text("Overall, you are owed ", style: TextStyle(fontSize: 16)),
-          Text(amount, style: const TextStyle(fontSize: 16, color: Colors.red, fontWeight: FontWeight.bold)),
+          const Text("Overall, ", style: TextStyle(fontSize: 16)),
+          Text(amount, style:  TextStyle(fontSize: 16, color:amount.contains("owe") ? Colors.red :amount.contains("settle") ? Colors.grey: Colors.green, fontWeight: FontWeight.bold)),
         ],
       ),
     );
@@ -225,10 +234,9 @@ class BottomActions extends StatelessWidget {
             ),
             label: const Text(
               "Start a new group",
-              style: TextStyle(color: Color(0xff5f0967),fontSize: 16),
+              style: TextStyle(color: Color(0xff5f0967), fontSize: 16),
             ),
             style: ElevatedButton.styleFrom(
-
               backgroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -239,8 +247,9 @@ class BottomActions extends StatelessWidget {
               ),
             ),
           ),
-
-          SizedBox(height: 10,),
+          SizedBox(
+            height: 10,
+          ),
           FloatingActionButton.extended(
             onPressed: () {
               Navigator.push(
@@ -250,7 +259,10 @@ class BottomActions extends StatelessWidget {
             },
             tooltip: "Add Expense",
             icon: const Icon(Icons.add),
-            label: const Text("Add Expense",style: TextStyle(fontSize: 16),),
+            label: const Text(
+              "Add Expense",
+              style: TextStyle(fontSize: 16),
+            ),
           ),
         ],
       ),
@@ -327,7 +339,11 @@ class ExpenseListItem extends StatelessWidget {
             Text(
               subtitle,
               style: TextStyle(
-                color: subtitle.contains('owe') ? Colors.orange : Colors.grey,
+                color: subtitle.contains('owe')
+                    ? Colors.orange
+                    : subtitle.contains('lent')
+                        ? Colors.green
+                        : Colors.grey,
                 fontSize: 14,
               ),
             ),

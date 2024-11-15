@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:splitit/DatabaseHelper/hive_services.dart';
 import 'package:splitit/modelClass/models.dart';
+import 'package:splitit/screens/add_expense_page.dart';
 import 'package:splitit/screens/group_settings.dart';
 
 class GroupDetails extends StatefulWidget {
@@ -21,9 +22,7 @@ class _GroupDetailsState extends State<GroupDetails> {
   Future<void> getAllExpenses() async {
     final box = Hive.box(ExpenseManagerService.normalBox);
     phoneNumber = box.get("mobile");
-
     final groupExpenses = ExpenseManagerService.getExpensesByGroup(widget.groupItem);
-
     setState(() {
       expenses = groupExpenses;
     });
@@ -67,8 +66,14 @@ class _GroupDetailsState extends State<GroupDetails> {
               itemBuilder: (BuildContext context, int index) {
                 bool isYou =phoneNumber == expenses[index].paidByMember.phone;
                 return GestureDetector(
+                  onTap: (){
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => AddExpensePage(
+                          expense: expenses[index],
+                        ))).then((value) => getAllExpenses());
+                  },
                   onLongPress: ()async{
-
                     showDialog(
                       context: context,
                       builder: (BuildContext context) {
@@ -101,12 +106,16 @@ class _GroupDetailsState extends State<GroupDetails> {
                   child: _buildTransactionTile(
                       title: expenses[index].description,
                       subtitle:
-                          '${isYou ? "You" : expenses[index].paidByMember.name} paid ₹${expenses[index].totalAmount.toString()}',
+                          '${isYou ? "You" : expenses[index].paidByMember.name} paid ₹${expenses[index].totalAmount.toStringAsFixed(3)}',
                       status: isYou ? 'You lent' : 'You borrowed',
-                      amount: expenses[index].splits
-                          .firstWhere((es) => es.member.phone == phoneNumber)
-                          .amount
-                          .toString(),
+                      amount: () {
+                        for (var split in expenses[index].splits) {
+                          if (split.member.phone == phoneNumber) {
+                            return (expenses[index].totalAmount- split.amount).toStringAsFixed(3);
+                          }
+                        }
+                        return '0';
+                      }(),
                       statusColor:isYou ? Colors.green : Colors.red),
                 );
 
@@ -127,6 +136,19 @@ class _GroupDetailsState extends State<GroupDetails> {
 
         ],
       ),
+      // floatingActionButton: FloatingActionButton.extended(
+      //   onPressed: () {
+      //     Navigator.push(
+      //       context,
+      //       MaterialPageRoute(builder: (context) => AddExpensePage(
+      //         group: widget.groupItem,
+      //       )),
+      //     ).then((value) => getAllExpenses());
+      //   },
+      //   tooltip: "Add Expense",
+      //   icon: const Icon(Icons.add),
+      //   label: const Text("Add Expense",style: TextStyle(fontSize: 16),),
+      // ),
       bottomNavigationBar: BottomNavigationBar(
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.group), label: 'Groups'),
