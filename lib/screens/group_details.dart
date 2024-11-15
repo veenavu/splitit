@@ -1,22 +1,40 @@
 import 'package:flutter/material.dart';
+import 'package:splitit/DatabaseHelper/hive_services.dart';
 import 'package:splitit/modelClass/models.dart';
 import 'package:splitit/screens/group_settings.dart';
 
-class GroupDetails extends StatelessWidget {
+class GroupDetails extends StatefulWidget {
   final Group groupItem;
 
   const GroupDetails({super.key, required this.groupItem});
 
   @override
+  State<GroupDetails> createState() => _GroupDetailsState();
+}
+
+class _GroupDetailsState extends State<GroupDetails> {
+  List<Expense> expenses = [];
+  getAllExpenses() async{
+    setState(() {
+    expenses = ExpenseManagerService.getExpensesByGroup(widget.groupItem);
+    });
+  }
+
+  @override
+  void initState() {
+    getAllExpenses();
+    super.initState();
+  }
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(groupItem.groupName),
+        title: Text(widget.groupItem.groupName),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => GroupSettings(group: groupItem)));
+              Navigator.push(context, MaterialPageRoute(builder: (context) => GroupSettings(group: widget.groupItem)));
             },
           ),
         ],
@@ -35,20 +53,80 @@ class GroupDetails extends StatelessWidget {
             ),
           ),
           Expanded(
-            child: ListView(
-              children: [
-                _buildDateHeader('September 2024'),
-                _buildTransactionTile('Grocery', 'Ameena paid ₹500.00', 'You borrowed', '₹100.00', Colors.red),
-                _buildTransactionTile('Vegetables', 'Sinitha paid ₹2300.00', 'You borrowed', '₹230.00', Colors.red),
-                _buildTransactionTile('Water can', 'You paid ₹620.00', 'You lent', '₹62.00', Colors.green),
-                _buildTransactionTile('Breakfast', 'Saba paid ₹480.00', 'You borrowed', '₹160.00', Colors.red),
-                _buildGroupTransaction('Sabu paid Riswan ₹4,580.00'),
-                _buildGroupTransaction('Sabu paid Aleena ₹5,200.00'),
-                _buildDateHeader('August 2024'),
-                _buildTransactionTile('Uber', 'Saba paid ₹300.00', 'You borrowed', '₹150.00', Colors.red),
-              ],
+            // child: ListView(
+            //   children: [
+            //     _buildDateHeader('September 2024'),
+            //     _buildTransactionTile('Grocery', 'Ameena paid ₹500.00', 'You borrowed', '₹100.00', Colors.red),
+            //     _buildTransactionTile('Vegetables', 'Sinitha paid ₹2300.00', 'You borrowed', '₹230.00', Colors.red),
+            //     _buildTransactionTile('Water can', 'You paid ₹620.00', 'You lent', '₹62.00', Colors.green),
+            //     _buildTransactionTile('Breakfast', 'Saba paid ₹480.00', 'You borrowed', '₹160.00', Colors.red),
+            //     _buildGroupTransaction('Sabu paid Riswan ₹4,580.00'),
+            //     _buildGroupTransaction('Sabu paid Aleena ₹5,200.00'),
+            //     _buildDateHeader('August 2024'),
+            //     _buildTransactionTile('Uber', 'Saba paid ₹300.00', 'You borrowed', '₹150.00', Colors.red),
+            //   ],
+
+            child: ListView.builder(
+              itemCount: expenses.length,
+              itemBuilder: (BuildContext context, int index) {
+                return GestureDetector(
+                  onLongPress: ()async{
+
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          title: const Text("Delete Expense"),
+                          content: const Text("Do you want to delete this expense?"),
+                          actions: <Widget>[
+                            TextButton(
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                              },
+                              child: const Text("Cancel"),
+                            ),
+                            TextButton(
+                              onPressed: () async{
+                                await ExpenseManagerService.deleteExpense(expenses[index]);
+                                setState(() {
+                                  expenses = ExpenseManagerService.getExpensesByGroup(widget.groupItem);
+                                });
+                                Navigator.of(context).pop();
+                              },
+                              child: const Text("Yes"),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+
+                  },
+
+                  child: _buildTransactionTile(
+                      title:  expenses[index].description,
+                      subtitle: 'Saba paid ₹480.00',
+                      status: 'You borrowed',
+                      amount: expenses[index].totalAmount.toString(),
+                      statusColor: Colors.red
+
+                  ),
+                );
+
+              },
+              // children: [
+              //   _buildDateHeader('September 2024'),
+              //   _buildTransactionTile('Grocery', 'Ameena paid ₹500.00', 'You borrowed', '₹100.00', Colors.red),
+              //   _buildTransactionTile('Vegetables', 'Sinitha paid ₹2300.00', 'You borrowed', '₹230.00', Colors.red),
+              //   _buildTransactionTile('Water can', 'You paid ₹620.00', 'You lent', '₹62.00', Colors.green),
+              //   _buildTransactionTile('Breakfast', 'Saba paid ₹480.00', 'You borrowed', '₹160.00', Colors.red),
+              //   _buildGroupTransaction('Sabu paid Riswan ₹4,580.00'),
+              //   _buildGroupTransaction('Sabu paid Aleena ₹5,200.00'),
+              //   _buildDateHeader('August 2024'),
+              //   _buildTransactionTile('Uber', 'Saba paid ₹300.00', 'You borrowed', '₹150.00', Colors.red),
+              // ],
             ),
           ),
+
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
@@ -88,7 +166,7 @@ class GroupDetails extends StatelessWidget {
     );
   }
 
-  Widget _buildTransactionTile(String title, String subtitle, String status, String amount, Color statusColor) {
+  Widget _buildTransactionTile({required String title, required String subtitle, required String status, required String amount, required Color statusColor}) {
     return ListTile(
       leading: const Icon(Icons.receipt, color: Colors.black54),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),

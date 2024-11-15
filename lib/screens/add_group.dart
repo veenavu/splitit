@@ -2,10 +2,12 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:splitit/DatabaseHelper/hive_services.dart';
 import 'package:splitit/modelClass/models.dart' as custom;
+import 'package:splitit/modelClass/models.dart';
 import 'package:splitit/utils/common_functions.dart';
 
 class AddNewGroupPage extends StatefulWidget {
@@ -78,6 +80,13 @@ class _AddNewGroupPageState extends State<AddNewGroupPage> {
     }
 
     List<custom.Member> members = await _getMembersFromContacts();
+    final box = Hive.box(ExpenseManagerService.normalBox);
+    final phone = box.get("mobile");
+
+    Profile? userProfile = ExpenseManagerService.getProfileByPhone(phone);
+    if(userProfile != null) {
+    members.add(custom.Member(name:userProfile.name , phone: userProfile.phone, imagePath: userProfile.imagePath));
+    }
 
     custom.Group group = custom.Group(
       groupName: _groupNameController.text,
@@ -227,11 +236,11 @@ class _AddNewGroupPageState extends State<AddNewGroupPage> {
             context: context,
              onContactsSelected: (contacts) {
               setState(() {
-                if (contacts != null) {
-                  setState(() {
-                    selectedContacts = contacts;
-                  });
-                }
+                contacts?.forEach((contact) {
+                  if (!selectedContacts.contains(contact)) {
+                    selectedContacts.add(contact);
+                  }
+                });
               });
             },
           );
