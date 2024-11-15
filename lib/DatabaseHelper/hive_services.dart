@@ -175,7 +175,7 @@ class ExpenseManagerService {
       description: description,
     );
 
-    if (_validateSplits(expense)) {
+    if (true/*_validateSplits(expense)*/) {
       final box = Hive.box<Expense>(expenseBoxName);
       await box.add(expense);
       await _updateMemberBalances(expense);
@@ -241,7 +241,7 @@ class ExpenseManagerService {
 
   static List<Expense> getExpensesByGroup(Group group) {
     final box = Hive.box<Expense>(expenseBoxName);
-    return box.values.where((expense) => expense.group?.groupName == group.groupName).toList();
+    return box.values.where((expense) => expense.group?.groupName.toLowerCase() == group.groupName.toLowerCase()).toList();
   }
 
   static List<Expense> getExpensesByMember(Member member) {
