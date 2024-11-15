@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:splitit/DatabaseHelper/hive_services.dart';
 import 'package:splitit/modelClass/models.dart';
 import 'package:splitit/screens/group_settings.dart';
@@ -14,9 +15,17 @@ class GroupDetails extends StatefulWidget {
 
 class _GroupDetailsState extends State<GroupDetails> {
   List<Expense> expenses = [];
-  getAllExpenses() async{
+  Expense? myExpense;
+  String? phoneNumber;
+
+  Future<void> getAllExpenses() async {
+    final box = Hive.box(ExpenseManagerService.normalBox);
+    phoneNumber = box.get("mobile");
+
+    final groupExpenses = ExpenseManagerService.getExpensesByGroup(widget.groupItem);
+
     setState(() {
-    expenses = ExpenseManagerService.getExpensesByGroup(widget.groupItem);
+      expenses = groupExpenses;
     });
   }
 
@@ -53,22 +62,10 @@ class _GroupDetailsState extends State<GroupDetails> {
             ),
           ),
           Expanded(
-            // child: ListView(
-            //   children: [
-            //     _buildDateHeader('September 2024'),
-            //     _buildTransactionTile('Grocery', 'Ameena paid ₹500.00', 'You borrowed', '₹100.00', Colors.red),
-            //     _buildTransactionTile('Vegetables', 'Sinitha paid ₹2300.00', 'You borrowed', '₹230.00', Colors.red),
-            //     _buildTransactionTile('Water can', 'You paid ₹620.00', 'You lent', '₹62.00', Colors.green),
-            //     _buildTransactionTile('Breakfast', 'Saba paid ₹480.00', 'You borrowed', '₹160.00', Colors.red),
-            //     _buildGroupTransaction('Sabu paid Riswan ₹4,580.00'),
-            //     _buildGroupTransaction('Sabu paid Aleena ₹5,200.00'),
-            //     _buildDateHeader('August 2024'),
-            //     _buildTransactionTile('Uber', 'Saba paid ₹300.00', 'You borrowed', '₹150.00', Colors.red),
-            //   ],
-
             child: ListView.builder(
               itemCount: expenses.length,
               itemBuilder: (BuildContext context, int index) {
+                bool isYou =phoneNumber == expenses[index].paidByMember.phone;
                 return GestureDetector(
                   onLongPress: ()async{
 
@@ -101,15 +98,16 @@ class _GroupDetailsState extends State<GroupDetails> {
                     );
 
                   },
-
                   child: _buildTransactionTile(
-                      title:  expenses[index].description,
-                      subtitle: 'Saba paid ₹480.00',
-                      status: 'You borrowed',
-                      amount: expenses[index].totalAmount.toString(),
-                      statusColor: Colors.red
-
-                  ),
+                      title: expenses[index].description,
+                      subtitle:
+                          '${isYou ? "You" : expenses[index].paidByMember.name} paid ₹${expenses[index].totalAmount.toString()}',
+                      status: isYou ? 'You lent' : 'You borrowed',
+                      amount: expenses[index].splits
+                          .firstWhere((es) => es.member.phone == phoneNumber)
+                          .amount
+                          .toString(),
+                      statusColor:isYou ? Colors.green : Colors.red),
                 );
 
               },
@@ -142,10 +140,9 @@ class _GroupDetailsState extends State<GroupDetails> {
     );
   }
 
-  Widget _buildButton(String text, Color color) {
+  Widget _buildButton(String text, Color color, {VoidCallback? onPressed}) {
     return ElevatedButton(
-      onPressed: () {},
-      child: Text(text),
+      onPressed: onPressed,
       style: ElevatedButton.styleFrom(
         //primary: color,
         // onPrimary: Colors.black,
@@ -153,6 +150,7 @@ class _GroupDetailsState extends State<GroupDetails> {
           borderRadius: BorderRadius.circular(8),
         ),
       ),
+      child: Text(text),
     );
   }
 

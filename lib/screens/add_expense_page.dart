@@ -5,7 +5,8 @@ import 'package:splitit/DatabaseHelper/hive_services.dart';
 import 'package:splitit/modelClass/models.dart';
 
 class AddExpensePage extends StatefulWidget {
-  const AddExpensePage({super.key});
+  final Expense? expense;
+  const AddExpensePage({super.key, this.expense});
 
   @override
   State<AddExpensePage> createState() => _AddExpensePageState();
