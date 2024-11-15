@@ -6,6 +6,7 @@ import 'package:splitit/DatabaseHelper/hive_services.dart';
 import 'package:splitit/modelClass/models.dart';
 import 'package:splitit/screens/add_group.dart';
 import 'package:splitit/screens/group_details.dart';
+import 'package:splitit/screens/group_search.dart';
 
 import 'add_expense_page.dart';
 
@@ -56,8 +57,16 @@ class _GroupPageState extends State<GroupPage> {
       appBar: AppBar(
         title: Text('Welcome ${userProfile?.name}'),
         actions: [
-          IconButton(icon: const Icon(Icons.search), onPressed: () {}),
-          IconButton(icon: const Icon(Icons.group), onPressed: () {}),
+          IconButton(icon: const Icon(Icons.search), onPressed: () {
+            final groups = ExpenseManagerService.getAllGroups();
+            showSearch(
+              context: context,
+              delegate: GroupSearchDelegate(groups, (){
+                _loadGroups();
+              }),
+            );
+          }),
+          // IconButton(icon: const Icon(Icons.group), onPressed: () {}),
         ],
       ),
       body: Padding(
@@ -173,7 +182,15 @@ class TotalOwed extends StatelessWidget {
       child: Row(
         children: [
           const Text("Overall, ", style: TextStyle(fontSize: 16)),
-          Text(amount, style:  TextStyle(fontSize: 16, color:amount.contains("owe") ? Colors.red :amount.contains("settle") ? Colors.grey: Colors.green, fontWeight: FontWeight.bold)),
+          Text(amount,
+              style: TextStyle(
+                  fontSize: 16,
+                  color: amount.contains("owe")
+                      ? Colors.red
+                      : amount.contains("settle")
+                          ? Colors.grey
+                          : Colors.green,
+                  fontWeight: FontWeight.bold)),
         ],
       ),
     );

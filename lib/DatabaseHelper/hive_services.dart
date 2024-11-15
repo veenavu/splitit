@@ -89,6 +89,19 @@ class ExpenseManagerService {
     await group.delete();
   }
 
+  static List<Group> searchGroups(String searchTerm) {
+    if (searchTerm.isEmpty) {
+      return getAllGroups();
+    }
+
+    final box = Hive.box<Group>(groupBoxName);
+    final searchTermLower = searchTerm.toLowerCase();
+
+    return box.values.where((group) =>
+        group.groupName.toLowerCase().contains(searchTermLower)
+    ).toList();
+  }
+
   // MEMBER OPERATIONS
   static Future<void> saveMember(Member member) async {
     final box = Hive.box<Member>(memberBoxName);
