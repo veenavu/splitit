@@ -10,7 +10,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:splitit/DatabaseHelper/hive_services.dart';
 import 'package:splitit/modelClass/models.dart';
-import 'package:splitit/screens/group_page.dart';
+import 'package:splitit/screens/dashboard/dashboard.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -262,7 +262,7 @@ class _SignUpPageState extends State<SignUpPage> {
           final box = Hive.box(ExpenseManagerService.normalBox);
           box.put("mobile", _phoneController.text);
           Navigator.pushReplacement(context,
-              MaterialPageRoute(builder: (context) => const GroupPage()));
+              MaterialPageRoute(builder: (context) => const Dashboard()));
         }
       } catch (e) {
         // Hide loading indicator if showing

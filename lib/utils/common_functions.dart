@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
-import 'package:splitit/screens/add_group.dart';
+import 'package:splitit/screens/group/add_group.dart';
 void showMemberAddingBottomSheet({
   required BuildContext context,
   Function(List<Contact>?)? onContactsSelected,

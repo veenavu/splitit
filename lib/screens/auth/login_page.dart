@@ -1,26 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:hive_flutter/hive_flutter.dart';
-import 'package:splitit/DatabaseHelper/hive_services.dart';
-import 'package:splitit/modelClass/models.dart';
-import 'package:splitit/screens/group_page.dart';
-import 'package:splitit/screens/profile_creation.dart';
+import 'package:splitit/screens/auth/controller/auth_controller.dart';
+import 'package:splitit/screens/auth/sign_up.dart';
 
-class LoginPage extends StatefulWidget {
+class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
-}
-
-class _LoginPageState extends State<LoginPage> {
-  final _formKey = GlobalKey<FormState>();
-  final _phoneController = TextEditingController();
-
-
-  @override
   Widget build(BuildContext context) {
+    final AuthController authController = Get.put(AuthController());
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -33,7 +23,7 @@ class _LoginPageState extends State<LoginPage> {
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Form(
-              key: _formKey,
+              key: authController.formKey,
               child: SingleChildScrollView(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
@@ -53,7 +43,7 @@ class _LoginPageState extends State<LoginPage> {
                     const SizedBox(height: 40.0),
                     // Phone Input Field
                     TextFormField(
-                      controller: _phoneController,
+                      controller: authController.phoneController,
                       decoration: InputDecoration(
                         hintText: 'Phone Number',
                         prefixIcon: const Icon(Icons.phone),
@@ -83,22 +73,7 @@ class _LoginPageState extends State<LoginPage> {
                         height: 50,
                         child: Builder(
                           builder: (context) => ElevatedButton(
-                            onPressed: () {
-                              if (_formKey.currentState!.validate()) {
-                                Profile? userProfile = ExpenseManagerService.getProfileByPhone(_phoneController.text);
-                                if(userProfile != null) {
-                                  final box = Hive.box(ExpenseManagerService.normalBox);
-                                  box.put("mobile", _phoneController.text);
-                                  Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const GroupPage()));
-                                }else{
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('User not found, please sign up.')),
-                                  );
-                                }
-                              }
-
-                              // _submitForm();
-                            },
+                            onPressed: authController.login,
                             child: const Text(
                               'Login',
                               style: TextStyle(
@@ -115,8 +90,8 @@ class _LoginPageState extends State<LoginPage> {
                     const SizedBox(height: 20.0),
                     TextButton(
                         onPressed: () {
-                          Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const SignUpPage()));
-                        },
+                          Get.off(()=> const SignUpPage());
+                          },
                         child: Text("Don't have an account? Sign up",
                             style: GoogleFonts.lato(color: Colors.white, fontSize: 16))),
                   ],

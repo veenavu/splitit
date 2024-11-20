@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:splitit/screens/login_page.dart';
-import 'package:splitit/screens/profile_creation.dart';
+import 'package:splitit/screens/auth/login_page.dart';
+import 'package:splitit/screens/auth/sign_up.dart';
 
 class GetStartedPage extends StatelessWidget {
   const GetStartedPage({super.key});

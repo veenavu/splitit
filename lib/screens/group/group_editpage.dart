@@ -1,19 +1,15 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_contacts/contact.dart';
-
 import 'package:image_picker/image_picker.dart';
-import 'package:splitit/modelClass/models.dart' as mod;
+import 'package:splitit/DatabaseHelper/hive_services.dart';
+import 'package:splitit/modelClass/models.dart';
 import 'package:splitit/utils/common_functions.dart';
 
-import '../DatabaseHelper/hive_services.dart';
-import '../modelClass/models.dart';
-
 class GroupEditPage extends StatefulWidget {
-  final mod.Group groups;
+  final Group groups;
 
-  GroupEditPage({super.key, required this.groups,});
+  const GroupEditPage({super.key, required this.groups,});
 
   @override
   State<GroupEditPage> createState() => _GroupEditPageState();
@@ -284,15 +280,15 @@ class _GroupEditPageState extends State<GroupEditPage> {
             onContactsSelected: (contacts) {
               if (contacts != null && contacts.isNotEmpty) {
                 // Convert selected contacts to `mod.Member` objects
-                List<mod.Member> selectedMembers = contacts.map((contact) {
-                  return mod.Member(
+                List<Member> selectedMembers = contacts.map((contact) {
+                  return Member(
                     name: contact.displayName,
                     phone: contact.phones.isNotEmpty ? contact.phones.first.number : '',
                   );
                 }).toList();
 
                 // Filter out members already in the group
-                List<mod.Member> uniqueMembers = selectedMembers.where((newMember) {
+                List<Member> uniqueMembers = selectedMembers.where((newMember) {
                   return !widget.groups.members.any((existingMember) =>
                   existingMember.name == newMember.name);
                 }).toList();

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:splitit/DatabaseHelper/hive_services.dart';
-import 'package:splitit/screens/get_started.dart';
+import 'package:splitit/screens/welcome/get_started.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

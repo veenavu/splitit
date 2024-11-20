@@ -3,8 +3,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:splitit/DatabaseHelper/hive_services.dart';
 import 'package:splitit/modelClass/models.dart';
-import 'package:splitit/screens/group_editpage.dart';
-import 'package:splitit/screens/group_page.dart';
+import 'package:splitit/screens/group/group_editpage.dart';
+import 'package:splitit/screens/dashboard/dashboard.dart';
 class GroupSettings extends StatefulWidget {
      Group group;
 

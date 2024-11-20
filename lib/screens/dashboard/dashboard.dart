@@ -4,21 +4,21 @@ import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:splitit/DatabaseHelper/hive_services.dart';
 import 'package:splitit/modelClass/models.dart';
-import 'package:splitit/screens/add_group.dart';
-import 'package:splitit/screens/group_details.dart';
-import 'package:splitit/screens/group_search.dart';
+import 'package:splitit/screens/group/add_group.dart';
+import 'package:splitit/screens/group/group_details.dart';
+import 'package:splitit/screens/group/group_search.dart';
 
-import 'add_expense_page.dart';
+import '../expense/add_expense_page.dart';
 
-class GroupPage extends StatefulWidget {
+class Dashboard extends StatefulWidget {
   final VoidCallback? onStartGroupComplete;
-  const GroupPage({super.key, this.onStartGroupComplete});
+  const Dashboard({super.key, this.onStartGroupComplete});
 
   @override
-  State<GroupPage> createState() => _GroupPageState();
+  State<Dashboard> createState() => _DashboardState();
 }
 
-class _GroupPageState extends State<GroupPage> {
+class _DashboardState extends State<Dashboard> {
   List<Group> groups = List.empty(growable: true);
   int selectedIndex = 0;
   Profile? userProfile;

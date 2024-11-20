@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:splitit/DatabaseHelper/hive_services.dart';
 import 'package:splitit/modelClass/models.dart';
-import 'package:splitit/screens/add_expense_page.dart';
-import 'package:splitit/screens/group_settings.dart';
+import 'package:splitit/screens/expense/add_expense_page.dart';
+import 'package:splitit/screens/group/group_settings.dart';
 
 class GroupDetails extends StatefulWidget {
   final Group groupItem;

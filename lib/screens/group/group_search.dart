@@ -1,7 +1,7 @@
 // First create a custom SearchDelegate
 import 'package:flutter/material.dart';
 import 'package:splitit/modelClass/models.dart';
-import 'package:splitit/screens/group_details.dart';
+import 'package:splitit/screens/group/group_details.dart';
 
 class GroupSearchDelegate extends SearchDelegate<String> {
   final List<Group> groups;
