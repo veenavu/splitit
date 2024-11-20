@@ -18,7 +18,7 @@ class GetStartedPage extends StatelessWidget {
         height: double.infinity,
         decoration: const BoxDecoration(
           image: DecorationImage(
-            image: AssetImage("lib/assets/background.jpg"),
+            image: AssetImage("assets/background.jpg"),
             fit: BoxFit.cover,
           ),
         ),

@@ -45,7 +45,8 @@ dependencies:
   equatable: ^2.0.5
   flutter_contacts: ^1.1.9+2
   permission_handler: ^11.3.1
-  
+  get: ^4.6.6
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -70,7 +71,7 @@ flutter:
   # the material Icons class.
   uses-material-design: true
   assets:
-    - lib/assets/background.jpg
+    - assets/background.jpg
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see
