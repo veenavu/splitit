@@ -8,6 +8,7 @@ import 'package:splitit/modelClass/models.dart' as mod;
 import 'package:splitit/utils/common_functions.dart';
 
 import '../DatabaseHelper/hive_services.dart';
+import '../modelClass/models.dart';
 
 class GroupEditPage extends StatefulWidget {
   final mod.Group groups;
@@ -42,22 +43,33 @@ class _GroupEditPageState extends State<GroupEditPage> {
   }
 
   Widget _buildGroupTypeButton(String type) {
-    return ChoiceChip(
-      label: Text(type),
+    return RawChip(
+      label: Text(
+        type,
+        style: TextStyle(
+          color: _selectedType == type ? Colors.white : Colors.black,
+          fontWeight: FontWeight.bold,
+          fontSize: 14,
+        ),
+      ),
       selected: _selectedType == type,
       onSelected: (bool selected) {
         setState(() {
           _selectedType = selected ? type : null;
         });
       },
-      selectedColor: const Color(0xFFC9BFBF),
-      backgroundColor: Colors.transparent,
-      labelStyle: TextStyle(
-        color: _selectedType == type ? Colors.black : Colors.black,
-        fontWeight: FontWeight.w500,
+      selectedColor: Colors.purple, // Highlight color for selected chip
+      backgroundColor: Colors.grey.shade200, // Neutral background for unselected chips
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12), // Rounded edges for modern style
       ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), // Enhanced spacing
+      showCheckmark: false, // Disables the tick mark on selection
     );
   }
+
+
+
 
   @override
   void initState() {
@@ -65,23 +77,87 @@ class _GroupEditPageState extends State<GroupEditPage> {
     _groupNameController = TextEditingController(text: widget.groups.groupName);
     _selectedType = widget.groups.category;
   }
+  void _showDeleteMemberDialog(Member member, int index) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Delete Member"),
+          content: Text("Are you sure you want to delete ${member.name}?"),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: const Text("Cancel"),
+            ),
+            TextButton(
+              onPressed: () async {
+                await _deleteMember(member, index);
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: const Text("Delete"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+  Future<void> _deleteMember(Member member, int index) async {
+    setState(() {
+      widget.groups.members.removeAt(index); // Remove the member from the list
+    });
 
-  @override
+    // Update the group in Hive
+    await ExpenseManagerService.updateGroup(widget.groups);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("${member.name} has been deleted.")),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Edit Group'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text(
+          'Edit Group',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: Colors.purple,
+        elevation: 4,
+        centerTitle: true, // Centers the title for a balanced look
         actions: [
           IconButton(
-            icon: const Icon(Icons.check, color: Colors.black, size: 28),
+            icon: const Icon(Icons.check_circle, color: Colors.white),
+            tooltip: 'Save Changes',
             onPressed: _updateTheGroup,
           ),
-          SizedBox(
-            width: 20,
-          ),
         ],
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.purple, Colors.deepPurple],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            bottom: Radius.circular(16), // Adds a curve to the bottom of the AppBar
+          ),
+        ),
       ),
+
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0),
         child: Column(
@@ -148,13 +224,56 @@ class _GroupEditPageState extends State<GroupEditPage> {
             ),
             Expanded(
               child: ListView.builder(
-                  itemCount: widget.groups.members.length,
-                  itemBuilder: (context, index) {
-                    return ListTile(
-                        leading: const CircleAvatar(),
-                        title: Text(widget.groups.members[index].name));
-                  }),
-            )
+                itemCount: widget.groups.members.length,
+                itemBuilder: (context, index) {
+                  final member = widget.groups.members[index];
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                    child: Card(
+                      elevation: 3,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: ListTile(
+                        onLongPress: () => _showDeleteMemberDialog(member, index),
+                        leading: CircleAvatar(
+                          backgroundColor: Colors.purple.shade100,
+                          child: const Icon(
+                            Icons.person,
+                            color: Colors.purple,
+                          ),
+                        ),
+                        title: Text(
+                          member.name,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        // subtitle: Text(
+                        //   member.phone.isNotEmpty ? member.phone : "No phone number available",
+                        //   style: const TextStyle(
+                        //     fontSize: 14,
+                        //     color: Colors.grey,
+                        //   ),
+                        // ),
+                        trailing: IconButton(
+                          icon: const Icon(
+                            Icons.delete,
+                            color: Colors.purple,
+                          ),
+                          tooltip: 'Delete Member',
+                          onPressed: () => _showDeleteMemberDialog(member, index),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+
+
           ],
         ),
       ),
@@ -167,20 +286,18 @@ class _GroupEditPageState extends State<GroupEditPage> {
                 // Convert selected contacts to `mod.Member` objects
                 List<mod.Member> selectedMembers = contacts.map((contact) {
                   return mod.Member(
-                      name: contact.displayName,
-                      phone: ''); // Add phone if available
+                    name: contact.displayName,
+                    phone: contact.phones.isNotEmpty ? contact.phones.first.number : '',
+                  );
                 }).toList();
 
-                // Filter out any selected members that are already in the group
-                List<mod.Member> uniqueMembers =
-                    selectedMembers.where((newMember) {
+                // Filter out members already in the group
+                List<mod.Member> uniqueMembers = selectedMembers.where((newMember) {
                   return !widget.groups.members.any((existingMember) =>
-                      existingMember.name ==
-                      newMember
-                          .name); // Adjust as needed, e.g., `name` or `phone`
+                  existingMember.name == newMember.name);
                 }).toList();
 
-                // Update the members list with the unique, non-duplicate entries
+                // Add unique members to the group
                 setState(() {
                   widget.groups.members.addAll(uniqueMembers);
                 });
@@ -190,17 +307,30 @@ class _GroupEditPageState extends State<GroupEditPage> {
         },
         label: const Row(
           children: [
-            Icon(Icons.person_add, color: Colors.white),
+            Icon(
+              Icons.person_add,
+              color: Colors.white,
+            ),
             SizedBox(width: 8),
             Text(
               "Add Members",
-              style:
-                  TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                color: Colors.white,
+              ),
             ),
           ],
         ),
         backgroundColor: Colors.purple,
+        icon: const Icon(Icons.add, color: Colors.white), // Optional Icon
+        tooltip: 'Add new members', // Accessibility and hints
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12), // Rounded corners for a modern look
+        ),
+        extendedPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       ),
+
     );
   }
 }

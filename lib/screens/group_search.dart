@@ -37,23 +37,59 @@ class GroupSearchDelegate extends SearchDelegate<String> {
 
     return ListView.builder(
       itemCount: searchResults.length,
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       itemBuilder: (context, index) {
         final group = searchResults[index];
-        return ListTile(
-          title: Text(group.groupName),
-          onTap: () {
-            Navigator.push(
+        return Card(
+          elevation: 3,
+          margin: const EdgeInsets.symmetric(vertical: 8),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: ListTile(
+            contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+            leading: CircleAvatar(
+              radius: 24,
+              backgroundColor: Colors.purple.shade100,
+              child: Text(
+                group.groupName.isNotEmpty ? group.groupName[0].toUpperCase() : '?',
+                style: const TextStyle(
+                  color: Colors.purple,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+              ),
+            ),
+            title: Text(
+              group.groupName,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
+            ),
+            trailing: const Icon(
+              Icons.arrow_forward_ios,
+              color: Colors.grey,
+              size: 16,
+            ),
+            onTap: () {
+              Navigator.push(
                 context,
                 MaterialPageRoute(
-                    builder: (context) => GroupDetails(
-                          groupItem: group,
-                        ))).then((value) {
-              callback.call();
-            });
-          },
+                  builder: (context) => GroupDetails(
+                    groupItem: group,
+                  ),
+                ),
+              ).then((value) {
+                callback.call();
+              });
+            },
+          ),
         );
       },
     );
+
   }
 
   @override

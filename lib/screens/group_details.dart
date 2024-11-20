@@ -37,43 +37,96 @@ class _GroupDetailsState extends State<GroupDetails> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.groupItem.groupName),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context), // Navigate back
+          tooltip: 'Go Back',
+        ),
+        title: Text(
+          widget.groupItem.groupName,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        centerTitle: true, // Centers the title for a balanced layout
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings),
+            icon: const Icon(Icons.settings, color: Colors.white),
+            tooltip: 'Group Settings',
             onPressed: () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => GroupSettings(group: widget.groupItem)));
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => GroupSettings(group: widget.groupItem),
+                ),
+              );
             },
           ),
         ],
+        backgroundColor: Colors.purple,
+        elevation: 4,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.purple, Colors.deepPurple],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            bottom: Radius.circular(16), // Rounded corners for modern look
+          ),
+        ),
       ),
+
       body: Column(
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16), // Rounded corners
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1), // Subtle shadow
+                  blurRadius: 10,
+                  spreadRadius: 2,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween, // Balanced spacing
               children: [
-                _buildButton('Settle up', Colors.grey.shade300),
-                _buildButton('Balance', Colors.grey.shade300),
-                _buildButton('Total', Colors.grey.shade300),
+                _buildButton('Settle Up', Colors.purple.shade100),
+                _buildButton('Balance', Colors.purple.shade100),
+                _buildButton('Total', Colors.purple.shade100),
               ],
             ),
           ),
+
           Expanded(
             child: ListView.builder(
               itemCount: expenses.length,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               itemBuilder: (BuildContext context, int index) {
-                bool isYou =phoneNumber == expenses[index].paidByMember.phone;
+                bool isYou = phoneNumber == expenses[index].paidByMember.phone;
                 return GestureDetector(
-                  onTap: (){
+                  onTap: () {
                     Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => AddExpensePage(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => AddExpensePage(
                           expense: expenses[index],
-                        ))).then((value) => getAllExpenses());
+                        ),
+                      ),
+                    ).then((value) => getAllExpenses());
                   },
-                  onLongPress: ()async{
+                  onLongPress: () async {
                     showDialog(
                       context: context,
                       builder: (BuildContext context) {
@@ -88,67 +141,90 @@ class _GroupDetailsState extends State<GroupDetails> {
                               child: const Text("Cancel"),
                             ),
                             TextButton(
-                              onPressed: () async{
+                              onPressed: () async {
                                 await ExpenseManagerService.deleteExpense(expenses[index]);
                                 setState(() {
                                   expenses = ExpenseManagerService.getExpensesByGroup(widget.groupItem);
                                 });
                                 Navigator.of(context).pop();
                               },
-                              child: const Text("Yes"),
+                              child: const Text("Yes", style: TextStyle(color: Colors.red)),
                             ),
                           ],
                         );
                       },
                     );
-
                   },
-                  child: _buildTransactionTile(
-                      title: expenses[index].description,
-                      subtitle:
-                          '${isYou ? "You" : expenses[index].paidByMember.name} paid ₹${expenses[index].totalAmount.toStringAsFixed(3)}',
-                      status: isYou ? 'You lent' : 'You borrowed',
-                      amount: () {
-                        for (var split in expenses[index].splits) {
-                          if (split.member.phone == phoneNumber) {
-                            return (expenses[index].totalAmount- split.amount).toStringAsFixed(3);
-                          }
-                        }
-                        return '0';
-                      }(),
-                      statusColor:isYou ? Colors.green : Colors.red),
+                  child: Card(
+                    elevation: 3,
+                    margin: const EdgeInsets.symmetric(vertical: 8),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                      leading: CircleAvatar(
+                        backgroundColor: isYou ? Colors.green.shade100 : Colors.red.shade100,
+                        radius: 24,
+                        child: Icon(
+                          isYou ? Icons.arrow_upward : Icons.arrow_downward,
+                          color: isYou ? Colors.green : Colors.red,
+                        ),
+                      ),
+                      title: Text(
+                        expenses[index].description,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      subtitle: Text(
+                        '${isYou ? "You" : expenses[index].paidByMember.name} paid ₹${expenses[index].totalAmount.toStringAsFixed(3)}',
+                        style: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontSize: 14,
+                        ),
+                      ),
+                      trailing: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            isYou ? 'You lent' : 'You borrowed',
+                            style: TextStyle(
+                              color: isYou ? Colors.green : Colors.red,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '₹${() {
+                              for (var split in expenses[index].splits) {
+                                if (split.member.phone == phoneNumber) {
+                                  return (expenses[index].totalAmount - split.amount).toStringAsFixed(3);
+                                }
+                              }
+                              return '0';
+                            }()}',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 );
-
               },
-              // children: [
-              //   _buildDateHeader('September 2024'),
-              //   _buildTransactionTile('Grocery', 'Ameena paid ₹500.00', 'You borrowed', '₹100.00', Colors.red),
-              //   _buildTransactionTile('Vegetables', 'Sinitha paid ₹2300.00', 'You borrowed', '₹230.00', Colors.red),
-              //   _buildTransactionTile('Water can', 'You paid ₹620.00', 'You lent', '₹62.00', Colors.green),
-              //   _buildTransactionTile('Breakfast', 'Saba paid ₹480.00', 'You borrowed', '₹160.00', Colors.red),
-              //   _buildGroupTransaction('Sabu paid Riswan ₹4,580.00'),
-              //   _buildGroupTransaction('Sabu paid Aleena ₹5,200.00'),
-              //   _buildDateHeader('August 2024'),
-              //   _buildTransactionTile('Uber', 'Saba paid ₹300.00', 'You borrowed', '₹150.00', Colors.red),
-              // ],
             ),
           ),
 
+
         ],
       ),
-      // floatingActionButton: FloatingActionButton.extended(
-      //   onPressed: () {
-      //     Navigator.push(
-      //       context,
-      //       MaterialPageRoute(builder: (context) => AddExpensePage(
-      //         group: widget.groupItem,
-      //       )),
-      //     ).then((value) => getAllExpenses());
-      //   },
-      //   tooltip: "Add Expense",
-      //   icon: const Icon(Icons.add),
-      //   label: const Text("Add Expense",style: TextStyle(fontSize: 16),),
-      // ),
+
       bottomNavigationBar: BottomNavigationBar(
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.group), label: 'Groups'),
@@ -166,15 +242,25 @@ class _GroupDetailsState extends State<GroupDetails> {
     return ElevatedButton(
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(
-        //primary: color,
-        // onPrimary: Colors.black,
+        backgroundColor: color, // Sets the button background color
+        foregroundColor: Colors.white, // Sets the text color
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24), // Better spacing
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(12), // Smooth rounded corners
+        ),
+        elevation: 3, // Adds a slight shadow for depth
+        shadowColor: Colors.black.withOpacity(0.2), // Subtle shadow
+      ),
+      child: Text(
+        text,
+        style: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
         ),
       ),
-      child: Text(text),
     );
   }
+
 
   Widget _buildDateHeader(String date) {
     return Padding(

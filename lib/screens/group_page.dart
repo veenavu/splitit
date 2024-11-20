@@ -55,20 +55,56 @@ class _GroupPageState extends State<GroupPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Welcome ${userProfile?.name}'),
+
+        title: Text(
+          'Welcome, ${userProfile?.name ?? 'User'}',
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        centerTitle: false, // Keeps title aligned to the left for a modern design
         actions: [
-          IconButton(icon: const Icon(Icons.search), onPressed: () {
-            final groups = ExpenseManagerService.getAllGroups();
-            showSearch(
-              context: context,
-              delegate: GroupSearchDelegate(groups, (){
-                _loadGroups();
-              }),
-            );
-          }),
-          // IconButton(icon: const Icon(Icons.group), onPressed: () {}),
+          IconButton(
+            icon: const Icon(Icons.search, color: Colors.white),
+            tooltip: 'Search Groups',
+            onPressed: () {
+              final groups = ExpenseManagerService.getAllGroups();
+              showSearch(
+                context: context,
+                delegate: GroupSearchDelegate(groups, () {
+                  _loadGroups();
+                }),
+              );
+            },
+          ),
+          // IconButton(
+          //   icon: const Icon(Icons.filter_list, color: Colors.white),
+          //   tooltip: 'Notifications',
+          //   onPressed: () {
+          //     // Handle notifications action
+          //   },
+          // ),
         ],
+        backgroundColor: Colors.purple, // Matches theme
+        elevation: 4, // Adds subtle shadow for depth
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.purple, Colors.deepPurple],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            bottom: Radius.circular(16), // Smooth rounded bottom
+          ),
+        ),
       ),
+
       body: Padding(
         padding: const EdgeInsets.all(8.0),
         child: Column(
