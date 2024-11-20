@@ -11,7 +11,8 @@ import 'package:splitit/screens/group_search.dart';
 import 'add_expense_page.dart';
 
 class GroupPage extends StatefulWidget {
-  const GroupPage({super.key});
+  final VoidCallback? onStartGroupComplete;
+  const GroupPage({super.key, this.onStartGroupComplete});
 
   @override
   State<GroupPage> createState() => _GroupPageState();
@@ -29,7 +30,7 @@ class _GroupPageState extends State<GroupPage> {
     });
   }
 
-  _getProfile() async {
+  Future<void> _getProfile() async {
     final box = Hive.box(ExpenseManagerService.normalBox);
     final phone = box.get("mobile");
 
@@ -46,16 +47,19 @@ class _GroupPageState extends State<GroupPage> {
     super.initState();
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
+  void _onStartGroup(VoidCallback? callback, BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const AddNewGroupPage()),
+    ).then((value) {
+      callback?.call(); // Safely call the callback if not null
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-
         title: Text(
           'Welcome, ${userProfile?.name ?? 'User'}',
           style: const TextStyle(
@@ -64,8 +68,9 @@ class _GroupPageState extends State<GroupPage> {
             color: Colors.white,
           ),
         ),
-        centerTitle: false, // Keeps title aligned to the left for a modern design
+        centerTitle: false,
         actions: [
+          // Search Icon
           IconButton(
             icon: const Icon(Icons.search, color: Colors.white),
             tooltip: 'Search Groups',
@@ -79,16 +84,19 @@ class _GroupPageState extends State<GroupPage> {
               );
             },
           ),
-          // IconButton(
-          //   icon: const Icon(Icons.filter_list, color: Colors.white),
-          //   tooltip: 'Notifications',
-          //   onPressed: () {
-          //     // Handle notifications action
-          //   },
-          // ),
+          // Start a New Group Icon
+          IconButton(
+            icon: const Icon(Icons.group_add, color: Colors.white),
+            tooltip: 'Start a New Group',
+            onPressed: () {
+              _onStartGroup(() {
+                widget.onStartGroupComplete?.call(); // Safe null-aware callback
+              }, context);
+            },
+          ),
         ],
-        backgroundColor: Colors.purple, // Matches theme
-        elevation: 4, // Adds subtle shadow for depth
+        backgroundColor: Colors.purple,
+        elevation: 4,
         flexibleSpace: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
@@ -100,47 +108,52 @@ class _GroupPageState extends State<GroupPage> {
         ),
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(
-            bottom: Radius.circular(16), // Smooth rounded bottom
+            bottom: Radius.circular(16),
           ),
         ),
       ),
-
       body: Padding(
         padding: const EdgeInsets.all(8.0),
         child: Column(
           children: [
             TotalOwed(
-                amount:
-                    ExpenseManagerService.getBalanceText(Member(name: userProfile!.name, phone: userProfile!.phone))),
+              amount: userProfile != null
+                  ? ExpenseManagerService.getBalanceText(
+                Member(name: userProfile!.name, phone: userProfile!.phone),
+              )
+                  : "Loading...",
+            ),
             Expanded(
               child: ListView.builder(
                 itemCount: groups.length,
                 itemBuilder: (context, index) {
                   final groupItem = groups[index];
-                  // final status = groupItem.getGroupStatus(null);
                   return GestureDetector(
                     onTap: () {
                       Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => GroupDetails(
-                                    groupItem: groupItem,
-                                  ))).then((value) {
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => GroupDetails(
+                            groupItem: groupItem,
+                          ),
+                        ),
+                      ).then((value) {
                         _loadGroups();
                       });
                     },
                     child: ExpenseListItem(
                       title: groupItem.groupName,
                       subtitle: ExpenseManagerService.getGroupBalanceText(
-                          Member(name: userProfile!.name, phone: userProfile!.phone), groupItem),
+                        Member(name: userProfile!.name, phone: userProfile!.phone),
+                        groupItem,
+                      ),
                       showGroupImage: index % 2 == 0 ? false : true,
-                      details: const [
-                        // 'Abdul R. owes you ₹12.00',
-                        // 'Jishna R. owes you ₹5.38',
-                      ],
-                      icon: Icons.article,
+                      details: const [],
+                      icon: Icons.article, // This will be ignored if groupImage is provided
                       iconColor: Colors.red[700]!,
+                      groupImage: groupItem.groupImage, // Pass the group image path
                     ),
+
                   );
                 },
               ),
@@ -161,45 +174,34 @@ class _GroupPageState extends State<GroupPage> {
           });
         },
         selectedItemColor: Theme.of(context).primaryColor,
-        // This affects both icon and label color when selected
         unselectedItemColor: Colors.black,
-        // This affects both icon and label color when not selected
         selectedLabelStyle: const TextStyle(
-          color: Color(0xff5f0967), // Purple color for selected label
+          color: Color(0xff5f0967),
           fontSize: 12,
           fontWeight: FontWeight.w500,
         ),
         unselectedLabelStyle: const TextStyle(
-          color: Colors.black, // Black color for unselected label
+          color: Colors.black,
           fontSize: 12,
           fontWeight: FontWeight.normal,
         ),
         items: const [
           BottomNavigationBarItem(
-            icon: Icon(
-              Icons.group,
-              color: Colors.black,
-            ),
+            icon: Icon(Icons.group, color: Colors.black),
             label: 'Groups',
           ),
           BottomNavigationBarItem(
-              icon: Icon(
-                Icons.person,
-                color: Colors.black,
-              ),
-              label: 'Friends'),
+            icon: Icon(Icons.person, color: Colors.black),
+            label: 'Friends',
+          ),
           BottomNavigationBarItem(
-              icon: Icon(
-                Icons.receipt,
-                color: Colors.black,
-              ),
-              label: 'Activity'),
+            icon: Icon(Icons.receipt, color: Colors.black),
+            label: 'Activity',
+          ),
           BottomNavigationBarItem(
-              icon: Icon(
-                Icons.account_circle,
-                color: Colors.black,
-              ),
-              label: 'Account'),
+            icon: Icon(Icons.account_circle, color: Colors.black),
+            label: 'Account',
+          ),
         ],
       ),
     );
@@ -218,46 +220,19 @@ class TotalOwed extends StatelessWidget {
       child: Row(
         children: [
           const Text("Overall, ", style: TextStyle(fontSize: 16)),
-          Text(amount,
-              style: TextStyle(
-                  fontSize: 16,
-                  color: amount.contains("owe")
-                      ? Colors.red
-                      : amount.contains("settle")
-                          ? Colors.grey
-                          : Colors.green,
-                  fontWeight: FontWeight.bold)),
+          Text(
+            amount,
+            style: TextStyle(
+              fontSize: 16,
+              color: amount.contains("owe")
+                  ? Colors.red
+                  : amount.contains("settle")
+                  ? Colors.grey
+                  : Colors.green,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ],
-      ),
-    );
-  }
-}
-
-class GroupTile extends StatelessWidget {
-  final Group group;
-  final String status;
-
-  const GroupTile({super.key, required this.group, required this.status});
-
-  @override
-  Widget build(BuildContext context) {
-    Color subtitleColor = status == "Lent" ? Colors.green : Colors.red;
-
-    return Card(
-      elevation: 0,
-      margin: const EdgeInsets.symmetric(vertical: 4),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundImage: FileImage(File(group.groupImage)), // Display the group image
-        ),
-        title: Text(
-          group.groupName,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Text(
-          status,
-          style: TextStyle(color: subtitleColor, fontWeight: FontWeight.w600),
-        ),
       ),
     );
   }
@@ -270,84 +245,52 @@ class BottomActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12.0),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          ElevatedButton.icon(
-            onPressed: () {
-              _onStartGroup(() {
-                onStartGroupComplete.call();
-              }, context);
-            },
-            icon: const Icon(
-              Icons.group_add,
-              color: Color(0xff5f0967),
-            ),
-            label: const Text(
-              "Start a new group",
-              style: TextStyle(color: Color(0xff5f0967), fontSize: 16),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-                side: const BorderSide(
-                  color: Color(0xff5f0967), // Border color
-                  width: 1, // Border width
-                ),
-              ),
-            ),
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: FloatingActionButton.extended(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => AddExpensePage()),
+            );
+          },
+          tooltip: "Add Expense",
+          icon: const Icon(
+            Icons.add,
+            size: 24,
+            color: Colors.white,
           ),
-          SizedBox(
-            height: 10,
+          label: const Text(
+            "Add Expense",
+            style: TextStyle(fontSize: 16, color: Colors.white),
           ),
-          FloatingActionButton.extended(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => AddExpensePage()),
-              );
-            },
-            tooltip: "Add Expense",
-            icon: const Icon(Icons.add),
-            label: const Text(
-              "Add Expense",
-              style: TextStyle(fontSize: 16),
-            ),
-          ),
-        ],
+          backgroundColor: const Color(0xffab47bc),
+        ),
       ),
     );
   }
-
-  _onStartGroup(VoidCallback callback, BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const AddNewGroupPage()),
-    ).then((value) => callback.call());
-  }
 }
-
 class ExpenseListItem extends StatelessWidget {
   final String title;
   final String subtitle;
   final List<String>? details;
-  final IconData icon;
+  final IconData? icon;
   final Color iconColor;
   final bool showImage;
   final bool showGroupImage;
+  final String? groupImage; // Add the groupImage property
 
   const ExpenseListItem({
     super.key,
     required this.title,
     required this.subtitle,
     this.details,
-    required this.icon,
+    this.icon,
     required this.iconColor,
     this.showImage = false,
     this.showGroupImage = false,
+    this.groupImage, // Accept groupImage
   });
 
   @override
@@ -359,24 +302,21 @@ class ExpenseListItem extends StatelessWidget {
           width: 48,
           height: 48,
           decoration: BoxDecoration(
-            color: showImage || showGroupImage ? Colors.transparent : iconColor.withOpacity(0.2),
+            color: groupImage != null ? Colors.transparent : iconColor.withOpacity(0.2),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: showImage || showGroupImage
+          child: groupImage != null
               ? ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Container(
-                    color: Colors.grey[800],
-                    child: Icon(
-                      showGroupImage ? Icons.group : Icons.apartment,
-                      color: Colors.white,
-                    ),
-                  ),
-                )
+            borderRadius: BorderRadius.circular(8),
+            child: Image.file(
+              File(groupImage!), // Display the groupImage
+              fit: BoxFit.cover,
+            ),
+          )
               : Icon(
-                  icon,
-                  color: iconColor,
-                ),
+            icon ?? Icons.article, // Fallback to icon if groupImage is null
+            color: iconColor,
+          ),
         ),
         title: Text(
           title,
@@ -395,20 +335,22 @@ class ExpenseListItem extends StatelessWidget {
                 color: subtitle.contains('owe')
                     ? Colors.orange
                     : subtitle.contains('lent')
-                        ? Colors.green
-                        : Colors.grey,
+                    ? Colors.green
+                    : Colors.grey,
                 fontSize: 14,
               ),
             ),
             if (details != null) ...[
               const SizedBox(height: 4),
-              ...details!.map((detail) => Text(
-                    detail,
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 12,
-                    ),
-                  )),
+              ...details!.map(
+                    (detail) => Text(
+                  detail,
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 12,
+                  ),
+                ),
+              ),
             ],
           ],
         ),
@@ -417,3 +359,4 @@ class ExpenseListItem extends StatelessWidget {
     );
   }
 }
+

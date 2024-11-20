@@ -114,136 +114,158 @@ class _AddExpensePageState extends State<AddExpensePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[100],
-      appBar: AppBar(
-        elevation: 0,
+      appBar:AppBar(
+        elevation: 4, // Adds subtle shadow for depth
         backgroundColor: Colors.transparent,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.black87),
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
           'New Expense',
           style: TextStyle(
-            color: Colors.black87,
-            fontWeight: FontWeight.w600,
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
           ),
         ),
         actions: [
           TextButton.icon(
             onPressed: () {
-              if(_amountController.text.isEmpty) return;
-              // if(selectedMembers.isEmpty) return;
-              if(selectedGroup == null) return;
-              if(selectedPayer == null) return;
-              if(_descriptionController.text.isEmpty) return;
+              if (_amountController.text.isEmpty) return;
+              if (selectedGroup == null) return;
+              if (selectedPayer == null) return;
+              if (_descriptionController.text.isEmpty) return;
 
               if (selectedSplitOption == 'By Amount') {
                 List<double> customAmounts = selectedMembers.map((member) {
                   return double.tryParse(_memberAmountControllers[member.name]?.text ?? '0') ?? 0.0;
                 }).toList();
 
-                if(widget.expense!=null){
+                if (widget.expense != null) {
                   ExpenseManagerService.updateExpense(
-                      expense: widget.expense!,
-                      totalAmount: double.tryParse(_amountController.text) ?? 0.0,
-                      divisionMethod: DivisionMethod.unequal,
-                      paidByMember: selectedPayer!,
-                      involvedMembers: selectedMembers,
-                      description: _descriptionController.text,
+                    expense: widget.expense!,
+                    totalAmount: double.tryParse(_amountController.text) ?? 0.0,
+                    divisionMethod: DivisionMethod.unequal,
+                    paidByMember: selectedPayer!,
+                    involvedMembers: selectedMembers,
+                    description: _descriptionController.text,
                     customAmounts: customAmounts,
                     group: selectedGroup,
                   );
-                }else{
+                } else {
                   ExpenseManagerService.createExpense(
-                      totalAmount: double.tryParse(_amountController.text) ?? 0.0,
-                      divisionMethod:  DivisionMethod.unequal,
-                      paidByMember: selectedPayer!,
-                      involvedMembers: selectedMembers,
-                      group: selectedGroup,
-                      customAmounts:customAmounts,
-                      description: _descriptionController.text
+                    totalAmount: double.tryParse(_amountController.text) ?? 0.0,
+                    divisionMethod: DivisionMethod.unequal,
+                    paidByMember: selectedPayer!,
+                    involvedMembers: selectedMembers,
+                    group: selectedGroup,
+                    customAmounts: customAmounts,
+                    description: _descriptionController.text,
                   );
                 }
-
-              }else{
-              if(widget.expense!=null){
-                ExpenseManagerService.updateExpense(
+              } else {
+                if (widget.expense != null) {
+                  ExpenseManagerService.updateExpense(
                     totalAmount: double.tryParse(_amountController.text) ?? 0.0,
                     divisionMethod: DivisionMethod.equal,
                     paidByMember: selectedPayer!,
                     involvedMembers: selectedMembers,
                     group: selectedGroup,
                     description: _descriptionController.text,
-                  expense: widget.expense!,
-                );
-              }else{
-                ExpenseManagerService.createExpense(
+                    expense: widget.expense!,
+                  );
+                } else {
+                  ExpenseManagerService.createExpense(
                     totalAmount: double.tryParse(_amountController.text) ?? 0.0,
                     divisionMethod: DivisionMethod.equal,
                     paidByMember: selectedPayer!,
                     involvedMembers: selectedMembers,
                     group: selectedGroup,
-                    description: _descriptionController.text
-                );
+                    description: _descriptionController.text,
+                  );
+                }
               }
-              }
-              //Adding Expense
-
               Navigator.pop(context);
-              // Add your save expense logic here
             },
-            icon: const Icon(Icons.check_circle_outline),
+            icon: const Icon(Icons.check_circle_outline, color: Colors.white),
             label: const Text('Save'),
             style: TextButton.styleFrom(
-              foregroundColor: Colors.purple,
-              textStyle: const TextStyle(fontWeight: FontWeight.bold),
+              foregroundColor: Colors.white,
+              textStyle: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
             ),
           ),
         ],
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Colors.deepPurple.shade700,
+                Colors.purple.shade400,
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            bottom: Radius.circular(20),
+          ),
+        ),
       ),
-      body: SingleChildScrollView(
+
+        body: SingleChildScrollView(
         child: Column(
           children: [
             // Group Selection Card
             Card(
               margin: const EdgeInsets.all(16),
-              elevation: 0,
+              elevation: 4, // Adds subtle shadow for depth
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
-                side: BorderSide(color: Colors.grey.shade200),
+                side: BorderSide(color: Colors.purple.shade200),
               ),
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(20), // Padding for consistent spacing
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Title
                     const Text(
                       'Select Group',
                       style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.grey,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.deepPurple,
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 16),
+                    // Dropdown
                     DropdownButtonFormField<Group>(
                       icon: const Icon(
-                        Icons.expand_more_rounded, // Modern rounded arrow
-                        size: 12,
-                        color: Colors.purple, // Match your theme color
+                        Icons.expand_more_rounded,
+                        size: 20,
+                        color: Colors.deepPurple, // Matches the purple theme
                       ),
-                      isExpanded: true, // Add this to prevent overflow
+                      isExpanded: true, // Ensures dropdown fits the available width
                       decoration: InputDecoration(
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
+                          borderSide: BorderSide(color: Colors.purple.shade200),
                         ),
                         filled: true,
-                        fillColor: Colors.grey[200],
+                        fillColor: Colors.purple.shade50, // Light purple background
                       ),
                       value: selectedGroup,
-                      hint: const Text("Choose a group"),
+                      hint: Text(
+                        "Choose a group",
+                        style: TextStyle(color: Colors.purple.shade300), // Placeholder text style
+                      ),
                       onChanged: (Group? newGroup) async {
                         setState(() {
                           selectedGroup = newGroup;
@@ -256,29 +278,39 @@ class _AddExpensePageState extends State<AddExpensePage> {
                       items: groups.map((Group group) {
                         return DropdownMenuItem<Group>(
                           value: group,
-                          child: Wrap(
+                          child: Row(
                             children: [
+                              // Group Avatar
                               CircleAvatar(
-                                radius: 16,
+                                radius: 18,
                                 backgroundImage: FileImage(File(group.groupImage)),
                               ),
                               const SizedBox(width: 12),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    group.groupName,
-                                    style: const TextStyle(fontSize: 12,fontWeight: FontWeight.w500),
-                                  ),
-                                  Text(
-                                    group.category ?? 'No category',
-                                    style: TextStyle(
-                                      color: Colors.grey[600],
-                                      fontSize: 12,
+                              // Group Name and Category
+                              Flexible(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      group.groupName,
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.black87,
+                                        overflow: TextOverflow.ellipsis, // Prevents text overflow
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                    Text(
+                                      group.category ?? 'No category',
+                                      style: TextStyle(
+                                        color: Colors.grey[600],
+                                        fontSize: 12,
+                                        overflow: TextOverflow.ellipsis, // Prevents text overflow
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ],
                           ),
@@ -288,18 +320,20 @@ class _AddExpensePageState extends State<AddExpensePage> {
                   ],
                 ),
               ),
-            ),
+            )
+
+            ,
 
             // Expense Details Card
             Card(
               margin: const EdgeInsets.symmetric(horizontal: 16),
-              elevation: 0,
+              elevation: 4, // Adds subtle shadow for a modern look
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
-                side: BorderSide(color: Colors.grey.shade200),
+                side: BorderSide(color: Colors.purple.shade100),
               ),
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -310,34 +344,49 @@ class _AddExpensePageState extends State<AddExpensePage> {
                       style: const TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
+                        color: Colors.deepPurple, // Dark purple for input text
                       ),
                       decoration: InputDecoration(
                         hintText: '0.00',
                         hintStyle: TextStyle(
-                          color: Colors.grey[400],
+                          color: Colors.purple.shade200, // Light purple for placeholder
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
                         ),
                         border: InputBorder.none,
                         prefixIcon: Icon(
                           Icons.currency_rupee,
-                          size: 32,
-                          color: Colors.grey[600],
+                          size: 28,
+                          color: Colors.purple.shade300, // Subtle purple for prefix icon
                         ),
+                        contentPadding: const EdgeInsets.symmetric(vertical: 8),
                       ),
                     ),
-                    const Divider(height: 32),
+                    const Divider(
+                      height: 32,
+                      thickness: 1,
+                      color: Colors.purpleAccent, // Divider matches theme
+                    ),
                     // Description Field
                     TextField(
                       controller: _descriptionController,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        color: Colors.black87,
+                      ),
                       decoration: InputDecoration(
                         hintText: 'What was this expense for?',
-                        hintStyle: TextStyle(color: Colors.grey[400]),
+                        hintStyle: TextStyle(
+                          color: Colors.purple.shade200, // Light purple for placeholder
+                          fontSize: 16,
+                        ),
                         border: InputBorder.none,
                         prefixIcon: Icon(
                           Icons.receipt_outlined,
-                          color: Colors.grey[600],
+                          size: 24,
+                          color: Colors.purple.shade300, // Subtle purple for prefix icon
                         ),
+                        contentPadding: const EdgeInsets.symmetric(vertical: 12),
                       ),
                     ),
                   ],
@@ -345,21 +394,23 @@ class _AddExpensePageState extends State<AddExpensePage> {
               ),
             ),
 
+
             // Split Options Card
             Card(
               margin: const EdgeInsets.all(16),
-              elevation: 0,
+              elevation: 4, // Subtle shadow for a modern appearance
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
-                side: BorderSide(color: Colors.grey.shade200),
+                side: BorderSide(color: Colors.purple.shade100),
               ),
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
+                        // Paid By Dropdown
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -368,34 +419,45 @@ class _AddExpensePageState extends State<AddExpensePage> {
                                 'Paid by',
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color: Colors.grey,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.deepPurple,
                                 ),
                               ),
                               const SizedBox(height: 8),
                               DropdownButtonFormField<Member>(
                                 icon: const Icon(
-                                  Icons.expand_more_rounded, // Modern rounded arrow
-                                  size: 12,
-                                  color: Colors.purple, // Match your theme color
+                                  Icons.expand_more_rounded,
+                                  size: 20,
+                                  color: Colors.deepPurple,
                                 ),
-                                padding: EdgeInsets.zero,
-                                isExpanded: true, // Add this to prevent overflow
+                                isExpanded: true,
                                 decoration: InputDecoration(
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide.none,
+                                    borderSide: BorderSide(color: Colors.purple.shade200),
                                   ),
                                   filled: true,
-                                  fillColor: Colors.grey[200],
+                                  fillColor: Colors.purple.shade50,
                                 ),
                                 value: selectedPayer,
-                                hint: const Text("Select", style: TextStyle(fontSize: 12), overflow: TextOverflow.ellipsis,),
+                                hint: Text(
+                                  "Select",
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.purple.shade300,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                                 onChanged: (value) => setState(() => selectedPayer = value),
                                 items: (selectedGroup?.members ?? []).map((Member member) {
                                   return DropdownMenuItem<Member>(
                                     value: member,
-                                    child: Text(member.name, overflow: TextOverflow.ellipsis),
+                                    child: Text(
+                                      member.name,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(fontSize: 14),
+                                    ),
                                   );
                                 }).toList(),
                               ),
@@ -403,6 +465,7 @@ class _AddExpensePageState extends State<AddExpensePage> {
                           ),
                         ),
                         const SizedBox(width: 16),
+                        // Split Dropdown
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -411,25 +474,26 @@ class _AddExpensePageState extends State<AddExpensePage> {
                                 'Split',
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color: Colors.grey,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.deepPurple,
                                 ),
                               ),
                               const SizedBox(height: 8),
                               DropdownButtonFormField<String>(
                                 icon: const Icon(
-                                  Icons.expand_more_rounded, // Modern rounded arrow
-                                  size: 12,
-                                  color: Colors.purple, // Match your theme color
+                                  Icons.expand_more_rounded,
+                                  size: 20,
+                                  color: Colors.deepPurple,
                                 ),
-                                isExpanded: true, // Add this to prevent overflow
+                                isExpanded: true,
                                 decoration: InputDecoration(
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide.none,
+                                    borderSide: BorderSide(color: Colors.purple.shade200),
                                   ),
                                   filled: true,
-                                  fillColor: Colors.grey[200],
+                                  fillColor: Colors.purple.shade50,
                                 ),
                                 value: selectedSplitOption,
                                 onChanged: (value) {
@@ -443,7 +507,10 @@ class _AddExpensePageState extends State<AddExpensePage> {
                                 items: ['Equally', 'By Amount'].map((String value) {
                                   return DropdownMenuItem<String>(
                                     value: value,
-                                    child: Text(value),
+                                    child: Text(
+                                      value,
+                                      style: const TextStyle(fontSize: 14),
+                                    ),
                                   );
                                 }).toList(),
                               ),
@@ -457,35 +524,41 @@ class _AddExpensePageState extends State<AddExpensePage> {
               ),
             ),
 
+
             // Members List
             Card(
               margin: const EdgeInsets.all(16),
-              elevation: 0,
+              elevation: 4, // Subtle shadow for a professional look
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
-                side: BorderSide(color: Colors.grey.shade200),
+                side: BorderSide(color: Colors.purple.shade100),
               ),
               child: ListView.separated(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: members.length,
-                separatorBuilder: (context, index) => const Divider(height: 1),
+                separatorBuilder: (context, index) => Divider(
+                  color: Colors.purple.shade50,
+                  thickness: 1,
+                ),
                 itemBuilder: (context, index) {
                   final member = members[index];
                   final isSelected = selectedMembers.contains(member);
 
                   return ListTile(
                     leading: CircleAvatar(
-                      backgroundColor: isSelected ? Colors.purple[100] : Colors.grey[200],
+                      backgroundColor: isSelected ? Colors.purple.shade100 : Colors.grey.shade200,
                       child: Icon(
                         Icons.person_outline,
-                        color: isSelected ? Colors.purple : Colors.grey[600],
+                        color: isSelected ? Colors.deepPurple : Colors.grey[600],
                       ),
                     ),
                     title: Text(
                       member.name,
                       style: TextStyle(
-                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        fontSize: 16,
+                        color: isSelected ? Colors.deepPurple : Colors.black87,
                       ),
                     ),
                     trailing: selectedSplitOption == 'By Amount'
@@ -494,29 +567,35 @@ class _AddExpensePageState extends State<AddExpensePage> {
                       child: TextField(
                         controller: _memberAmountControllers[member.name],
                         keyboardType: TextInputType.number,
+                        style: const TextStyle(fontSize: 14),
                         decoration: InputDecoration(
                           contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(color: Colors.purple.shade200),
                           ),
                           hintText: '0.00',
-                          isDense: true,
+                          hintStyle: TextStyle(color: Colors.purple.shade300),
+                          filled: true,
+                          fillColor: Colors.purple.shade50,
                         ),
                       ),
                     )
                         : AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
+                      height: 24,
+                      width: 24,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: isSelected ? Colors.purple : Colors.transparent,
+                        color: isSelected ? Colors.deepPurple : Colors.transparent,
                         border: Border.all(
-                          color: isSelected ? Colors.purple : Colors.grey,
+                          color: isSelected ? Colors.deepPurple : Colors.grey,
                           width: 2,
                         ),
                       ),
                       child: Icon(
                         Icons.check,
-                        size: 20,
+                        size: 16,
                         color: isSelected ? Colors.white : Colors.transparent,
                       ),
                     ),
@@ -524,7 +603,8 @@ class _AddExpensePageState extends State<AddExpensePage> {
                   );
                 },
               ),
-            ),
+            )
+
           ],
         ),
       ),

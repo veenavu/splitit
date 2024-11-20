@@ -251,13 +251,13 @@ class _GroupEditPageState extends State<GroupEditPage> {
                             color: Colors.black87,
                           ),
                         ),
-                        // subtitle: Text(
-                        //   member.phone.isNotEmpty ? member.phone : "No phone number available",
-                        //   style: const TextStyle(
-                        //     fontSize: 14,
-                        //     color: Colors.grey,
-                        //   ),
-                        // ),
+                        subtitle: Text(
+                          member.phone.isNotEmpty ? member.phone : "No phone number available",
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey,
+                          ),
+                        ),
                         trailing: IconButton(
                           icon: const Icon(
                             Icons.delete,
