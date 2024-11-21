@@ -80,10 +80,14 @@ class _GroupSettingsState extends State<GroupSettings> {
                       child: const Text("Cancel"),
                     ),
                     TextButton(
-                      onPressed: () {
+                      onPressed: () async{
                         ExpenseManagerService.deleteGroup(widget.group);
-                        Get.offNamedUntil(Routes.dashboard, (route) => route.settings.name == Routes.dashboard);
-                        Get.find<DashboardController>().loadGroups();
+                        await Future.delayed(const Duration(milliseconds: 100));
+                        Future.microtask(() {
+                          Get.offNamedUntil(Routes.dashboard, (route) => route.settings.name == Routes.dashboard);
+                          Get.find<DashboardController>().loadGroups();
+                        });
+
                       },
                       child: const Text("Delete", style: TextStyle(color: Colors.red)),
                     ),
