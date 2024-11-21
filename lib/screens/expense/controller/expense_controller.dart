@@ -30,7 +30,8 @@ class ExpenseController extends GetxController {
   void onClose() {
     _descriptionController.dispose();
     _amountController.dispose();
-    _memberAmountControllers.forEach((_, controller) => controller.dispose());
+    memberAmountControllers.forEach((_, controller) => controller.dispose());
+    memberAmountControllers.clear();
     super.onClose();
   }
 
@@ -38,7 +39,7 @@ class ExpenseController extends GetxController {
   void _resetData() {
     _descriptionController.text = '';
     _amountController.text = '';
-    _memberAmountControllers.forEach((_, controller) => controller.text = '');
+    // _memberAmountControllers.forEach((_, controller) => controller.text = '');
     selectedPayer();
     selectedMembers.clear();
   }
@@ -68,22 +69,66 @@ class ExpenseController extends GetxController {
   }
 
   void initializeMemberControllersWithCustomAmounts(Expense expense) {
-    _memberAmountControllers.forEach((_, controller) => controller.dispose());
+    // Clear existing controllers
+    _memberAmountControllers.forEach((_, controller) {
+      controller.removeListener(() {}); // Remove any existing listeners
+      controller.dispose();
+    });
     _memberAmountControllers.clear();
 
-    List<Member> involvedMembers = [];
-    List<double> amounts = [];
+    // Clear selected members
+    selectedMembers.clear();
 
-    for (var sp in expense.splits) {
-      involvedMembers.add(sp.member);
-      amounts.add(sp.amount);
-    }
-
-    for (var i = 0; i < involvedMembers.length; i++) {
-      var member = involvedMembers[i];
-      _memberAmountControllers[member.name] = TextEditingController(
-        text: amounts[i].toString(),
+    // Create controllers and add members with amounts
+    for (var split in expense.splits) {
+      final controller = TextEditingController(
+          text: split.amount.toStringAsFixed(2)
       );
+
+      // Add controller
+      _memberAmountControllers[split.member.phone] = controller;
+
+      // Add listener for automatic member selection
+      controller.addListener(() {
+        final amount = double.tryParse(controller.text) ?? 0.0;
+        if (amount > 0) {
+          if (!selectedMembers.contains(split.member)) {
+            selectedMembers.add(split.member);
+          }
+        } else {
+          selectedMembers.remove(split.member);
+        }
+      });
+
+      // Add member to selected members since it has an amount
+      if (split.amount > 0) {
+        selectedMembers.add(split.member);
+      }
+    }
+  }
+
+// Optional: Helper method to initialize when editing an expense
+  void initializeForEditing(Expense expense) {
+    // Set split option based on division method
+    selectedSplitOption.value = expense.divisionMethod == DivisionMethod.unequal
+        ? 'By Amount'
+        : 'Equal';
+
+    // Initialize payer
+    selectedPayer.value = expense.paidByMember;
+
+    // Initialize amount controller
+    _amountController.text = expense.totalAmount.toString();
+
+    // Initialize description
+    _descriptionController.text = expense.description;
+
+    // Initialize member controllers with amounts
+    initializeMemberControllersWithCustomAmounts(expense);
+
+    // Set group if exists
+    if (expense.group != null) {
+      selectedGroup.value = expense.group;
     }
   }
 
@@ -92,7 +137,7 @@ class ExpenseController extends GetxController {
     _memberAmountControllers.clear();
 
     for (var member in members) {
-      _memberAmountControllers[member.name] = TextEditingController();
+      _memberAmountControllers[member.phone] = TextEditingController();
     }
   }
 
@@ -102,12 +147,25 @@ class ExpenseController extends GetxController {
   }
 
   void toggleMemberSelection(Member member) {
-    if (selectedMembers.contains(member)) {
-      selectedMembers.remove(member);
+    if (selectedSplitOption.value == 'By Amount') {
+      final controller = memberAmountControllers[member.phone];
+      if (controller != null) {
+        final amount = double.tryParse(controller.text) ?? 0.0;
+        if (amount > 0) {
+          if (!selectedMembers.contains(member)) {
+            selectedMembers.add(member);
+          }
+        } else {
+          selectedMembers.remove(member);
+        }
+      }
     } else {
-      selectedMembers.add(member);
+      if (selectedMembers.contains(member)) {
+        selectedMembers.remove(member);
+      } else {
+        selectedMembers.add(member);
+      }
     }
-    update();
   }
 
   void onGroupChanged(Group? newGroup) {
@@ -122,7 +180,16 @@ class ExpenseController extends GetxController {
     if (value != null) {
       selectedSplitOption.value = value;
       if (value == 'By Amount') {
-        initializeMemberAmountControllers();
+        // Keep only members with amounts > 0
+        selectedMembers.removeWhere((member) {
+          final controller = memberAmountControllers[member.phone];
+          final amount = double.tryParse(controller?.text ?? '') ?? 0.0;
+          return amount <= 0;
+        });
+
+        for (var member in members) {
+          _memberAmountControllers[member.phone] = TextEditingController();
+        }
       }
     }
   }
@@ -134,58 +201,109 @@ class ExpenseController extends GetxController {
         _descriptionController.text.isNotEmpty;
   }
 
-  void saveExpense(Expense? existingExpense) {
+  void saveExpense(Expense? existingExpense) async {
     if (!validateExpense()) return;
 
-    if (selectedSplitOption.value == 'By Amount') {
-      List<double> customAmounts = selectedMembers.map((member) {
-        return double.tryParse(_memberAmountControllers[member.name]?.text ?? '0') ?? 0.0;
-      }).toList();
+    try {
+      final totalAmount = double.tryParse(_amountController.text) ?? 0.0;
+      final description = _descriptionController.text;
 
-      if (existingExpense != null) {
-        ExpenseManagerService.updateExpense(
-          expense: existingExpense,
-          totalAmount: double.tryParse(_amountController.text) ?? 0.0,
-          divisionMethod: DivisionMethod.unequal,
-          paidByMember: selectedPayer.value!,
-          involvedMembers: selectedMembers,
-          description: _descriptionController.text,
-          customAmounts: customAmounts,
-          group: selectedGroup.value,
+      // Common parameters for both create and update
+      final params = {
+        'totalAmount': totalAmount,
+        'paidByMember': selectedPayer.value!,
+        'involvedMembers': selectedMembers,
+        'description': description,
+        'group': selectedGroup.value,
+      };
+
+      if (selectedSplitOption.value == 'By Amount') {
+        // Handle unequal split
+        print("Selected Member Length: ${selectedMembers.length}");
+        final customAmounts = selectedMembers.map((member) {
+          // Use a unique identifier instead of name
+          final controllerId = member.phone; // or member.key depending on your Member model
+          final controller = _memberAmountControllers[controllerId];
+
+          if (controller == null) {
+            print('Warning: No controller found for member ${member.name} (${member.phone})');
+            return 0.0;
+          }
+
+          final amount = double.tryParse(controller.text) ?? 0.0;
+          print('Member: ${member.name}, Amount: $amount'); // Debug log
+          return amount;
+        }).toList();
+        print('Total members: ${selectedMembers.length}');
+        print('Total amounts: ${customAmounts.length}');
+        print('Individual amounts: $customAmounts');
+
+        // Validate total matches sum of splits
+        final sumOfSplits = customAmounts.fold<double>(
+            0, (sum, amount) => sum + amount
         );
+
+        if ((sumOfSplits - totalAmount).abs() > 0.01) {
+          Get.snackbar(
+            'Error',
+            'Sum of split amounts must equal total amount',
+            snackPosition: SnackPosition.BOTTOM,
+          );
+          return;
+        }
+
+        if (existingExpense != null) {
+          await ExpenseManagerService.updateExpense(
+            expense: existingExpense,
+            totalAmount: totalAmount,
+            divisionMethod: DivisionMethod.unequal,
+            paidByMember: selectedPayer.value!,
+            involvedMembers: selectedMembers,
+            customAmounts: customAmounts,
+            description: description,
+            group: selectedGroup.value,
+          );
+        } else {
+          await ExpenseManagerService.createExpense(
+            totalAmount: totalAmount,
+            divisionMethod: DivisionMethod.unequal,
+            paidByMember: selectedPayer.value!,
+            involvedMembers: selectedMembers,
+            customAmounts: customAmounts,
+            description: description,
+            group: selectedGroup.value,
+          );
+        }
       } else {
-        ExpenseManagerService.createExpense(
-          totalAmount: double.tryParse(_amountController.text) ?? 0.0,
-          divisionMethod: DivisionMethod.unequal,
-          paidByMember: selectedPayer.value!,
-          involvedMembers: selectedMembers,
-          group: selectedGroup.value,
-          customAmounts: customAmounts,
-          description: _descriptionController.text,
-        );
+        // Handle equal split
+        if (existingExpense != null) {
+          await ExpenseManagerService.updateExpense(
+            expense: existingExpense,
+            totalAmount: totalAmount,
+            divisionMethod: DivisionMethod.equal,
+            paidByMember: selectedPayer.value!,
+            involvedMembers: selectedMembers,
+            description: description,
+            group: selectedGroup.value,
+          );
+        } else {
+          await ExpenseManagerService.createExpense(
+            totalAmount: totalAmount,
+            divisionMethod: DivisionMethod.equal,
+            paidByMember: selectedPayer.value!,
+            involvedMembers: selectedMembers,
+            description: description,
+            group: selectedGroup.value,
+          );
+        }
       }
-    } else {
-      if (existingExpense != null) {
-        ExpenseManagerService.updateExpense(
-          totalAmount: double.tryParse(_amountController.text) ?? 0.0,
-          divisionMethod: DivisionMethod.equal,
-          paidByMember: selectedPayer.value!,
-          involvedMembers: selectedMembers,
-          group: selectedGroup.value,
-          description: _descriptionController.text,
-          expense: existingExpense,
-        );
-      } else {
-        ExpenseManagerService.createExpense(
-          totalAmount: double.tryParse(_amountController.text) ?? 0.0,
-          divisionMethod: DivisionMethod.equal,
-          paidByMember: selectedPayer.value!,
-          involvedMembers: selectedMembers,
-          group: selectedGroup.value,
-          description: _descriptionController.text,
-        );
-      }
+
+      Get.back();
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        e.toString(),
+        snackPosition: SnackPosition.BOTTOM,
+      );
     }
-    Get.back();
-  }
-}
+  }}

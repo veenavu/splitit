@@ -132,30 +132,28 @@ class AddExpensePage extends StatelessWidget {
                                       backgroundImage: FileImage(File(group.groupImage)),
                                     ),
                                     const SizedBox(width: 12),
-                                    Flexible(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Text(
-                                            group.groupName,
-                                            style: const TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.black87,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          group.groupName,
+                                          style: const TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.black87,
+                                            overflow: TextOverflow.ellipsis,
                                           ),
-                                          Text(
-                                            group.category ?? 'No category',
-                                            style: TextStyle(
-                                              color: Colors.grey[600],
-                                              fontSize: 12,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
+                                        ),
+                                        Text(
+                                          group.category ?? 'No category',
+                                          style: TextStyle(
+                                            color: Colors.grey[600],
+                                            fontSize: 12,
+                                            overflow: TextOverflow.ellipsis,
                                           ),
-                                        ],
-                                      ),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
@@ -393,21 +391,32 @@ class AddExpensePage extends StatelessWidget {
                               ? SizedBox(
                                   width: 80,
                                   child: TextField(
-                                    controller: controller.memberAmountControllers[member.name],
+                                    controller: controller.memberAmountControllers[member.phone],
                                     keyboardType: TextInputType.number,
-                                    style: const TextStyle(fontSize: 14),
-                                    decoration: InputDecoration(
-                                      contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                        borderSide: BorderSide(color: Colors.purple.shade200),
+                                      style: const TextStyle(fontSize: 14),
+                                      decoration: InputDecoration(
+                                        contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(8),
+                                          borderSide: BorderSide(color: Colors.purple.shade200),
+                                        ),
+                                        hintText: '0.00',
+                                        hintStyle: TextStyle(color: Colors.purple.shade300),
+                                        filled: true,
+                                        fillColor: Colors.purple.shade50,
                                       ),
-                                      hintText: '0.00',
-                                      hintStyle: TextStyle(color: Colors.purple.shade300),
-                                      filled: true,
-                                      fillColor: Colors.purple.shade50,
-                                    ),
-                                  ),
+                                      onChanged: (value) {
+                                        final amount = double.tryParse(value) ?? 0.0;
+                                        if (amount > 0) {
+                                          if (!controller.selectedMembers.contains(member)) {
+                                            controller.toggleMemberSelection(member);
+                                          }
+                                        } else {
+                                          if (controller.selectedMembers.contains(member)) {
+                                            controller.toggleMemberSelection(member);
+                                          }
+                                        }
+                                      }),
                                 )
                               : AnimatedContainer(
                                   duration: const Duration(milliseconds: 200),

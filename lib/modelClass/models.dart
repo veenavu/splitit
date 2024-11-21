@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 
 part 'models.g.dart';
@@ -200,6 +201,19 @@ class ExpenseSplit extends HiveObject {
     required this.amount,
     this.percentage,
   });
+
+  // Create a copy of ExpenseSplit with new values
+  ExpenseSplit copyWith({
+    Member? member,
+    double? amount,
+    double? percentage,
+  }) {
+    return ExpenseSplit(
+      member: member ?? this.member,
+      amount: amount ?? this.amount,
+      percentage: percentage ?? this.percentage,
+    );
+  }
 }
 
 // Expense Model
@@ -248,35 +262,53 @@ class Expense extends HiveObject {
     DateTime? createdAt,
   }) : createdAt = createdAt ?? DateTime.now();
 
-  // Helper method to calculate amounts based on percentages
-  void calculateSplitsByPercentage() {
-    if (divisionMethod == DivisionMethod.percentage) {
-      for (var split in splits) {
-        if (split.percentage != null) {
-          split.amount = (totalAmount * split.percentage!) / 100;
-        }
-      }
+  // Create splits from members and amounts
+  static List<ExpenseSplit> createSplitsFromAmounts(
+      List<Member> members,
+      List<double> amounts,
+      ) {
+    if (members.length != amounts.length) {
+      throw Exception('Members and amounts must have the same length');
     }
+
+    return List.generate(
+      members.length,
+          (i) => ExpenseSplit(
+        member: members[i],
+        amount: amounts[i],
+
+        percentage: null,
+      ),
+    );
   }
 
-  // Validate if splits are correct
+  // Validate splits total matches expense amount
   bool validateSplits() {
     double totalSplitAmount = splits.fold(0, (sum, split) => sum + split.amount);
     return (totalSplitAmount - totalAmount).abs() < 0.01;
   }
 
-  // Get amount owed by a specific member
-  double getAmountForMember(Member member) {
-    return splits
-        .firstWhere((split) => split.member.key == member.key,
-        orElse: () => ExpenseSplit(member: member, amount: 0))
-        .amount;
+  // Get split for a specific member
+  ExpenseSplit? getSplitForMember(Member member) {
+    return splits.firstWhereOrNull((split) => split.member.key == member.key);
   }
 
-  // Check if a member is involved in this expense
+  // Check if a member is involved
   bool isMemberInvolved(Member member) {
     return splits.any((split) => split.member.key == member.key) ||
         paidByMember.key == member.key;
+  }
+
+  // Update amounts for unequal split
+  void updateUnequalSplits(List<Member> members, List<double> amounts) {
+    if (divisionMethod != DivisionMethod.unequal) {
+      throw Exception('Can only update amounts for unequal split');
+    }
+
+    splits = createSplitsFromAmounts(members, amounts);
+    if (!validateSplits()) {
+      throw Exception('Split amounts do not match total expense amount');
+    }
   }
 }
 

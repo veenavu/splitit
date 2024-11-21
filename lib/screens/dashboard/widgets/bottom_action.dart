@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:splitit/routes/app_routes.dart';
-import 'package:splitit/screens/expense/add_expense_page.dart';
 
 class BottomActions extends StatelessWidget {
   final VoidCallback onStartGroupComplete;
@@ -16,7 +15,7 @@ class BottomActions extends StatelessWidget {
         child: FloatingActionButton.extended(
           onPressed: () {
 
-            Get.to(() =>  AddExpensePage())?.then(
+            Get.toNamed(Routes.addExpense)?.then(
                     (onValue) => onStartGroupComplete.call());
           },
           tooltip: "Add Expense",

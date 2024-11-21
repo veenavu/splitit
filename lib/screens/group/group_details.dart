@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:splitit/DatabaseHelper/hive_services.dart';
 import 'package:splitit/modelClass/models.dart';
@@ -33,6 +34,7 @@ class _GroupDetailsState extends State<GroupDetails> {
     getAllExpenses();
     super.initState();
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -50,7 +52,8 @@ class _GroupDetailsState extends State<GroupDetails> {
             color: Colors.white,
           ),
         ),
-        centerTitle: true, // Centers the title for a balanced layout
+        centerTitle: true,
+        // Centers the title for a balanced layout
         actions: [
           IconButton(
             icon: const Icon(Icons.settings, color: Colors.white),
@@ -82,7 +85,6 @@ class _GroupDetailsState extends State<GroupDetails> {
           ),
         ),
       ),
-
       body: Column(
         children: [
           Container(
@@ -108,7 +110,6 @@ class _GroupDetailsState extends State<GroupDetails> {
               ],
             ),
           ),
-
           Expanded(
             child: ListView.builder(
               itemCount: expenses.length,
@@ -117,14 +118,10 @@ class _GroupDetailsState extends State<GroupDetails> {
                 bool isYou = phoneNumber == expenses[index].paidByMember.phone;
                 return GestureDetector(
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => AddExpensePage(
+
+                    Get.to(() => AddExpensePage(
                           expense: expenses[index],
-                        ),
-                      ),
-                    ).then((value) => getAllExpenses());
+                        ))?.then((value) => getAllExpenses());
                   },
                   onLongPress: () async {
                     showDialog(
@@ -220,11 +217,8 @@ class _GroupDetailsState extends State<GroupDetails> {
               },
             ),
           ),
-
-
         ],
       ),
-
       bottomNavigationBar: BottomNavigationBar(
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.group), label: 'Groups'),
@@ -242,13 +236,17 @@ class _GroupDetailsState extends State<GroupDetails> {
     return ElevatedButton(
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(
-        backgroundColor: color, // Sets the button background color
-        foregroundColor: Colors.white, // Sets the text color
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24), // Better spacing
+        backgroundColor: color,
+        // Sets the button background color
+        foregroundColor: Colors.white,
+        // Sets the text color
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+        // Better spacing
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12), // Smooth rounded corners
         ),
-        elevation: 3, // Adds a slight shadow for depth
+        elevation: 3,
+        // Adds a slight shadow for depth
         shadowColor: Colors.black.withOpacity(0.2), // Subtle shadow
       ),
       child: Text(
@@ -261,7 +259,6 @@ class _GroupDetailsState extends State<GroupDetails> {
     );
   }
 
-
   Widget _buildDateHeader(String date) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
@@ -272,7 +269,12 @@ class _GroupDetailsState extends State<GroupDetails> {
     );
   }
 
-  Widget _buildTransactionTile({required String title, required String subtitle, required String status, required String amount, required Color statusColor}) {
+  Widget _buildTransactionTile(
+      {required String title,
+      required String subtitle,
+      required String status,
+      required String amount,
+      required Color statusColor}) {
     return ListTile(
       leading: const Icon(Icons.receipt, color: Colors.black54),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),

@@ -97,9 +97,7 @@ class ExpenseManagerService {
     final box = Hive.box<Group>(groupBoxName);
     final searchTermLower = searchTerm.toLowerCase();
 
-    return box.values.where((group) =>
-        group.groupName.toLowerCase().contains(searchTermLower)
-    ).toList();
+    return box.values.where((group) => group.groupName.toLowerCase().contains(searchTermLower)).toList();
   }
 
   // MEMBER OPERATIONS
@@ -152,15 +150,23 @@ class ExpenseManagerService {
       case DivisionMethod.equal:
         splits = _splitEqually(totalAmount, involvedMembers);
         break;
+
       case DivisionMethod.unequal:
         if (customAmounts == null || customAmounts.length != involvedMembers.length) {
           throw Exception('Custom amounts must be provided for unequal split');
         }
-        splits = _splitByAmount(involvedMembers, customAmounts);
+        if (customAmounts.fold<double>(0, (sum, amount) => sum + amount) != totalAmount) {
+          throw Exception('Sum of custom amounts must equal total amount');
+        }
+        splits = Expense.createSplitsFromAmounts(involvedMembers, customAmounts);
         break;
+
       case DivisionMethod.percentage:
         if (percentages == null || percentages.length != involvedMembers.length) {
           throw Exception('Percentages must be provided for percentage split');
+        }
+        if (percentages.fold<double>(0, (sum, pct) => sum + pct) != 100) {
+          throw Exception('Percentages must sum to 100');
         }
         splits = _splitByPercentage(totalAmount, involvedMembers, percentages);
         break;
@@ -175,7 +181,7 @@ class ExpenseManagerService {
       description: description,
     );
 
-    if (true/*_validateSplits(expense)*/) {
+    if (expense.validateSplits()) {
       final box = Hive.box<Expense>(expenseBoxName);
       await box.add(expense);
       await _updateMemberBalances(expense);
@@ -195,7 +201,7 @@ class ExpenseManagerService {
     List<double>? customAmounts,
     List<double>? percentages,
   }) async {
-    // Reverse the previous balance updates
+    // Reverse previous balance updates
     await _reverseMemberBalances(expense);
 
     List<ExpenseSplit> splits;
@@ -203,15 +209,23 @@ class ExpenseManagerService {
       case DivisionMethod.equal:
         splits = _splitEqually(totalAmount, involvedMembers);
         break;
+
       case DivisionMethod.unequal:
         if (customAmounts == null || customAmounts.length != involvedMembers.length) {
           throw Exception('Custom amounts must be provided for unequal split');
         }
-        splits = _splitByAmount(involvedMembers, customAmounts);
+        if (customAmounts.fold<double>(0, (sum, amount) => sum + amount) != totalAmount) {
+          throw Exception('Sum of custom amounts must equal total amount');
+        }
+        splits = Expense.createSplitsFromAmounts(involvedMembers, customAmounts);
         break;
+
       case DivisionMethod.percentage:
         if (percentages == null || percentages.length != involvedMembers.length) {
           throw Exception('Percentages must be provided for percentage split');
+        }
+        if (percentages.fold<double>(0, (sum, pct) => sum + pct) != 100) {
+          throw Exception('Percentages must sum to 100');
         }
         splits = _splitByPercentage(totalAmount, involvedMembers, percentages);
         break;
@@ -226,7 +240,7 @@ class ExpenseManagerService {
       ..group = group
       ..description = description;
 
-    if (_validateSplits(expense)) {
+    if (expense.validateSplits()) {
       await expense.save();
       await _updateMemberBalances(expense);
     } else {
@@ -241,7 +255,9 @@ class ExpenseManagerService {
 
   static List<Expense> getExpensesByGroup(Group group) {
     final box = Hive.box<Expense>(expenseBoxName);
-    return box.values.where((expense) => expense.group?.groupName.toLowerCase() == group.groupName.toLowerCase()).toList();
+    return box.values
+        .where((expense) => expense.group?.groupName.toLowerCase() == group.groupName.toLowerCase())
+        .toList();
   }
 
   static List<Expense> getExpensesByMember(Member member) {
@@ -267,9 +283,7 @@ class ExpenseManagerService {
             .fold(0.0, (sum, split) => sum + split.amount);
       }
 
-      var memberSplit = expense.splits
-          .where((split) => split.member.phone == member.phone)
-          .firstOrNull;
+      var memberSplit = expense.splits.where((split) => split.member.phone == member.phone).firstOrNull;
       if (memberSplit != null && expense.paidByMember.phone != member.phone) {
         totalOwed += memberSplit.amount;
       }
@@ -315,9 +329,7 @@ class ExpenseManagerService {
       }
 
       // If member owes money
-      var memberSplit = expense.splits
-          .where((split) => split.member.phone == member.phone)
-          .firstOrNull;
+      var memberSplit = expense.splits.where((split) => split.member.phone == member.phone).firstOrNull;
       if (memberSplit != null && expense.paidByMember.phone != member.phone) {
         totalOwed += memberSplit.amount;
       }
@@ -333,19 +345,8 @@ class ExpenseManagerService {
       return 'all settled up';
     }
   }
-  static List<ExpenseSplit> _splitByAmount(
-    List<Member> members,
-    List<double> amounts,
-  ) {
-    return List.generate(
-      members.length,
-      (i) => ExpenseSplit(
-        member: members[i],
-        amount: amounts[i],
-        percentage: null,
-      ),
-    );
-  }
+
+
 
   static List<ExpenseSplit> _splitByPercentage(
     double totalAmount,
@@ -362,18 +363,12 @@ class ExpenseManagerService {
     );
   }
 
-  static bool _validateSplits(Expense expense) {
-    double totalSplitAmount = expense.splits.fold(0, (sum, split) => sum + split.amount);
-    return (totalSplitAmount - expense.totalAmount).abs() < 0.01;
-  }
 
   static Future<void> _updateMemberBalances(Expense expense) async {
-    // Get reference to the members box
     final membersBox = Hive.box<Member>(memberBoxName);
 
     for (var split in expense.splits) {
       if (split.member.key != expense.paidByMember.key) {
-        // Get fresh reference to the member from the box
         final member = membersBox.get(split.member.key);
         if (member != null) {
           member.totalAmountOwedByMe += split.amount;
@@ -384,25 +379,16 @@ class ExpenseManagerService {
   }
 
   static Future<void> _reverseMemberBalances(Expense expense) async {
-    final membersBox = Hive.box<Member>('members');
+    final membersBox = Hive.box<Member>(memberBoxName);
 
-    // Reverse splits for non-paying members
     for (var split in expense.splits) {
       if (split.member.key != expense.paidByMember.key) {
-        // Get fresh reference to the member from box
         final member = membersBox.get(split.member.key);
         if (member != null) {
           member.totalAmountOwedByMe -= split.amount;
           await member.save();
         }
       }
-    }
-
-    // Update the payer's balance
-    final payer = membersBox.get(expense.paidByMember.key);
-    if (payer != null) {
-      payer.totalAmountOwedByMe += expense.totalAmount;
-      await payer.save();
     }
   }
 
@@ -484,192 +470,6 @@ class ExpenseManagerService {
       'totalExpenses': totalExpenses,
       'memberContributions': memberContributions,
     };
-  }
-
-  // ___________________________________________________________________________________
-
-  // FILTERING AND ANALYTICS
-  static List<Expense> getExpensesByDateRange(DateTime start, DateTime end) {
-    final expenses = getAllExpenses();
-    return expenses.where((expense) => expense.createdAt.isAfter(start) && expense.createdAt.isBefore(end)).toList();
-  }
-
-  static Map<String, double> getCategoryWiseExpenses(Group group) {
-    final expenses = getExpensesByGroup(group);
-    Map<String, double> categoryExpenses = {};
-
-    for (var expense in expenses) {
-      final category = expense.category ?? 'Uncategorized';
-      categoryExpenses[category] = (categoryExpenses[category] ?? 0) + expense.totalAmount;
-    }
-
-    return categoryExpenses;
-  }
-
-  static Map<DateTime, double> getMonthlyExpenses(Group? group) {
-    final expenses = group != null ? getExpensesByGroup(group) : getAllExpenses();
-    Map<DateTime, double> monthlyExpenses = {};
-
-    for (var expense in expenses) {
-      final monthYear = DateTime(
-        expense.createdAt.year,
-        expense.createdAt.month,
-        1,
-      );
-      monthlyExpenses[monthYear] = (monthlyExpenses[monthYear] ?? 0) + expense.totalAmount;
-    }
-
-    return monthlyExpenses;
-  }
-
-  // MEMBER ANALYTICS
-  static Map<Member, MemberStatistics> getMemberStatistics(Group? group) {
-    final expenses = group != null ? getExpensesByGroup(group) : getAllExpenses();
-    Map<Member, MemberStatistics> statistics = {};
-
-    for (var expense in expenses) {
-      // Update payer statistics
-      statistics.putIfAbsent(
-        expense.paidByMember,
-        () => MemberStatistics(),
-      );
-      statistics[expense.paidByMember]!.totalPaid += expense.totalAmount;
-      statistics[expense.paidByMember]!.expensesPaid++;
-
-      // Update participant statistics
-      for (var split in expense.splits) {
-        statistics.putIfAbsent(
-          split.member,
-          () => MemberStatistics(),
-        );
-        statistics[split.member]!.totalOwed += split.amount;
-        statistics[split.member]!.expensesParticipated++;
-      }
-    }
-
-    return statistics;
-  }
-
-  // EXPENSE CATEGORIES
-  static Future<void> addExpenseCategory(Group group, String category) async {
-    if (group.categories == null) {
-      group.categories = [];
-    }
-    if (!group.categories!.contains(category)) {
-      group.categories!.add(category);
-      await updateGroup(group);
-    }
-  }
-
-  static Future<void> removeExpenseCategory(Group group, String category) async {
-    if (group.categories?.contains(category) ?? false) {
-      group.categories!.remove(category);
-      await updateGroup(group);
-    }
-  }
-
-  // SIMPLIFIED SETTLEMENT
-  static List<SettlementTransaction> getSimplifiedSettlements(Group group) {
-    final members = group.members;
-    final expenses = getExpensesByGroup(group);
-
-    // Calculate net balances for each member
-    Map<Member, double> balances = {};
-    for (var member in members) {
-      balances[member] = 0;
-    }
-
-    // Calculate initial balances
-    for (var expense in expenses) {
-      balances[expense.paidByMember] = (balances[expense.paidByMember] ?? 0) + expense.totalAmount;
-
-      for (var split in expense.splits) {
-        balances[split.member] = (balances[split.member] ?? 0) - split.amount;
-      }
-    }
-
-    List<SettlementTransaction> settlements = [];
-    var sortedMembers = balances.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
-
-    // Generate settlement transactions
-    while (sortedMembers.length >= 2) {
-      var creditor = sortedMembers.first;
-      var debtor = sortedMembers.last;
-
-      double amount = min(-debtor.value, creditor.value);
-      if (amount > 0.01) {
-        settlements.add(SettlementTransaction(
-          from: debtor.key,
-          to: creditor.key,
-          amount: amount,
-        ));
-      }
-
-      // Update balances and remove settled members
-      if ((creditor.value - amount).abs() < 0.01) {
-        sortedMembers.removeAt(0);
-      } else {
-        sortedMembers[0] = MapEntry(
-          creditor.key,
-          creditor.value - amount,
-        );
-      }
-
-      if ((debtor.value + amount).abs() < 0.01) {
-        sortedMembers.removeLast();
-      } else {
-        sortedMembers[sortedMembers.length - 1] = MapEntry(
-          debtor.key,
-          debtor.value + amount,
-        );
-      }
-    }
-
-    return settlements;
-  }
-
-  // EXPENSE REMINDERS
-  static List<ExpenseReminder> getPendingSettlements(Member member) {
-    final expenses = getExpensesByMember(member);
-    List<ExpenseReminder> reminders = [];
-
-    for (var expense in expenses) {
-      if (expense.paidByMember.key != member.key) {
-        double amountOwed = expense.getAmountForMember(member);
-        if (amountOwed > 0) {
-          reminders.add(ExpenseReminder(
-            expense: expense,
-            amount: amountOwed,
-            toMember: expense.paidByMember,
-            fromMember: member,
-            date: expense.createdAt,
-          ));
-        }
-      }
-    }
-
-    return reminders;
-  }
-
-  // GROUP STATISTICS
-  static GroupStatistics getGroupStatistics(Group group) {
-    final expenses = getExpensesByGroup(group);
-    final monthlyExpenses = getMonthlyExpenses(group);
-    final categoryExpenses = getCategoryWiseExpenses(group);
-    final memberStats = getMemberStatistics(group);
-
-    return GroupStatistics(
-      totalExpenses: expenses.fold(0, (sum, exp) => sum + exp.totalAmount),
-      averageExpenseAmount:
-          expenses.isEmpty ? 0 : expenses.fold(0.0, (sum, exp) => sum + exp.totalAmount) / expenses.length,
-      monthlyExpenses: monthlyExpenses,
-      categoryExpenses: categoryExpenses,
-      memberStatistics: memberStats,
-      expenseCount: expenses.length,
-      activeMembers: group.members.length,
-      mostActiveCategory: categoryExpenses.entries.reduce((a, b) => a.value > b.value ? a : b).key,
-      mostActivePayer: memberStats.entries.reduce((a, b) => a.value.totalPaid > b.value.totalPaid ? a : b).key,
-    );
   }
 }
 
