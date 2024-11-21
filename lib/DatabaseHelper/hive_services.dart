@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:get/get.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 import '../modelClass/models.dart';
@@ -86,6 +87,13 @@ class ExpenseManagerService {
   }
 
   static Future<void> deleteGroup(Group group) async {
+    // First delete all expenses in the group
+    final expenses = getExpensesByGroup(group);
+    for (var expense in expenses) {
+      await deleteExpense(expense);
+    }
+
+    // Then delete the group itself
     await group.delete();
   }
 
@@ -277,24 +285,36 @@ class ExpenseManagerService {
     final expenses = getExpensesByGroup(group);
 
     for (var expense in expenses) {
-      if (expense.paidByMember.phone == member.phone) {
-        totalLent += expense.splits
-            .where((split) => split.member.phone != member.phone)
-            .fold(0.0, (sum, split) => sum + split.amount);
-      }
+      try {
+        // When member is the payer
+        if (expense.paidByMember.phone == member.phone) {
+          // Calculate total amount lent to others (excluding self splits)
+          final lentAmount = expense.splits
+              .where((split) => split.member.phone != member.phone)
+              .fold(0.0, (sum, split) => sum + (split.amount ?? 0.0));
+          totalLent += lentAmount;
+        }
 
-      var memberSplit = expense.splits.where((split) => split.member.phone == member.phone).firstOrNull;
-      if (memberSplit != null && expense.paidByMember.phone != member.phone) {
-        totalOwed += memberSplit.amount;
+        // When member owes money
+        final memberSplit = expense.splits.firstWhereOrNull((split) => split.member.phone == member.phone);
+
+        if (memberSplit != null && expense.paidByMember.phone != member.phone) {
+          totalOwed += memberSplit.amount;
+        }
+      } catch (e) {
+        print('Error processing expense: ${e.toString()}');
+        continue; // Skip problematic expenses instead of failing
       }
     }
 
-    final netAmount = totalLent - totalOwed;
+    // Handle potential floating point precision issues
+    final netAmount = (totalLent - totalOwed).roundToDouble();
 
-    if (netAmount > 0) {
-      return 'you lent ₹${netAmount.toStringAsFixed(1)}';
-    } else if (netAmount < 0) {
-      return 'you owe ₹${(-netAmount).toStringAsFixed(1)}';
+    // Use absolute value for negative amounts
+    if (netAmount > 0.0) {
+      return 'you get back ₹${netAmount.toStringAsFixed(2)}';
+    } else if (netAmount < 0.0) {
+      return 'you owe ₹${netAmount.abs().toStringAsFixed(2)}';
     } else {
       return 'all settled up';
     }
@@ -316,37 +336,9 @@ class ExpenseManagerService {
   }
 
   static String getBalanceText(Member member) {
-    double totalLent = 0.0;
-    double totalOwed = 0.0;
-    final expenses = getAllExpenses();
-
-    for (var expense in expenses) {
-      // If member is the payer
-      if (expense.paidByMember.phone == member.phone) {
-        totalLent += expense.splits
-            .where((split) => split.member.phone != member.phone)
-            .fold(0.0, (sum, split) => sum + split.amount);
-      }
-
-      // If member owes money
-      var memberSplit = expense.splits.where((split) => split.member.phone == member.phone).firstOrNull;
-      if (memberSplit != null && expense.paidByMember.phone != member.phone) {
-        totalOwed += memberSplit.amount;
-      }
-    }
-
-    final netAmount = totalLent - totalOwed;
-
-    if (netAmount > 0) {
-      return 'you lent ₹${netAmount.toStringAsFixed(1)}';
-    } else if (netAmount < 0) {
-      return 'you owe ₹${(-netAmount).toStringAsFixed(1)}';
-    } else {
-      return 'all settled up';
-    }
+    final netWorth = getMemberNetWorth(member);
+    return netWorth.summaryText;
   }
-
-
 
   static List<ExpenseSplit> _splitByPercentage(
     double totalAmount,
@@ -362,7 +354,6 @@ class ExpenseManagerService {
       ),
     );
   }
-
 
   static Future<void> _updateMemberBalances(Expense expense) async {
     final membersBox = Hive.box<Member>(memberBoxName);
@@ -471,74 +462,172 @@ class ExpenseManagerService {
       'memberContributions': memberContributions,
     };
   }
+
+  static MemberGroupExpense getMemberGroupExpense(Member member, Group group) {
+    final expenses = getExpensesByGroup(group);
+    double totalPaid = 0.0;
+    double totalShare = 0.0;
+
+    for (var expense in expenses) {
+      // Calculate amount paid by member
+      if (expense.paidByMember.phone == member.phone) {
+        totalPaid += expense.totalAmount;
+      }
+
+      // Calculate member's share in expenses
+      // Using firstWhereOrNull to safely handle cases where member isn't in splits
+      final memberSplit = expense.splits.firstWhereOrNull((split) => split.member.phone == member.phone);
+      if (memberSplit != null) {
+        totalShare += memberSplit.amount;
+      }
+    }
+
+    return MemberGroupExpense(
+      member: member,
+      group: group,
+      totalPaid: totalPaid,
+      totalShare: totalShare,
+      netBalance: totalPaid - totalShare,
+    );
+  }
+
+  static MemberNetWorth getMemberNetWorth(Member member) {
+    final expenses = getAllExpenses();
+    double totalLent = 0.0;
+    double totalOwed = 0.0;
+
+    // Track group-wise summaries
+    Map<String, ExpenseGroupSummary> groupSummaries = {};
+
+    // Track category totals
+    Map<String, double> categoryTotals = {};
+
+    for (var expense in expenses) {
+      try {
+        double lentInExpense = 0.0;
+        double owedInExpense = 0.0;
+
+        // Calculate amount lent in this expense
+        if (expense.paidByMember.phone == member.phone) {
+          lentInExpense = expense.splits
+              .where((split) => split.member.phone != member.phone)
+              .fold(0.0, (sum, split) => sum + (split.amount ?? 0.0));
+          totalLent += lentInExpense;
+
+          // Track category
+          final category = expense.category ?? 'Uncategorized';
+          categoryTotals[category] = (categoryTotals[category] ?? 0.0) + expense.totalAmount;
+        }
+
+        // Calculate amount owed in this expense
+        final memberSplit = expense.splits.firstWhereOrNull((split) => split.member.phone == member.phone);
+
+        if (memberSplit != null && expense.paidByMember.phone != member.phone) {
+          owedInExpense = memberSplit.amount;
+          totalOwed += owedInExpense;
+        }
+
+        // Update group summary
+        final groupKey = expense.group?.groupName ?? 'personal';
+        final existingSummary = groupSummaries[groupKey];
+
+        if (existingSummary == null) {
+          groupSummaries[groupKey] = ExpenseGroupSummary(
+            group: expense.group,
+            amountLent: lentInExpense,
+            amountOwed: owedInExpense,
+            netAmount: lentInExpense - owedInExpense,
+            expenseCount: 1,
+          );
+        } else {
+          groupSummaries[groupKey] = ExpenseGroupSummary(
+            group: expense.group,
+            amountLent: existingSummary.amountLent + lentInExpense,
+            amountOwed: existingSummary.amountOwed + owedInExpense,
+            netAmount: existingSummary.netAmount + (lentInExpense - owedInExpense),
+            expenseCount: existingSummary.expenseCount + 1,
+          );
+        }
+      } catch (e) {
+        print('Error processing expense: ${e.toString()}');
+        continue;
+      }
+    }
+
+    return MemberNetWorth(
+      totalAmountLent: totalLent,
+      totalAmountOwed: totalOwed,
+      netWorth: totalLent - totalOwed,
+      groupSummaries: groupSummaries.values.toList(),
+      categoryTotals: categoryTotals,
+    );
+  }
 }
 
-// Settlement Transaction class
-class SettlementTransaction {
-  final Member from;
-  final Member to;
-  final double amount;
+class MemberGroupExpense {
+  final Member member;
+  final Group group;
+  final double totalPaid; // Total amount paid by member
+  final double totalShare; // Total share in all expenses
+  final double netBalance; // Positive means others owe them, negative means they owe others
 
-  SettlementTransaction({
-    required this.from,
-    required this.to,
-    required this.amount,
+  const MemberGroupExpense({
+    required this.member,
+    required this.group,
+    required this.totalPaid,
+    required this.totalShare,
+    required this.netBalance,
   });
+
+  String get balanceText {
+    if (netBalance > 0) {
+      return 'Gets back ₹${netBalance.toStringAsFixed(2)}';
+    } else if (netBalance < 0) {
+      return 'Owes ₹${(-netBalance).toStringAsFixed(2)}';
+    }
+    return 'All settled';
+  }
 }
-// Additional Classes for Analytics
 
-class MemberStatistics {
-  double totalPaid;
-  double totalOwed;
-  int expensesPaid;
-  int expensesParticipated;
+class MemberNetWorth {
+  final double totalAmountLent;
+  final double totalAmountOwed;
+  final double netWorth;
+  final List<ExpenseGroupSummary> groupSummaries;
+  final Map<String, double> categoryTotals;
 
-  MemberStatistics({
-    this.totalPaid = 0,
-    this.totalOwed = 0,
-    this.expensesPaid = 0,
-    this.expensesParticipated = 0,
+  MemberNetWorth({
+    required this.totalAmountLent,
+    required this.totalAmountOwed,
+    required this.netWorth,
+    required this.groupSummaries,
+    required this.categoryTotals,
   });
 
-  double get netBalance => totalPaid - totalOwed;
+  String get summaryText {
+    if (netWorth > 0) {
+      return 'Overall, you get back ₹${netWorth.toStringAsFixed(2)}';
+    } else if (netWorth < 0) {
+      return 'Overall, you owe ₹${(-netWorth).toStringAsFixed(2)}';
+    }
+    return 'All settled up';
+  }
 }
 
-class GroupStatistics {
-  final double totalExpenses;
-  final double averageExpenseAmount;
-  final Map<DateTime, double> monthlyExpenses;
-  final Map<String, double> categoryExpenses;
-  final Map<Member, MemberStatistics> memberStatistics;
+class ExpenseGroupSummary {
+  final Group? group;
+  final double amountLent;
+  final double amountOwed;
+  final double netAmount;
   final int expenseCount;
-  final int activeMembers;
-  final String mostActiveCategory;
-  final Member mostActivePayer;
 
-  GroupStatistics({
-    required this.totalExpenses,
-    required this.averageExpenseAmount,
-    required this.monthlyExpenses,
-    required this.categoryExpenses,
-    required this.memberStatistics,
+  ExpenseGroupSummary({
+    required this.group,
+    required this.amountLent,
+    required this.amountOwed,
+    required this.netAmount,
     required this.expenseCount,
-    required this.activeMembers,
-    required this.mostActiveCategory,
-    required this.mostActivePayer,
   });
-}
 
-class ExpenseReminder {
-  final Expense expense;
-  final double amount;
-  final Member toMember;
-  final Member fromMember;
-  final DateTime date;
-
-  ExpenseReminder({
-    required this.expense,
-    required this.amount,
-    required this.toMember,
-    required this.fromMember,
-    required this.date,
-  });
+  String get groupName => group?.groupName ?? 'Personal Expenses';
 }

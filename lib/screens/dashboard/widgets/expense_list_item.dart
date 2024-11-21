@@ -65,7 +65,7 @@ class ExpenseListItem extends StatelessWidget {
               style: TextStyle(
                 color: subtitle.contains('owe')
                     ? Colors.orange
-                    : subtitle.contains('lent')
+                    : subtitle.contains('get back')
                         ? Colors.green
                         : Colors.grey,
                 fontSize: 14,

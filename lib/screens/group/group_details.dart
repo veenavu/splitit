@@ -185,6 +185,7 @@ class _GroupDetailsState extends State<GroupDetails> {
                       ),
                       trailing: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Text(
                             isYou ? 'You lent' : 'You borrowed',

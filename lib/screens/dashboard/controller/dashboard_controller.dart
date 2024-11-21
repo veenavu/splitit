@@ -10,17 +10,20 @@ class DashboardController extends GetxController {
   RxList<Group> groups = RxList<Group>.empty(growable: true);
   RxInt selectedIndex = 0.obs;
   Rxn<Profile> userProfile = Rxn<Profile>();
+  RxString balanceText = "Loading...".obs;
 
   @override
   void onInit() {
     super.onInit();
     loadGroups();
     getProfile();
+    getBalanceText();
   }
 
   Future<void> loadGroups() async {
     final allGroups = ExpenseManagerService.getAllGroups();
     groups.value = allGroups;
+    getBalanceText();
   }
 
   Future<void> getProfile() async {
@@ -37,8 +40,8 @@ class DashboardController extends GetxController {
     });
   }
 
-  String getBalanceText() {
-    return userProfile.value != null
+  void getBalanceText() {
+    balanceText.value = userProfile.value != null
         ? ExpenseManagerService.getBalanceText(
             Member(
               name: userProfile.value!.name,
@@ -46,6 +49,7 @@ class DashboardController extends GetxController {
             ),
           )
         : "Loading...";
+    print(balanceText.value);
   }
 
   String getGroupBalanceText(Group group) {

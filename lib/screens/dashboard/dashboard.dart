@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:splitit/DatabaseHelper/hive_services.dart';
+import 'package:splitit/modelClass/models.dart';
 import 'package:splitit/screens/dashboard/controller/dashboard_controller.dart';
 import 'package:splitit/screens/dashboard/widgets/bottom_action.dart';
 import 'package:splitit/screens/dashboard/widgets/expense_list_item.dart';
@@ -74,7 +76,7 @@ class Dashboard extends StatelessWidget {
         child: Column(
           children: [
             Obx(() => TotalOwed(
-                  amount: controller.getBalanceText(),
+                  amount: controller.balanceText.value,
                 )),
             Expanded(
               child: Obx(() => ListView.builder(
@@ -83,6 +85,11 @@ class Dashboard extends StatelessWidget {
                       final groupItem = controller.groups[index];
                       return GestureDetector(
                         onTap: () {
+                          final b = ExpenseManagerService.getMemberGroupExpense(Member(
+                            name: controller.userProfile.value!.name,
+                            phone: controller.userProfile.value!.phone,
+                          ), groupItem);
+                          print(b.netBalance);
                           Get.to(()=> GroupDetails(groupItem: groupItem))?.then((value) {
                             controller.loadGroups();
                           });

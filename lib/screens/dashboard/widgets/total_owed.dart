@@ -11,7 +11,6 @@ class TotalOwed extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
         children: [
-          const Text("Overall, ", style: TextStyle(fontSize: 16)),
           Text(
             amount,
             style: TextStyle(
