@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
+import 'package:get/get.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
@@ -113,7 +114,7 @@ class _AddNewGroupPageState extends State<AddNewGroupPage> {
 
     await ExpenseManagerService.saveTheGroup(group);
     print("Navigating to GroupsScreen...");
-    Navigator.pop(context);
+    Get.back();;
 
 
   }
@@ -160,7 +161,7 @@ class _AddNewGroupPageState extends State<AddNewGroupPage> {
           actions: <Widget>[
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop();
+                Get.back();
               },
               child: const Text("Cancel"),
             ),
@@ -169,7 +170,7 @@ class _AddNewGroupPageState extends State<AddNewGroupPage> {
                 setState(() {
                   selectedContacts.removeAt(index);
                 });
-                Navigator.of(context).pop();
+                Get.back();
               },
               child: const Text("Yes"),
             ),

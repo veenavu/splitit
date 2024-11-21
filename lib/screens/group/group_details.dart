@@ -41,7 +41,7 @@ class _GroupDetailsState extends State<GroupDetails> {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context), // Navigate back
+          onPressed: () => Get.back(), // Navigate back
           tooltip: 'Go Back',
         ),
         title: Text(
@@ -133,7 +133,7 @@ class _GroupDetailsState extends State<GroupDetails> {
                           actions: <Widget>[
                             TextButton(
                               onPressed: () {
-                                Navigator.of(context).pop();
+                                Get.back();
                               },
                               child: const Text("Cancel"),
                             ),
@@ -143,7 +143,7 @@ class _GroupDetailsState extends State<GroupDetails> {
                                 setState(() {
                                   expenses = ExpenseManagerService.getExpensesByGroup(widget.groupItem);
                                 });
-                                Navigator.of(context).pop();
+                                Get.back();
                               },
                               child: const Text("Yes", style: TextStyle(color: Colors.red)),
                             ),
@@ -200,7 +200,9 @@ class _GroupDetailsState extends State<GroupDetails> {
                             '₹${() {
                               for (var split in expenses[index].splits) {
                                 if (split.member.phone == phoneNumber) {
-                                  return (expenses[index].totalAmount - split.amount).toStringAsFixed(3);
+                                  return isYou
+                                      ? (expenses[index].totalAmount - split.amount).toStringAsFixed(3)
+                                      : split.amount.toStringAsFixed(3);
                                 }
                               }
                               return '0';
@@ -227,7 +229,7 @@ class _GroupDetailsState extends State<GroupDetails> {
           BottomNavigationBarItem(icon: Icon(Icons.history), label: 'Activity'),
           BottomNavigationBarItem(icon: Icon(Icons.account_circle), label: 'Account'),
         ],
-        selectedItemColor: Color(0xff5f0967),
+        selectedItemColor: const Color(0xff5f0967),
         unselectedItemColor: Colors.grey,
       ),
     );
@@ -260,47 +262,6 @@ class _GroupDetailsState extends State<GroupDetails> {
     );
   }
 
-  Widget _buildDateHeader(String date) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      child: Text(
-        date,
-        style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey),
-      ),
-    );
-  }
 
-  Widget _buildTransactionTile(
-      {required String title,
-      required String subtitle,
-      required String status,
-      required String amount,
-      required Color statusColor}) {
-    return ListTile(
-      leading: const Icon(Icons.receipt, color: Colors.black54),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-      subtitle: Text(subtitle),
-      trailing: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          Text(
-            status,
-            style: TextStyle(color: statusColor),
-          ),
-          Text(
-            amount,
-            style: TextStyle(color: statusColor, fontWeight: FontWeight.bold),
-          ),
-        ],
-      ),
-    );
-  }
 
-  Widget _buildGroupTransaction(String text) {
-    return ListTile(
-      leading: const Icon(Icons.group, color: Colors.green),
-      title: Text(text),
-      tileColor: Colors.grey.shade200,
-    );
-  }
 }

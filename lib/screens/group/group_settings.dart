@@ -1,8 +1,11 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:splitit/DatabaseHelper/hive_services.dart';
 import 'package:splitit/modelClass/models.dart';
+import 'package:splitit/routes/app_routes.dart';
+import 'package:splitit/screens/dashboard/controller/dashboard_controller.dart';
 import 'package:splitit/screens/group/group_editpage.dart';
 import 'package:splitit/screens/dashboard/dashboard.dart';
 class GroupSettings extends StatefulWidget {
@@ -21,7 +24,7 @@ class _GroupSettingsState extends State<GroupSettings> {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context), // Navigate back
+          onPressed: () => Get.back(), // Navigate back
           tooltip: 'Go Back',
         ),
         title: const Text(
@@ -73,14 +76,14 @@ class _GroupSettingsState extends State<GroupSettings> {
                   ),
                   actions: [
                     TextButton(
-                      onPressed: () => Navigator.pop(context), // Cancel deletion
+                      onPressed: () => Get.back(), // Cancel deletion
                       child: const Text("Cancel"),
                     ),
                     TextButton(
                       onPressed: () {
                         ExpenseManagerService.deleteGroup(widget.group);
-                        Navigator.pop(context); // Close dialog
-                        Navigator.pop(context); // Close settings page
+                        Get.offNamedUntil(Routes.dashboard, (route) => route.settings.name == Routes.dashboard);
+                        Get.find<DashboardController>().loadGroups();
                       },
                       child: const Text("Delete", style: TextStyle(color: Colors.red)),
                     ),
@@ -237,7 +240,7 @@ class _GroupSettingsState extends State<GroupSettings> {
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                     child: Card(
-                      elevation: 3,
+                      elevation: 2,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),

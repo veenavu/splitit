@@ -1,9 +1,12 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:splitit/DatabaseHelper/hive_services.dart';
 import 'package:splitit/modelClass/models.dart';
+import 'package:splitit/routes/app_routes.dart';
+import 'package:splitit/screens/dashboard/controller/dashboard_controller.dart';
 import 'package:splitit/utils/common_functions.dart';
 
 class GroupEditPage extends StatefulWidget {
@@ -37,7 +40,8 @@ class _GroupEditPageState extends State<GroupEditPage> {
     widget.groups.groupName = _groupNameController.text; // Update group name
     widget.groups.category = _selectedType;             // Update group type
     ExpenseManagerService.updateGroup(widget.groups);
-    Navigator.pop(context, true);
+    Get.offAllNamed(Routes.dashboard);
+    Get.find<DashboardController>().loadGroups();
   }
 
   Widget _buildGroupTypeButton(String type) {
@@ -85,14 +89,14 @@ class _GroupEditPageState extends State<GroupEditPage> {
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog
+                Get.back(); // Close the dialog
               },
               child: const Text("Cancel"),
             ),
             TextButton(
               onPressed: () async {
                 await _deleteMember(member, index);
-                Navigator.of(context).pop(); // Close the dialog
+                Get.back(); // Close the dialog
               },
               child: const Text("Delete"),
             ),
@@ -120,7 +124,7 @@ class _GroupEditPageState extends State<GroupEditPage> {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Get.back(),
         ),
         title: const Text(
           'Edit Group',
@@ -141,7 +145,7 @@ class _GroupEditPageState extends State<GroupEditPage> {
           ),
         ],
         flexibleSpace: Container(
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             gradient: LinearGradient(
               colors: [Colors.purple, Colors.deepPurple],
               begin: Alignment.topLeft,

@@ -89,6 +89,7 @@ class ExpenseManagerService {
   static Future<void> deleteGroup(Group group) async {
     // First delete all expenses in the group
     final expenses = getExpensesByGroup(group);
+
     for (var expense in expenses) {
       await deleteExpense(expense);
     }
@@ -359,8 +360,8 @@ class ExpenseManagerService {
     final membersBox = Hive.box<Member>(memberBoxName);
 
     for (var split in expense.splits) {
-      if (split.member.key != expense.paidByMember.key) {
-        final member = membersBox.get(split.member.key);
+      if (split.member.phone != expense.paidByMember.phone) {
+        final member = membersBox.get(split.member.phone);
         if (member != null) {
           member.totalAmountOwedByMe += split.amount;
           await member.save();
@@ -373,8 +374,8 @@ class ExpenseManagerService {
     final membersBox = Hive.box<Member>(memberBoxName);
 
     for (var split in expense.splits) {
-      if (split.member.key != expense.paidByMember.key) {
-        final member = membersBox.get(split.member.key);
+      if (split.member.phone != expense.paidByMember.phone) {
+        final member = membersBox.get(split.member.phone);
         if (member != null) {
           member.totalAmountOwedByMe -= split.amount;
           await member.save();
@@ -390,11 +391,11 @@ class ExpenseManagerService {
 
     // Calculate net balances for each member
     for (var expense in expenses) {
-      String payerKey = expense.paidByMember.key.toString();
+      String payerKey = expense.paidByMember.phone.toString();
       balances[payerKey] = (balances[payerKey] ?? 0) + expense.totalAmount;
 
       for (var split in expense.splits) {
-        String memberKey = split.member.key.toString();
+        String memberKey = split.member.phone.toString();
         balances[memberKey] = (balances[memberKey] ?? 0) - split.amount;
       }
     }

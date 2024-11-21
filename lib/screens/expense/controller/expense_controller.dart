@@ -18,6 +18,8 @@ class ExpenseController extends GetxController {
   final selectedPayer = Rx<Member?>(null);
   final RxString selectedSplitOption = 'Equally'.obs;
 
+  RxDouble remaining = 0.0.obs;
+
   TextEditingController get descriptionController => _descriptionController;
   TextEditingController get amountController => _amountController;
   Map<String, TextEditingController> get memberAmountControllers => _memberAmountControllers;
@@ -68,6 +70,16 @@ class ExpenseController extends GetxController {
     }else{
       _resetData();
     }
+  }
+
+  calculateRemaining(){
+    double totalEntered = memberAmountControllers.values
+        .map((c) => double.tryParse(c.text) ?? 0.0)
+        .fold(0.0, (sum, amount) => sum + amount);
+
+    double totalAmount = double.tryParse(amountController.text) ?? 0.0;
+    remaining.value = totalAmount - totalEntered;
+
   }
 
   void initializeMemberControllersWithCustomAmounts(Expense expense) {
@@ -174,6 +186,10 @@ class ExpenseController extends GetxController {
     selectedGroup.value = newGroup;
     if (newGroup != null) {
       members.value = newGroup.members.toList();
+
+      for (var member in members) {
+        toggleMemberSelection(member);
+      }
       selectedPayer.value = null;
     }
   }
