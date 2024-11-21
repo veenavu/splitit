@@ -15,6 +15,8 @@ class DashboardController extends GetxController {
   RxInt selectedIndex = 0.obs;
   Rxn<Profile> userProfile = Rxn<Profile>();
   RxString balanceText = "Loading...".obs;
+  RxInt selectedFilter = 0.obs; // 0: All, 1: You owe, 2: Owes you
+  RxList<Group> filteredGroups = RxList<Group>.empty(growable: true);
 
   List<Widget> pages = <Widget>[
     const GroupListPage(),
@@ -36,7 +38,53 @@ class DashboardController extends GetxController {
     final allGroups = ExpenseManagerService.getAllGroups();
     groups.value = allGroups;
     getBalanceText();
+    applyFilter();
   }
+  void applyFilter() {
+    if (userProfile.value == null) return;
+
+    Member currentMember = Member(
+      name: userProfile.value!.name,
+      phone: userProfile.value!.phone,
+    );
+
+    switch (selectedFilter.value) {
+      case 1: // You owe
+        filteredGroups.value = ExpenseManagerService.getGroupsYouOwe(currentMember);
+        break;
+      case 2: // Owes you
+        filteredGroups.value = ExpenseManagerService.getGroupsThatOweYou(currentMember);
+        break;
+      default: // All groups
+        filteredGroups.value = groups;
+        break;
+    }
+  }
+
+  void changeFilter(int filterIndex) {
+    selectedFilter.value = filterIndex;
+    applyFilter();
+  }
+
+  // Get filtered groups with balance info
+  List<Map<String, dynamic>> getGroupsWithBalance() {
+    if (userProfile.value == null) return [];
+
+    Member currentMember = Member(
+      name: userProfile.value!.name,
+      phone: userProfile.value!.phone,
+    );
+
+    return filteredGroups.map((group) {
+      double balance = ExpenseManagerService.getGroupBalance(group, currentMember);
+      return {
+        'group': group,
+        'balance': balance,
+        'balanceText': ExpenseManagerService.getGroupBalanceText(currentMember, group),
+      };
+    }).toList();
+  }
+
 
   Future<void> getProfile() async {
     final box = Hive.box(ExpenseManagerService.normalBox);

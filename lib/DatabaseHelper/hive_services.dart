@@ -109,6 +109,101 @@ class ExpenseManagerService {
     return box.values.where((group) => group.groupName.toLowerCase().contains(searchTermLower)).toList();
   }
 
+
+  static List<Group> getGroupsYouOwe(Member member) {
+    final allGroups = getAllGroups();
+    return allGroups.where((group) {
+      // Get all expenses for this group
+      final groupExpenses = getExpensesByGroup(group);
+      double totalLent = 0.0;
+      double totalOwed = 0.0;
+
+      for (var expense in groupExpenses) {
+        // When member is the payer
+        if (expense.paidByMember.phone == member.phone) {
+          // Calculate amount lent to others (excluding self)
+          final lentAmount = expense.splits
+              .where((split) => split.member.phone != member.phone)
+              .fold(0.0, (sum, split) => sum + split.amount);
+          totalLent += lentAmount;
+        }
+
+        // When member owes money
+        final memberSplit = expense.splits
+            .firstWhereOrNull((split) => split.member.phone == member.phone);
+
+        if (memberSplit != null && expense.paidByMember.phone != member.phone) {
+          totalOwed += memberSplit.amount;
+        }
+      }
+
+      // Return true if you owe money in this group (net negative balance)
+      final netAmount = (totalLent - totalOwed).roundToDouble();
+      return netAmount < 0;
+    }).toList();
+  }
+
+  static List<Group> getGroupsThatOweYou(Member member) {
+    final allGroups = getAllGroups();
+    return allGroups.where((group) {
+      // Get all expenses for this group
+      final groupExpenses = getExpensesByGroup(group);
+      double totalLent = 0.0;
+      double totalOwed = 0.0;
+
+      for (var expense in groupExpenses) {
+        // When member is the payer
+        if (expense.paidByMember.phone == member.phone) {
+          // Calculate amount lent to others (excluding self)
+          final lentAmount = expense.splits
+              .where((split) => split.member.phone != member.phone)
+              .fold(0.0, (sum, split) => sum + split.amount);
+          totalLent += lentAmount;
+        }
+
+        // When member owes money
+        final memberSplit = expense.splits
+            .firstWhereOrNull((split) => split.member.phone == member.phone);
+
+        if (memberSplit != null && expense.paidByMember.phone != member.phone) {
+          totalOwed += memberSplit.amount;
+        }
+      }
+
+      // Return true if others owe you money in this group (net positive balance)
+      final netAmount = (totalLent - totalOwed).roundToDouble();
+      return netAmount > 0;
+    }).toList();
+  }
+
+// Helper function to get amount owed/to be received for a group
+  static double getGroupBalance(Group group, Member member) {
+    final groupExpenses = getExpensesByGroup(group);
+    double totalLent = 0.0;
+    double totalOwed = 0.0;
+
+    for (var expense in groupExpenses) {
+      // When member is the payer
+      if (expense.paidByMember.phone == member.phone) {
+        // Calculate amount lent to others (excluding self)
+        final lentAmount = expense.splits
+            .where((split) => split.member.phone != member.phone)
+            .fold(0.0, (sum, split) => sum + split.amount);
+        totalLent += lentAmount;
+      }
+
+      // When member owes money
+      final memberSplit = expense.splits
+          .firstWhereOrNull((split) => split.member.phone == member.phone);
+
+      if (memberSplit != null && expense.paidByMember.phone != member.phone) {
+        totalOwed += memberSplit.amount;
+      }
+    }
+
+    return (totalLent - totalOwed).roundToDouble();
+  }
+
   // MEMBER OPERATIONS
   static Future<void> saveMember(Member member) async {
     final box = Hive.box<Member>(memberBoxName);

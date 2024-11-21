@@ -86,12 +86,15 @@ class GroupListPage extends StatelessWidget {
                     switch (result) {
                       case 'all_groups':
                       // Handle All Groups selection
+                        controller.changeFilter(0);
                         break;
                       case 'groups_you_owe':
                       // Handle Groups you owe selection
+                        controller.changeFilter(1);
                         break;
                       case 'groups_owe_you':
-                      // Handle Groups that owe you selection
+                        controller.changeFilter(2);
+                        // Handle Groups that owe you selection
                         break;
                     }
                   }
@@ -102,9 +105,9 @@ class GroupListPage extends StatelessWidget {
           ),
           Expanded(
             child: Obx(() => ListView.builder(
-              itemCount: controller.groups.length,
+              itemCount: controller.filteredGroups.length,
               itemBuilder: (context, index) {
-                final groupItem = controller.groups[index];
+                final groupItem = controller.filteredGroups[index];
                 return GestureDetector(
                   onTap: () {
                     Get.to(()=> GroupDetails(groupItem: groupItem))?.then((value) {
