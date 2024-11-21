@@ -1,15 +1,44 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:splitit/DatabaseHelper/hive_services.dart';
 import 'package:splitit/routes/app_routes.dart';
 
-class GetStartedPage extends StatelessWidget {
-  const GetStartedPage({super.key});
+class SplashPage extends StatefulWidget {
+  const SplashPage({super.key});
 
   @override
+  State<SplashPage> createState() => _SplashPageState();
+}
+
+class _SplashPageState extends State<SplashPage> {
+
+
+  @override
+  void initState() {
+    Future.delayed(const Duration(seconds: 2), () {
+      _navigateToNextPage();
+    });
+    super.initState();
+  }
+
+
+  _navigateToNextPage(){
+    final box = Hive.box(ExpenseManagerService.normalBox);
+    final isLoggedIn = box.get("isLoggedIn", defaultValue: false);
+
+    if(isLoggedIn){
+      Get.offNamed(Routes.dashboard);
+    }else{
+      Get.offNamed(Routes.getStarted);
+    }
+
+  }
+  @override
   Widget build(BuildContext context) {
-    double screenWidth = MediaQuery.of(context).size.width;
-    double screenHeight = MediaQuery.of(context).size.height;
+    double screenWidth = MediaQuery.sizeOf(context).width;
+    double screenHeight = MediaQuery.sizeOf(context).height;
     bool isMobile = screenWidth < 600; // Define mobile breakpoint
 
     return Scaffold(
@@ -49,43 +78,6 @@ class GetStartedPage extends StatelessWidget {
               ),
             ),
             SizedBox(height: screenHeight * 0.2), // Adjust spacing for layout
-            Container(
-              width: isMobile ? screenWidth * 0.8 : screenWidth * 0.5,
-              height: screenHeight * 0.07, // Responsive button height
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF5F0967), Color(0xFFBD11CD)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: ElevatedButton(
-                onPressed: () {
-                  //Navigate to the Login screen
-                  Get.offNamed(Routes.login);
-
-                  // Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const LoginPage()));
-                },
-                style: ElevatedButton.styleFrom(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  padding: EdgeInsets.symmetric(
-                    vertical: screenHeight * 0.02,
-                  ),
-                ),
-                child: Text(
-                  'Get Started',
-                  style: TextStyle(
-                    fontSize: screenWidth * 0.05,
-                    color: const Color(0xFF5F0967),
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ),
-            SizedBox(height: screenHeight * 0.03), // Responsive spacing
           ],
         ),
       ),

@@ -5,12 +5,24 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:splitit/DatabaseHelper/hive_services.dart';
 import 'package:splitit/modelClass/models.dart';
 import 'package:splitit/routes/app_routes.dart';
+import 'package:splitit/screens/dashboard/pages/activity_page.dart';
+import 'package:splitit/screens/dashboard/pages/friends_page.dart';
+import 'package:splitit/screens/dashboard/pages/group_list_page.dart';
+import 'package:splitit/screens/dashboard/pages/profile_page.dart';
 
 class DashboardController extends GetxController {
   RxList<Group> groups = RxList<Group>.empty(growable: true);
   RxInt selectedIndex = 0.obs;
   Rxn<Profile> userProfile = Rxn<Profile>();
   RxString balanceText = "Loading...".obs;
+
+  List<Widget> pages = <Widget>[
+    const GroupListPage(),
+    const FriendsPage(),
+    const ActivitiesPage(),
+    const ProfilePage(),
+
+  ];
 
   @override
   void onInit() {

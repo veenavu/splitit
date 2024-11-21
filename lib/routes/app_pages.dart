@@ -8,11 +8,16 @@ import 'package:splitit/screens/dashboard/dashboard.dart';
 import 'package:splitit/screens/expense/add_expense_page.dart';
 import 'package:splitit/screens/group/add_group.dart';
 import 'package:splitit/screens/welcome/get_started.dart';
+import 'package:splitit/screens/welcome/splash.dart';
 
 class AppPages {
   static final pages = [
     GetPage(
       name: Routes.initial,
+      page: () => const SplashPage(),
+    ),
+    GetPage(
+      name: Routes.getStarted,
       page: () => const GetStartedPage(),
     ),
     GetPage(

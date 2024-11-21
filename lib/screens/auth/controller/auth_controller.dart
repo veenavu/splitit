@@ -32,6 +32,8 @@ class AuthController extends GetxController {
         box.put("mobile", phoneController.text);
 
         _clearData();
+        box.put("isLoggedIn", true);
+
 
         Get.offNamed(Routes.dashboard);
         // Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const Dashboard()));
@@ -73,6 +75,8 @@ class AuthController extends GetxController {
         box.put("mobile", signUpPhoneController.text);
 
         _clearData();
+
+        box.put("isLoggedIn", true);
 
         Get.offNamed(Routes.dashboard);
       } catch (e) {

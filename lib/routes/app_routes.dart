@@ -1,6 +1,7 @@
 // app_routes.dart
 abstract class Routes {
   static const initial = '/';
+  static const getStarted = '/get-started';
   static const login = '/login';
   static const signup = '/signup';
   static const dashboard = '/dashboard';
