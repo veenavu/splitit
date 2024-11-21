@@ -185,23 +185,31 @@ class _GroupPageState extends State<GroupPage> {
           fontSize: 12,
           fontWeight: FontWeight.normal,
         ),
-        items: const [
-          BottomNavigationBarItem(
+        items: [
+          const BottomNavigationBarItem(
             icon: Icon(Icons.group, color: Colors.black),
             label: 'Groups',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.person, color: Colors.black),
             label: 'Friends',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.receipt, color: Colors.black),
             label: 'Activity',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.account_circle, color: Colors.black),
-            label: 'Account',
+            icon: userProfile?.imagePath != null && userProfile!.imagePath!.isNotEmpty
+                ? CircleAvatar(
+              radius: 12, // Adjust size for the avatar
+              backgroundImage: FileImage(File(userProfile!.imagePath!)), // Use FileImage for local files
+              backgroundColor: Colors.transparent, // Optional background color
+            )
+                : const Icon(Icons.account_circle, color: Colors.black),
+            label: userProfile?.name ?? "Account",
           ),
+
+
         ],
       ),
     );

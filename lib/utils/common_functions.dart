@@ -91,3 +91,64 @@ void showMemberAddingBottomSheet({
 
   onContactsSelected?.call(result);
 }
+
+
+
+
+
+//__________________________________________________________________
+
+
+class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
+  final String title;
+  final List<Widget> actions;
+  final bool centerTitle;
+  final Color backgroundColor;
+  final Gradient? gradient;
+  final double elevation;
+  final BorderRadius? borderRadius;
+
+  const CustomAppBar({
+    Key? key,
+    required this.title,
+    this.actions = const [],
+    this.centerTitle = false,
+    this.backgroundColor = Colors.purple,
+    this.gradient,
+    this.elevation = 4,
+    this.borderRadius,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return AppBar(
+      title: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+      ),
+      centerTitle: centerTitle,
+      actions: actions,
+      backgroundColor: backgroundColor,
+      elevation: elevation,
+      flexibleSpace: gradient != null
+          ? Container(
+        decoration: BoxDecoration(
+          gradient: gradient,
+        ),
+      )
+          : null,
+      shape: borderRadius != null
+          ? RoundedRectangleBorder(
+        borderRadius: borderRadius!,
+      )
+          : null,
+    );
+  }
+
+  @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+}
