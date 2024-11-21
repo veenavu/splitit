@@ -38,6 +38,8 @@ class _GroupEditPageState extends State<GroupEditPage> {
     }
   }
   Future<void> _updateTheGroup() async {
+    widget.groups.groupName = _groupNameController.text; // Update group name
+    widget.groups.category = _selectedType;             // Update group type
     ExpenseManagerService.updateGroup(widget.groups);
     Navigator.pop(context, true);
   }
