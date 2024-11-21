@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:splitit/routes/app_routes.dart';
 import 'package:splitit/screens/auth/controller/auth_controller.dart';
 import 'package:splitit/screens/auth/sign_up.dart';
 
@@ -90,7 +91,7 @@ class LoginPage extends StatelessWidget {
                     const SizedBox(height: 20.0),
                     TextButton(
                         onPressed: () {
-                          Get.off(()=> const SignUpPage());
+                          Get.offNamed(Routes.signup);
                           },
                         child: Text("Don't have an account? Sign up",
                             style: GoogleFonts.lato(color: Colors.white, fontSize: 16))),

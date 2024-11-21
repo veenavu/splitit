@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:splitit/routes/app_routes.dart';
 import 'package:splitit/screens/auth/login_page.dart';
 import 'package:splitit/screens/auth/sign_up.dart';
 
@@ -62,8 +64,10 @@ class GetStartedPage extends StatelessWidget {
               ),
               child: ElevatedButton(
                 onPressed: () {
-                  //Navigate to the SetProfile screen
-                  Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const LoginPage()));
+                  //Navigate to the Login screen
+                  Get.offNamed(Routes.login);
+
+                  // Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const LoginPage()));
                 },
                 style: ElevatedButton.styleFrom(
                   shape: RoundedRectangleBorder(

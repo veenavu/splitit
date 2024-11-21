@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:splitit/DatabaseHelper/hive_services.dart';
+import 'package:splitit/routes/app_pages.dart';
 import 'package:splitit/screens/welcome/get_started.dart';
+
+import 'routes/app_routes.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,8 +19,9 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return GetMaterialApp(
       title: 'SplitIt',
-      home: const GetStartedPage(),
+      initialRoute: Routes.initial,
       debugShowCheckedModeBanner: false,
+      getPages: AppPages.pages,
       theme: ThemeData(
         primaryColor: const Color(0xff5f0967),
         primarySwatch: Colors.purple,

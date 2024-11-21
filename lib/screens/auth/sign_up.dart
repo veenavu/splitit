@@ -145,7 +145,7 @@ class SignUpPage extends StatelessWidget {
                         child: Builder(
                           builder: (context) => ElevatedButton(
                             onPressed: (){
-                              authController.submitForm();
+                              authController.signup();
                             },
                             child: const Text(
                               'Submit',
