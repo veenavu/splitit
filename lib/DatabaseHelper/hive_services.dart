@@ -38,11 +38,6 @@ class ExpenseManagerService {
     await box.add(profile);
   }
 
-  static Profile? getProfile() {
-    final box = Hive.box<Profile>(profileBoxName);
-    return box.isNotEmpty ? box.getAt(0) : null;
-  }
-
   static Profile? getProfileByPhone(String phone) {
     final box = Hive.box<Profile>(profileBoxName);
 
@@ -97,18 +92,6 @@ class ExpenseManagerService {
     // Then delete the group itself
     await group.delete();
   }
-
-  static List<Group> searchGroups(String searchTerm) {
-    if (searchTerm.isEmpty) {
-      return getAllGroups();
-    }
-
-    final box = Hive.box<Group>(groupBoxName);
-    final searchTermLower = searchTerm.toLowerCase();
-
-    return box.values.where((group) => group.groupName.toLowerCase().contains(searchTermLower)).toList();
-  }
-
 
   static List<Group> getGroupsYouOwe(Member member) {
     final allGroups = getAllGroups();
@@ -202,39 +185,6 @@ class ExpenseManagerService {
     }
 
     return (totalLent - totalOwed).roundToDouble();
-  }
-
-  // MEMBER OPERATIONS
-  static Future<void> saveMember(Member member) async {
-    final box = Hive.box<Member>(memberBoxName);
-    await box.add(member);
-  }
-
-  static List<Member> getAllMembers() {
-    final box = Hive.box<Member>(memberBoxName);
-    return box.values.toList();
-  }
-
-  static Future<void> updateMember(Member member) async {
-    await member.save();
-  }
-
-  static Future<void> deleteMember(Member member) async {
-    // Remove member from all groups
-    final groups = getAllGroups();
-    for (var group in groups) {
-      if (group.members.contains(member)) {
-        group.members.remove(member);
-        await group.save();
-      }
-    }
-
-    // Handle expenses involving this member
-    final expenses = getExpensesByMember(member);
-    for (var expense in expenses) {
-      await deleteExpense(expense);
-    }
-    await member.delete();
   }
 
   // EXPENSE OPERATIONS
@@ -364,11 +314,6 @@ class ExpenseManagerService {
         .toList();
   }
 
-  static List<Expense> getExpensesByMember(Member member) {
-    final box = Hive.box<Expense>(expenseBoxName);
-    return box.values.where((expense) => expense.isMemberInvolved(member)).toList();
-  }
-
   static Future<void> deleteExpense(Expense expense) async {
     // Reverse the member balance updates
     await _reverseMemberBalances(expense);
@@ -479,114 +424,6 @@ class ExpenseManagerService {
     }
   }
 
-  // SETTLEMENT CALCULATIONS
-  static List<SettlementTransaction> calculateSettlements(List<Member> members) {
-    Map<String, double> balances = {};
-    final expenses = getAllExpenses();
-
-    // Calculate net balances for each member
-    for (var expense in expenses) {
-      String payerKey = expense.paidByMember.phone.toString();
-      balances[payerKey] = (balances[payerKey] ?? 0) + expense.totalAmount;
-
-      for (var split in expense.splits) {
-        String memberKey = split.member.phone.toString();
-        balances[memberKey] = (balances[memberKey] ?? 0) - split.amount;
-      }
-    }
-
-    List<SettlementTransaction> settlements = [];
-    var memberBalances = balances.entries.toList();
-
-    while (memberBalances.length >= 2) {
-      memberBalances.sort((a, b) => b.value.compareTo(a.value));
-
-      var creditor = memberBalances.first;
-      var debtor = memberBalances.last;
-
-      double amount = min(-debtor.value, creditor.value);
-      if (amount > 0.01) {
-        settlements.add(SettlementTransaction(
-          from: Hive.box<Member>(memberBoxName).get(int.parse(debtor.key))!,
-          to: Hive.box<Member>(memberBoxName).get(int.parse(creditor.key))!,
-          amount: amount,
-        ));
-      }
-
-      if ((creditor.value - amount).abs() < 0.01) {
-        memberBalances.removeAt(0);
-      } else {
-        memberBalances[0] = MapEntry(creditor.key, creditor.value - amount);
-      }
-
-      if ((debtor.value + amount).abs() < 0.01) {
-        memberBalances.removeLast();
-      } else {
-        memberBalances[memberBalances.length - 1] = MapEntry(debtor.key, debtor.value + amount);
-      }
-    }
-
-    return settlements;
-  }
-
-  // Get member balance summary
-  static Map<Member, double> getMemberBalances() {
-    final members = getAllMembers();
-    Map<Member, double> balances = {};
-
-    for (var member in members) {
-      balances[member] = member.totalAmountOwedByMe;
-    }
-
-    return balances;
-  }
-
-  // Get group expense summary
-  static Map<String, dynamic> getGroupExpenseSummary(Group group) {
-    final expenses = getExpensesByGroup(group);
-    double totalExpenses = 0;
-    Map<Member, double> memberContributions = {};
-
-    for (var expense in expenses) {
-      totalExpenses += expense.totalAmount;
-      memberContributions[expense.paidByMember] =
-          (memberContributions[expense.paidByMember] ?? 0) + expense.totalAmount;
-    }
-
-    return {
-      'totalExpenses': totalExpenses,
-      'memberContributions': memberContributions,
-    };
-  }
-
-  static MemberGroupExpense getMemberGroupExpense(Member member, Group group) {
-    final expenses = getExpensesByGroup(group);
-    double totalPaid = 0.0;
-    double totalShare = 0.0;
-
-    for (var expense in expenses) {
-      // Calculate amount paid by member
-      if (expense.paidByMember.phone == member.phone) {
-        totalPaid += expense.totalAmount;
-      }
-
-      // Calculate member's share in expenses
-      // Using firstWhereOrNull to safely handle cases where member isn't in splits
-      final memberSplit = expense.splits.firstWhereOrNull((split) => split.member.phone == member.phone);
-      if (memberSplit != null) {
-        totalShare += memberSplit.amount;
-      }
-    }
-
-    return MemberGroupExpense(
-      member: member,
-      group: group,
-      totalPaid: totalPaid,
-      totalShare: totalShare,
-      netBalance: totalPaid - totalShare,
-    );
-  }
-
   static MemberNetWorth getMemberNetWorth(Member member) {
     final expenses = getAllExpenses();
     double totalLent = 0.0;
@@ -657,31 +494,6 @@ class ExpenseManagerService {
       groupSummaries: groupSummaries.values.toList(),
       categoryTotals: categoryTotals,
     );
-  }
-}
-
-class MemberGroupExpense {
-  final Member member;
-  final Group group;
-  final double totalPaid; // Total amount paid by member
-  final double totalShare; // Total share in all expenses
-  final double netBalance; // Positive means others owe them, negative means they owe others
-
-  const MemberGroupExpense({
-    required this.member,
-    required this.group,
-    required this.totalPaid,
-    required this.totalShare,
-    required this.netBalance,
-  });
-
-  String get balanceText {
-    if (netBalance > 0) {
-      return 'Gets back ₹${netBalance.toStringAsFixed(2)}';
-    } else if (netBalance < 0) {
-      return 'Owes ₹${(-netBalance).toStringAsFixed(2)}';
-    }
-    return 'All settled';
   }
 }
 

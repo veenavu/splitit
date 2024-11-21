@@ -7,11 +7,11 @@ import 'package:splitit/modelClass/models.dart';
 import 'package:splitit/routes/app_routes.dart';
 import 'package:splitit/screens/dashboard/controller/dashboard_controller.dart';
 import 'package:splitit/screens/group/group_editpage.dart';
-import 'package:splitit/screens/dashboard/dashboard.dart';
-class GroupSettings extends StatefulWidget {
-     Group group;
 
-   GroupSettings({super.key, required this.group});
+class GroupSettings extends StatefulWidget {
+  Group group;
+
+  GroupSettings({super.key, required this.group});
 
   @override
   State<GroupSettings> createState() => _GroupSettingsState();
@@ -35,7 +35,8 @@ class _GroupSettingsState extends State<GroupSettings> {
             color: Colors.white,
           ),
         ),
-        centerTitle: true, // Centers the title for a balanced appearance
+        centerTitle: true,
+        // Centers the title for a balanced appearance
         actions: [
           IconButton(
             icon: const Icon(Icons.edit, color: Colors.white),
@@ -80,14 +81,13 @@ class _GroupSettingsState extends State<GroupSettings> {
                       child: const Text("Cancel"),
                     ),
                     TextButton(
-                      onPressed: () async{
+                      onPressed: () async {
                         ExpenseManagerService.deleteGroup(widget.group);
                         await Future.delayed(const Duration(milliseconds: 100));
                         Future.microtask(() {
                           Get.offNamedUntil(Routes.dashboard, (route) => route.settings.name == Routes.dashboard);
                           Get.find<DashboardController>().loadGroups();
                         });
-
                       },
                       child: const Text("Delete", style: TextStyle(color: Colors.red)),
                     ),
@@ -114,7 +114,6 @@ class _GroupSettingsState extends State<GroupSettings> {
           ),
         ),
       ),
-
       body: Padding(
         padding: const EdgeInsets.all(8.0),
         child: Column(
@@ -143,20 +142,19 @@ class _GroupSettingsState extends State<GroupSettings> {
                   borderRadius: BorderRadius.circular(50), // Ensures the circle shape
                   child: widget.group.groupImage.isNotEmpty
                       ? Image.file(
-                    File(widget.group.groupImage),
-                    height: 100,
-                    width: 100,
-                    fit: BoxFit.cover,
-                  )
+                          File(widget.group.groupImage),
+                          height: 100,
+                          width: 100,
+                          fit: BoxFit.cover,
+                        )
                       : const Icon(
-                    Icons.group,
-                    size: 50,
-                    color: Colors.grey,
-                  ), // Fallback icon if no image
+                          Icons.group,
+                          size: 50,
+                          color: Colors.grey,
+                        ), // Fallback icon if no image
                 ),
               ),
             ),
-
             Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -203,8 +201,6 @@ class _GroupSettingsState extends State<GroupSettings> {
                 ],
               ),
             ),
-
-
             const SizedBox(height: 30),
             Align(
               alignment: Alignment.centerLeft,
@@ -232,7 +228,6 @@ class _GroupSettingsState extends State<GroupSettings> {
                 ),
               ),
             ),
-
             const SizedBox(
               height: 5,
             ),
@@ -270,14 +265,12 @@ class _GroupSettingsState extends State<GroupSettings> {
                             color: Colors.black87,
                           ),
                         ),
-
                       ),
                     ),
                   );
                 },
               ),
             ),
-
           ],
         ),
       ),

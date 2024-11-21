@@ -313,62 +313,7 @@ class Expense extends HiveObject {
 }
 
 
-// Statistics Models (Not stored in Hive)
-class MemberStatistics {
-  double totalPaid;
-  double totalOwed;
-  int expensesPaid;
-  int expensesParticipated;
 
-  MemberStatistics({
-    this.totalPaid = 0,
-    this.totalOwed = 0,
-    this.expensesPaid = 0,
-    this.expensesParticipated = 0,
-  });
-
-  double get netBalance => totalPaid - totalOwed;
-}
-
-class GroupStatistics {
-  final double totalExpenses;
-  final double averageExpenseAmount;
-  final Map<DateTime, double> monthlyExpenses;
-  final Map<String, double> categoryExpenses;
-  final Map<Member, MemberStatistics> memberStatistics;
-  final int expenseCount;
-  final int activeMembers;
-  final String mostActiveCategory;
-  final Member mostActivePayer;
-
-  GroupStatistics({
-    required this.totalExpenses,
-    required this.averageExpenseAmount,
-    required this.monthlyExpenses,
-    required this.categoryExpenses,
-    required this.memberStatistics,
-    required this.expenseCount,
-    required this.activeMembers,
-    required this.mostActiveCategory,
-    required this.mostActivePayer,
-  });
-}
-
-class ExpenseReminder {
-  final Expense expense;
-  final double amount;
-  final Member toMember;
-  final Member fromMember;
-  final DateTime date;
-
-  ExpenseReminder({
-    required this.expense,
-    required this.amount,
-    required this.toMember,
-    required this.fromMember,
-    required this.date,
-  });
-}
 
 class SettlementTransaction {
   final Member from;
