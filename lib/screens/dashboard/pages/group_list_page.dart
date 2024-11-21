@@ -17,9 +17,89 @@ class GroupListPage extends StatelessWidget {
       padding: const EdgeInsets.all(8.0),
       child: Column(
         children: [
-          Obx(() => TotalOwed(
-            amount: controller.balanceText.value,
-          )),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Obx(() => TotalOwed(
+                amount: controller.balanceText.value,
+              )),
+              IconButton(
+                onPressed: () async {
+                  // Get the RenderBox of the IconButton
+                  final RenderBox button = context.findRenderObject() as RenderBox;
+                  final RenderBox overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
+
+                  final buttonPosition = button.localToGlobal(Offset.zero, ancestor: overlay);
+
+                  // Position the menu to the right of the button
+                  final position = RelativeRect.fromLTRB(
+                    buttonPosition.dx + 200, // Move menu to the right by adjusting left position
+                    buttonPosition.dy + 50, // Position below the button
+                    buttonPosition.dx,
+                    buttonPosition.dy + button.size.height + 10,
+                  );
+
+                  // Show the popup menu
+                  final result = await showMenu<String>(
+                    context: context,
+                    position: position,
+                    items: [
+                      const PopupMenuItem<String>(
+                        value: 'all_groups',
+                        child: Row(
+                          children: [
+                            Icon(Icons.group, color: Colors.grey),
+                            SizedBox(width: 8),
+                            Text('All Groups'),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem<String>(
+                        value: 'groups_you_owe',
+                        child: Row(
+                          children: [
+                            Icon(Icons.arrow_upward, color: Colors.grey),
+                            SizedBox(width: 8),
+                            Text('Groups you owe'),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem<String>(
+                        value: 'groups_owe_you',
+                        child: Row(
+                          children: [
+                            Icon(Icons.arrow_downward, color: Colors.grey),
+                            SizedBox(width: 8),
+                            Text('Groups that owe you'),
+                          ],
+                        ),
+                      ),
+                    ],
+                    elevation: 8.0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  );
+
+                  // Handle the selected menu item
+                  if (result != null) {
+                    switch (result) {
+                      case 'all_groups':
+                      // Handle All Groups selection
+                        break;
+                      case 'groups_you_owe':
+                      // Handle Groups you owe selection
+                        break;
+                      case 'groups_owe_you':
+                      // Handle Groups that owe you selection
+                        break;
+                    }
+                  }
+                },
+                icon: const Icon(Icons.sort),
+              )
+            ],
+          ),
           Expanded(
             child: Obx(() => ListView.builder(
               itemCount: controller.groups.length,
@@ -27,11 +107,6 @@ class GroupListPage extends StatelessWidget {
                 final groupItem = controller.groups[index];
                 return GestureDetector(
                   onTap: () {
-                    // final b = ExpenseManagerService.getMemberGroupExpense(Member(
-                    //   name: controller.userProfile.value!.name,
-                    //   phone: controller.userProfile.value!.phone,
-                    // ), groupItem);
-                    // print(b.netBalance);
                     Get.to(()=> GroupDetails(groupItem: groupItem))?.then((value) {
                       controller.loadGroups();
                     });
