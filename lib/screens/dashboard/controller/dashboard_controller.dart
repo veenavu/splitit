@@ -17,6 +17,8 @@ class DashboardController extends GetxController {
   RxString balanceText = "Loading...".obs;
   RxInt selectedFilter = 0.obs; // 0: All, 1: You owe, 2: Owes you
   RxList<Group> filteredGroups = RxList<Group>.empty(growable: true);
+  var isLoading = false.obs; // Observable boolean for loading state
+
 
   List<Widget> pages = <Widget>[
     const GroupListPage(),
@@ -35,11 +37,19 @@ class DashboardController extends GetxController {
   }
 
   Future<void> loadGroups() async {
-    final allGroups = ExpenseManagerService.getAllGroups();
-    groups.value = allGroups;
-    getBalanceText();
-    applyFilter();
+    isLoading.value = true; // Start loading
+    try {
+      final allGroups = await ExpenseManagerService.getAllGroups(); // Fetch data
+      groups.value = allGroups; // Update groups
+      getBalanceText(); // Call related functions
+      applyFilter();
+    } catch (e) {
+      Get.snackbar('Error', 'Failed to load groups: $e'); // Handle errors
+    } finally {
+      isLoading.value = false; // Stop loading
+    }
   }
+
   void applyFilter() {
     if (userProfile.value == null) return;
 
