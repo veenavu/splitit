@@ -7,6 +7,7 @@ import 'package:splitit/screens/dashboard/binding/dashboard_binding.dart';
 import 'package:splitit/screens/dashboard/dashboard.dart';
 import 'package:splitit/screens/expense/add_expense_page.dart';
 import 'package:splitit/screens/group/add_group.dart';
+import 'package:splitit/screens/group/gruop_binding/group_binding.dart';
 import 'package:splitit/screens/welcome/get_started.dart';
 import 'package:splitit/screens/welcome/splash.dart';
 
@@ -38,6 +39,7 @@ class AppPages {
     GetPage(
       name: Routes.addNewGroup,
       page: () => const AddNewGroupPage(),
+      binding: AddNewGroupBinding(),
     ),
 
     GetPage(

@@ -1,157 +1,14 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter_contacts/flutter_contacts.dart';
+import 'package:flutter_contacts/flutter_contacts.dart' as fl;
 import 'package:get/get.dart';
-import 'package:hive_flutter/hive_flutter.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:splitit/DatabaseHelper/hive_services.dart';
-import 'package:splitit/modelClass/models.dart' as custom;
-import 'package:splitit/modelClass/models.dart';
-import 'package:splitit/utils/common_functions.dart';
 
-class AddNewGroupPage extends StatefulWidget {
+
+import '../../utils/common_functions.dart';
+import 'controller/group_controller.dart';
+
+class AddNewGroupPage extends GetView<AddNewGroupController> {
   const AddNewGroupPage({super.key});
-  @override
-  State<AddNewGroupPage> createState() => _AddNewGroupPageState();
-}
-class _AddNewGroupPageState extends State<AddNewGroupPage> {
-  //ExpenseManagerService service=ExpenseManagerService();
-  final TextEditingController _groupNameController = TextEditingController();
-  String? _selectedType;
-  String? _imagePath;
-  List<Contact> selectedContacts = [];
-  final List<String> _groupTypes = ['Trip', 'Home', 'Couple', 'Others'];
-  Future<void> _pickImage() async {
-    final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      String? savedPath = await _saveImagePath(File(pickedFile.path));
-      setState(() {
-        _imagePath = savedPath;
-      });
-    }
-  }
-  Future<String?> _saveImagePath(File imageFile) async {
-    try {
-      final directory = await getApplicationDocumentsDirectory();
-      final filePath = '${directory.path}/${DateTime.now().millisecondsSinceEpoch}.png';
-      final savedImage = await imageFile.copy(filePath);
-      return savedImage.path;
-    } catch (e) {
-      print("Error saving image: $e");
-      return null;
-    }
-  }
-  Future<List<custom.Member>> _getMembersFromContacts() async {
-    final memberid= await ExpenseManagerService.generateNextMemberId();
-    return await Future.wait(selectedContacts.map((contact) async {
-      String? imagePath;
-      if (contact.photo != null) {
-        imagePath = await _saveContactImage(contact.photo! as File, contact.displayName ?? 'contact_image');
-      }
-      return custom.Member(
-        name: contact.displayName ?? 'Unnamed',
-        phone: contact.phones.isNotEmpty ? contact.phones.first.number : 'No Phone',
-        imagePath: imagePath,
-        mid: memberid,
-      );
-    }).toList());
-  }
-  Future<String?> _saveContactImage(File imageFile, String fileName) async {
-    final directory = await getApplicationDocumentsDirectory();
-    final filePath = '${directory.path}/$fileName.png';
-    final savedImage = await imageFile.copy(filePath);
-    return savedImage.path;
-  }
-  Future<void> _saveGroup() async {
-   final groupid= await ExpenseManagerService.generateNextGroupId();
-   final memberid= await ExpenseManagerService.generateNextMemberId();
-    if (_groupNameController.text.isEmpty || _imagePath == null || _selectedType == null || selectedContacts.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please fill in all fields and add members")),
-      );
-      return;
-    }
-    List<custom.Member> members = await _getMembersFromContacts();
-    final box = Hive.box(ExpenseManagerService.normalBox);
-    final phone = box.get("mobile");
-    Profile? userProfile = ExpenseManagerService.getProfileByPhone(phone);
-    if(userProfile != null) {
-      members.add(custom.Member( mid: memberid ,name:userProfile.name , phone: userProfile.phone, imagePath: userProfile.imagePath));
-    }
-    custom.Group group = custom.Group(
-      gid: groupid,
-      groupName: _groupNameController.text,
-      groupImage: _imagePath!,
-      category: _selectedType,
-      members: members,
-    );
-    await ExpenseManagerService.saveTheGroup(group);
-    print("Navigating to GroupsScreen...");
-    Get.back();
-  }
-
-
-  Widget _buildGroupTypeButton(String type) {
-    return RawChip(
-      label: Text(
-        type,
-        style: TextStyle(
-          color: _selectedType == type ? Colors.white : Colors.purple,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      selected: _selectedType == type,
-      onSelected: (bool selected) {
-        setState(() {
-          _selectedType = selected ? type : null;
-        });
-      },
-      selectedColor: Colors.purple,
-      backgroundColor: Colors.purple.shade50,
-      showCheckmark: false, // Removes the tick mark
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16), // Smooth rounded edges
-      ),
-      elevation: 4, // Adds subtle shadow for depth
-      shadowColor: Colors.black.withOpacity(0.1),
-      pressElevation: 6, // Highlights the chip when pressed
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-    );
-  }
-
-
-
-
-  void _removeContact(int index) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text("Delete Member"),
-          content: const Text("Do you want to delete this member?"),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () {
-                Get.back();
-              },
-              child: const Text("Cancel"),
-            ),
-            TextButton(
-              onPressed: () {
-                setState(() {
-                  selectedContacts.removeAt(index);
-                });
-                Get.back();
-              },
-              child: const Text("Yes"),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
 
   @override
   Widget build(BuildContext context) {
@@ -159,7 +16,7 @@ class _AddNewGroupPageState extends State<AddNewGroupPage> {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => Get.back(),
           tooltip: 'Go Back',
           iconSize: 28,
           color: Colors.white,
@@ -172,11 +29,11 @@ class _AddNewGroupPageState extends State<AddNewGroupPage> {
             color: Colors.white,
           ),
         ),
-        centerTitle: true, // Centers the title for better alignment
+        centerTitle: true,
         actions: [
           IconButton(
             icon: const Icon(Icons.check, size: 28),
-            onPressed: _saveGroup,
+            onPressed: controller.saveGroup,
             tooltip: 'Save Group',
             color: Colors.white,
           ),
@@ -194,19 +51,19 @@ class _AddNewGroupPageState extends State<AddNewGroupPage> {
         ),
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(
-            bottom: Radius.circular(20), // Rounded corners for the bottom
+            bottom: Radius.circular(20),
           ),
         ),
       ),
-
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0),
         child: Column(
           children: [
-            const SizedBox(height: 30,),
+            const SizedBox(height: 30),
+            // Group Image Selection
             GestureDetector(
-              onTap: _pickImage,
-              child: Container(
+              onTap: controller.pickImage,
+              child: Obx(() => Container(
                 width: 120,
                 height: 120,
                 decoration: BoxDecoration(
@@ -225,10 +82,10 @@ class _AddNewGroupPageState extends State<AddNewGroupPage> {
                     ),
                   ],
                 ),
-                child: _imagePath != null
+                child: controller.imagePath.value != null
                     ? ClipOval(
                   child: Image.file(
-                    File(_imagePath!),
+                    File(controller.imagePath.value!),
                     fit: BoxFit.cover,
                     width: 120,
                     height: 120,
@@ -255,12 +112,13 @@ class _AddNewGroupPageState extends State<AddNewGroupPage> {
                     ],
                   ),
                 ),
-              ),
+              )),
             ),
 
             const SizedBox(height: 50),
+            // Group Name Input
             TextField(
-              controller: _groupNameController,
+              controller: controller.groupNameController,
               decoration: InputDecoration(
                 hintText: 'Enter Group Name',
                 hintStyle: TextStyle(
@@ -297,51 +155,87 @@ class _AddNewGroupPageState extends State<AddNewGroupPage> {
             ),
 
             const SizedBox(height: 20),
+            // Group Type Selection
             const Align(
               alignment: Alignment.centerLeft,
               child: Text(
                 'Type',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.purple),
+                style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.purple
+                ),
               ),
             ),
             const SizedBox(height: 10),
             Wrap(
               spacing: 8.0,
-              children: _groupTypes.map((type) => _buildGroupTypeButton(type)).toList(),
+              children: controller.groupTypes.map((type) => Obx(() => RawChip(
+                label: Text(
+                  type,
+                  style: TextStyle(
+                    color: controller.selectedType.value == type
+                        ? Colors.white
+                        : Colors.purple,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                selected: controller.selectedType.value == type,
+                onSelected: (bool selected) {
+                  controller.updateSelectedType(selected ? type : null);
+                },
+                selectedColor: Colors.purple,
+                backgroundColor: Colors.purple.shade50,
+                showCheckmark: false,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                elevation: 4,
+                shadowColor: Colors.black.withOpacity(0.1),
+                pressElevation: 6,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              ))).toList(),
             ),
+
+            const SizedBox(height: 20),
+            // Selected Contacts List
             Expanded(
-              child: ListView.builder(
-                itemCount: selectedContacts.length,
+              child: Obx(() => ListView.builder(
+                itemCount: controller.selectedContacts.length,
                 itemBuilder: (context, index) {
-                  final contact = selectedContacts[index];
+                  final contact = controller.selectedContacts[index];
                   return ListTile(
                     leading: CircleAvatar(
-                      backgroundImage: contact.photo != null ? FileImage(contact.photo! as File) : null,
-                      child: contact.photo == null ? const Icon(Icons.person) : null,
+                      backgroundImage: contact.photo != null
+                          ? MemoryImage(contact.photo!)
+                          : null,
+                      child: contact.photo == null
+                          ? const Icon(Icons.person)
+                          : null,
                     ),
-                    title: Text(contact.displayName),
-                    subtitle: Text(contact.phones.isNotEmpty ? contact.phones.first.number : 'No Phone'),
-                    onLongPress: () => _removeContact(index),
+                    title: Text(contact.displayName ?? 'No Name'),
+                    subtitle: Text(
+                        contact.phones.isNotEmpty
+                            ? contact.phones.first.number
+                            : 'No Phone'
+                    ),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.remove_circle_outline),
+                      color: Colors.red,
+                      onPressed: () => controller.removeContact(index),
+                    ),
                   );
                 },
-              ),
+              )),
             ),
           ],
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: (){
+        onPressed: () {
           showMemberAddingBottomSheet(
             context: context,
-            onContactsSelected: (contacts) {
-              setState(() {
-                contacts?.forEach((contact) {
-                  if (!selectedContacts.contains(contact)) {
-                    selectedContacts.add(contact);
-                  }
-                });
-              });
-            },
+            onContactsSelected: controller.addSelectedContacts,
           );
         },
         label: const Row(
@@ -350,7 +244,10 @@ class _AddNewGroupPageState extends State<AddNewGroupPage> {
             SizedBox(width: 8),
             Text(
               "Add Members",
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold
+              ),
             ),
           ],
         ),
@@ -360,94 +257,3 @@ class _AddNewGroupPageState extends State<AddNewGroupPage> {
   }
 }
 
-
-class MemberAdding extends StatefulWidget {
-  final ValueChanged<List<Contact>> onContactsSelected;
-
-
-  MemberAdding({required this.onContactsSelected});
-
-
-  @override
-  _MemberAddingState createState() => _MemberAddingState();
-}
-
-
-class _MemberAddingState extends State<MemberAdding> {
-  List<Contact> contacts = [];
-  Set<String> selectedContactIds = {};
-
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchContacts();
-  }
-
-
-  Future<void> _fetchContacts() async {
-    if (await FlutterContacts.requestPermission()) {
-      List<Contact> fetchedContacts = await FlutterContacts.getContacts(withProperties: true);
-      setState(() => contacts = fetchedContacts);
-    }
-  }
-
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Select Contacts'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.check),
-            onPressed: () {
-              final selectedContacts = contacts.where((contact) => selectedContactIds.contains(contact.id)).toList();
-              widget.onContactsSelected(selectedContacts);
-            },
-          ),
-        ],
-      ),
-      body: contacts.isNotEmpty
-          ? ListView.builder(
-        itemCount: contacts.length,
-        itemBuilder: (context, index) {
-          final contact = contacts[index];
-          final isSelected = selectedContactIds.contains(contact.id);
-
-
-          return GestureDetector(
-            onTap: () {
-              setState(() {
-                isSelected ? selectedContactIds.remove(contact.id) : selectedContactIds.add(contact.id);
-              });
-            },
-            child: Container(
-              color: isSelected ? Colors.blueAccent.withOpacity(0.5) : Colors.transparent,
-              child: ListTile(
-                leading: CircleAvatar(
-                  backgroundImage: contact.photo != null ? MemoryImage(contact.photo!) : null,
-                  child: contact.photo == null ? const Icon(Icons.person) : null,
-                ),
-                title: Text(
-                  contact.displayName ?? 'No Name',
-                  style: TextStyle(color: isSelected ? Colors.white : Colors.black),
-                ),
-                subtitle: Text(
-                  contact.phones.isNotEmpty ? contact.phones.first.number : 'No Phone',
-                  style: TextStyle(color: isSelected ? Colors.white70 : Colors.black54),
-                ),
-                trailing: Icon(
-                  isSelected ? Icons.check_circle : Icons.circle_outlined,
-                  color: isSelected ? Colors.white : Colors.grey,
-                ),
-                //onLongPress: () => _removeContact(index),
-              ),
-            ),
-          );
-        },
-      )
-          : const Center(child: Text('No contacts found or permission denied')),
-    );
-  }
-}

@@ -14,38 +14,29 @@ class ExpenseManagerService {
   static const String groupIdBox = 'groupId';
   static const String memberIdBox = 'memberId';
   static const String profileIdBox = 'profileId';
+  //Add a Map to track open Boxes
+  static final Map<String, Box> _openBoxes = {};
+
 
   // Initialize Hive and Register Adapters
   static Future<void> initHive() async {
     await Hive.initFlutter();
 
+    // Register Adapters (only if not already registered)
+    if (!Hive.isAdapterRegistered(0)) Hive.registerAdapter(ProfileAdapter());
+    if (!Hive.isAdapterRegistered(1)) Hive.registerAdapter(GroupAdapter());
+    if (!Hive.isAdapterRegistered(2)) Hive.registerAdapter(MemberAdapter());
+    if (!Hive.isAdapterRegistered(3)) Hive.registerAdapter(DivisionMethodAdapter());
+    if (!Hive.isAdapterRegistered(4)) Hive.registerAdapter(ExpenseAdapter());
+    if (!Hive.isAdapterRegistered(5)) Hive.registerAdapter(ExpenseSplitAdapter());
+    if (!Hive.isAdapterRegistered(6)) Hive.registerAdapter(MemberIdAdapter());
+    if (!Hive.isAdapterRegistered(7)) Hive.registerAdapter(GroupIdAdapter());
+    if (!Hive.isAdapterRegistered(8)) Hive.registerAdapter(ProfileIdAdapter());
+    await _initializeHive();
 
-    // First try to clear existing data (only needed first time after schema change)
-    try {
-      await clearAllData();
-    } catch (e) {
-      print('Error clearing data: $e');
-    }
+  }
 
-    // Register Adapters
-    if (!Hive.isAdapterRegistered(0)) {
-      Hive.registerAdapter(ProfileAdapter());
-    }
-    if (!Hive.isAdapterRegistered(1)) {
-      Hive.registerAdapter(GroupAdapter());
-    }
-    if (!Hive.isAdapterRegistered(2)) {
-      Hive.registerAdapter(MemberAdapter());
-    }
-    // ... register other adapters ...
-    Hive.registerAdapter(DivisionMethodAdapter());
-    Hive.registerAdapter(ExpenseAdapter());
-    Hive.registerAdapter(ExpenseSplitAdapter());
-    Hive.registerAdapter(MemberIdAdapter());
-    Hive.registerAdapter(GroupIdAdapter());
-    Hive.registerAdapter(ProfileIdAdapter());
-
-    // Open Boxes
+  static Future<void> _initializeHive() async {
     await Hive.openBox<Profile>(profileBoxName);
     await Hive.openBox<Group>(groupBoxName);
     await Hive.openBox<Member>(memberBoxName);
@@ -54,32 +45,38 @@ class ExpenseManagerService {
     await Hive.openBox<int>(groupIdBox);
     await Hive.openBox<int>(memberIdBox);
     await Hive.openBox<int>(profileIdBox);
-
-    // // Register Adapters
-    // Hive.registerAdapter(ProfileAdapter());
-    // Hive.registerAdapter(GroupAdapter());
-    // Hive.registerAdapter(MemberAdapter());
-    // Hive.registerAdapter(DivisionMethodAdapter());
-    // Hive.registerAdapter(ExpenseAdapter());
-    // Hive.registerAdapter(ExpenseSplitAdapter());
-    // Hive.registerAdapter(MemberIdAdapter());
-    // Hive.registerAdapter(GroupIdAdapter());
-    // Hive.registerAdapter(ProfileIdAdapter());
-    //
-    //
-    // // Open Boxes
-    // var box = await Hive.openBox<Profile>(profileBoxName);
-    // var box1 =await Hive.openBox<Group>(groupBoxName);
-    // var box2 =await Hive.openBox<Member>(memberBoxName);
-    // var box3 =await Hive.openBox<Expense>(expenseBoxName);
-    // var box4 =await Hive.openBox(normalBox);
-    // var box5 =await Hive.openBox<int>(groupIdBox);
-    // var box6 =await Hive.openBox<int>(memberIdBox);
-    // var box7 =await Hive.openBox<int>(profileIdBox);
-
-
-
   }
+
+  static Future<Box> _openBox<T>(String boxName) async {
+    try {
+      if (_openBoxes.containsKey(boxName)) {
+        return _openBoxes[boxName]!;
+      }
+
+      // Close the box if it's already open in Hive
+      if (Hive.isBoxOpen(boxName)) {
+        await Hive.box<T>(boxName).close();
+      }
+
+      final box = await Hive.openBox<T>(boxName);
+      _openBoxes[boxName] = box;
+      return box;
+    } catch (e) {
+      // If there's an error, try to recover
+      await Hive.deleteBoxFromDisk(boxName);
+      final box = await Hive.openBox<T>(boxName);
+      _openBoxes[boxName] = box;
+      return box;
+    }
+  }
+  static Future<Box> getBox(String boxName) async {
+    if (!_openBoxes.containsKey(boxName)) {
+      await _openBox(boxName);
+    }
+    return _openBoxes[boxName]!;
+  }
+
+
 
   // PROFILE OPERATIONS
   static Future<void> saveProfile(Profile profile) async {
@@ -89,7 +86,6 @@ class ExpenseManagerService {
     profile.pid=nextId;
     await box.add(profile);
   }
-
 
   static Profile? getProfileByPhone(String phone) {
     final box = Hive.box<Profile>(profileBoxName);
@@ -101,10 +97,6 @@ class ExpenseManagerService {
         return profile;
       }
     }
-
-
-
-
     return null; // Return null if no profile found with given phone number
   }
 
@@ -138,23 +130,34 @@ class ExpenseManagerService {
 
 
 
-  // Add this method to ExpenseManagerService
-  static Future<void> clearAllData() async {
-    await Hive.deleteBoxFromDisk(profileBoxName);
-    await Hive.deleteBoxFromDisk(groupBoxName);
-    await Hive.deleteBoxFromDisk(memberBoxName);
-    await Hive.deleteBoxFromDisk(expenseBoxName);
-    await Hive.deleteBoxFromDisk(normalBox);
-    await Hive.deleteBoxFromDisk(groupIdBox);
-    await Hive.deleteBoxFromDisk(memberIdBox);
-    await Hive.deleteBoxFromDisk(profileIdBox);
+  // Modified clearAllData method
+  static Future<void> clearAllBoxesAndData() async {
+    try {
+      // Close all open boxes
+      await Hive.close();
+
+      // Clear the open boxes tracking map
+      _openBoxes.clear();
+
+      // Delete all boxes from disk
+      await Future.wait([
+        Hive.deleteBoxFromDisk(profileBoxName),
+        Hive.deleteBoxFromDisk(groupBoxName),
+        Hive.deleteBoxFromDisk(memberBoxName),
+        Hive.deleteBoxFromDisk(expenseBoxName),
+        Hive.deleteBoxFromDisk(normalBox),
+        Hive.deleteBoxFromDisk(groupIdBox),
+        Hive.deleteBoxFromDisk(memberIdBox),
+        Hive.deleteBoxFromDisk(profileIdBox),
+      ]);
+
+      // Re-initialize Hive
+      await initHive();
+    } catch (e) {
+      print('Error clearing Hive data: $e');
+      rethrow;
+    }
   }
-
-
-
-
-
-
 
   // GROUP OPERATIONS
   static Future<int> generateNextGroupId() async {
@@ -181,11 +184,26 @@ class ExpenseManagerService {
 
 
   static Future<void> saveTheGroup(Group group) async {
-    final box = Hive.box<Group>(groupBoxName);
-    int nextId = await generateNextGroupId();
-    group.gid=nextId;
-    await box.add(group);
+    try {
+      final box = await getBox(groupBoxName) as Box<Group>;
+      int nextId = await generateNextGroupId();
+      group.gid = nextId;
+      await box.add(group);
+    } catch (e) {
+      // Close and reopen the box if there's an error
+      await _reopenBox<Group>(groupBoxName);
+      throw Exception('Failed to save group: ${e.toString()}');
+    }
   }
+
+  static Future<void> _reopenBox<T>(String boxName) async {
+    if (_openBoxes.containsKey(boxName)) {
+      await _openBoxes[boxName]!.close();
+      _openBoxes.remove(boxName);
+    }
+    await _openBox<T>(boxName);
+  }
+
 
   static Future<int> generateNextProfileId() async {
     final pidBox = Hive.box<int>(profileIdBox);
@@ -194,11 +212,6 @@ class ExpenseManagerService {
     await pidBox.put('lastId', nextId);
     return nextId;
   }
-
-
-
-
-
 
   static List<Group> getAllGroups() {
     final box = Hive.box<Group>(groupBoxName);
