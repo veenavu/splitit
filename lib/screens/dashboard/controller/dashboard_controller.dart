@@ -10,6 +10,8 @@ import 'package:splitit/screens/dashboard/pages/friends_page.dart';
 import 'package:splitit/screens/dashboard/pages/group_list_page.dart';
 import 'package:splitit/screens/dashboard/pages/profile_page.dart';
 
+import 'friendsPage_controller.dart';
+
 class DashboardController extends GetxController {
   RxList<Group> groups = RxList<Group>.empty(growable: true);
   RxInt selectedIndex = 0.obs;
@@ -20,12 +22,14 @@ class DashboardController extends GetxController {
   var isLoading = false.obs; // Observable boolean for loading state
 
 
-  List<Widget> pages = <Widget>[
+  final List<Widget> pages = [
     const GroupListPage(),
-    const FriendsPage(),
+    GetBuilder<FriendsController>(
+      init: FriendsController(),
+      builder: (controller) => const FriendsPage(),
+    ),
     const ActivitiesPage(),
     const ProfilePage(),
-
   ];
 
   @override

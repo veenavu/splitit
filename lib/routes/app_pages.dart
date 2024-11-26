@@ -10,6 +10,9 @@ import 'package:splitit/screens/group/add_group.dart';
 import 'package:splitit/screens/group/gruop_binding/group_binding.dart';
 import 'package:splitit/screens/welcome/get_started.dart';
 import 'package:splitit/screens/welcome/splash.dart';
+import 'package:splitit/screens/dashboard/binding/friendsPage_binding.dart';
+
+import '../screens/dashboard/pages/friends_page.dart';
 
 class AppPages {
   static final pages = [
@@ -46,6 +49,12 @@ class AppPages {
       name: Routes.addExpense,
       page: () => AddExpensePage(),
 
+    ),
+
+    GetPage(
+        name: Routes.friends,
+        page: () => const FriendsPage(),
+        binding: FriendsBinding(),
     ),
 
   ];
