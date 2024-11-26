@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:hive/hive.dart';
 import 'package:splitit/DatabaseHelper/hive_services.dart';
 import 'package:splitit/modelClass/models.dart';
 import 'package:splitit/routes/app_routes.dart';
@@ -18,6 +19,62 @@ class GroupSettings extends StatefulWidget {
 }
 
 class _GroupSettingsState extends State<GroupSettings> {
+  String? currentUserPhone;
+  void getCurrentUserPhone() {
+    final box = Hive.box(ExpenseManagerService.normalBox);
+    currentUserPhone = box.get("mobile");
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    getCurrentUserPhone();
+  }
+
+  String buildMemberBalanceSubtitle(String currentUserPhone, Member member) {
+    double balance = 0.0;
+    List<Expense> expenses = ExpenseManagerService.getExpensesByGroup(widget.group);
+
+    for (var expense in expenses) {
+      // When member is the payer
+      if (expense.paidByMember.phone == member.phone) {
+        // Calculate amount lent to others (excluding self splits)
+        final lentAmount = expense.splits
+            .where((split) => split.member.phone != member.phone)
+            .fold(0.0, (sum, split) => sum + split.amount);
+        balance += lentAmount;
+      }
+
+      // When member owes money
+      final memberSplit = expense.splits.firstWhereOrNull(
+              (split) => split.member.phone == member.phone
+      );
+
+      if (memberSplit != null && expense.paidByMember.phone != member.phone) {
+        balance -= memberSplit.amount;
+      }
+    }
+
+    if (member.phone == currentUserPhone) {
+      if (balance > 0) {
+        return 'You get back ₹${balance.toStringAsFixed(2)}';
+      } else if (balance < 0) {
+        return 'You owe ₹${(-balance).toStringAsFixed(2)}';
+      }
+      return 'All settled up';
+    } else {
+      if (balance > 0) {
+        return 'Gets back ₹${balance.toStringAsFixed(2)}';
+      } else if (balance < 0) {
+        return 'Owes ₹${(-balance).toStringAsFixed(2)}';
+      }
+      return 'All settled up';
+    }
+  }
+
+
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -263,6 +320,18 @@ class _GroupSettingsState extends State<GroupSettings> {
                             fontWeight: FontWeight.w600,
                             fontSize: 16,
                             color: Colors.black87,
+                          ),
+                        ),
+                       // subtitle: buildMemberBalanceSubtitle(currentUserPhone, member, member.balance),
+                        subtitle: Text(
+                          buildMemberBalanceSubtitle(currentUserPhone ?? '', member),
+                          style: TextStyle(
+                            color: buildMemberBalanceSubtitle(currentUserPhone ?? '', member).contains('owe')
+                                ? Colors.red
+                                : buildMemberBalanceSubtitle(currentUserPhone ?? '', member).contains('get')
+                                ? Colors.green
+                                : Colors.grey,
+                            fontSize: 14,
                           ),
                         ),
                       ),
