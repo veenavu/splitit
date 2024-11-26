@@ -349,6 +349,7 @@ try{
     await expense.delete();
   }
 
+
   static String getGroupBalanceText(Member member, Group group) {
     double totalLent = 0.0;
     double totalOwed = 0.0;
@@ -358,18 +359,29 @@ try{
       try {
         // When member is the payer
         if (expense.paidByMember.phone == member.phone) {
-          // Calculate total amount lent to others (excluding self splits)
-          final lentAmount = expense.splits
-              .where((split) => split.member.phone != member.phone)
-              .fold(0.0, (sum, split) => sum + (split.amount ?? 0.0));
-          totalLent += lentAmount;
+          // Get total amount paid for the expense
+          double totalPaid = expense.totalAmount;
+
+          // Find member's own share in this expense
+          double ownShare = 0.0;
+          final selfSplit = expense.splits
+              .firstWhereOrNull((split) => split.member.phone == member.phone);
+          if (selfSplit != null) {
+            ownShare = selfSplit.amount;
+          }
+
+          // Amount lent is total paid minus own share
+          totalLent += (totalPaid - ownShare);
         }
 
-        // When member owes money
-        final memberSplit = expense.splits.firstWhereOrNull((split) => split.member.id == member.id);
+        // When member owes money (someone else paid)
+        if (expense.paidByMember.phone != member.phone) {
+          final memberSplit = expense.splits
+              .firstWhereOrNull((split) => split.member.phone == member.phone);
 
-        if (memberSplit != null && expense.paidByMember.id != member.id) {
-          totalOwed += memberSplit.amount;
+          if (memberSplit != null) {
+            totalOwed += memberSplit.amount;
+          }
         }
       } catch (e) {
         print('Error processing expense: ${e.toString()}');
@@ -389,6 +401,49 @@ try{
       return 'all settled up';
     }
   }
+
+
+
+  // static String getGroupBalanceText(Member member, Group group) {
+  //   double totalLent = 0.0;
+  //   double totalOwed = 0.0;
+  //   final expenses = getExpensesByGroup(group);
+  //
+  //   for (var expense in expenses) {
+  //     try {
+  //       // When member is the payer
+  //       if (expense.paidByMember.phone == member.phone) {
+  //         // Calculate total amount lent to others (excluding self splits)
+  //         final lentAmount = expense.splits
+  //             .where((split) => split.member.phone != member.phone)
+  //             .fold(0.0, (sum, split) => sum + (split.amount ?? 0.0));
+  //         totalLent += lentAmount;
+  //       }
+  //
+  //       // When member owes money
+  //       final memberSplit = expense.splits.firstWhereOrNull((split) => split.member.id == member.id);
+  //
+  //       if (memberSplit != null && expense.paidByMember.id != member.id) {
+  //         totalOwed += memberSplit.amount;
+  //       }
+  //     } catch (e) {
+  //       print('Error processing expense: ${e.toString()}');
+  //       continue; // Skip problematic expenses instead of failing
+  //     }
+  //   }
+  //
+  //   // Handle potential floating point precision issues
+  //   final netAmount = (totalLent - totalOwed).roundToDouble();
+  //
+  //   // Use absolute value for negative amounts
+  //   if (netAmount > 0.0) {
+  //     return 'you get back ₹${netAmount.toStringAsFixed(2)}';
+  //   } else if (netAmount < 0.0) {
+  //     return 'you owe ₹${netAmount.abs().toStringAsFixed(2)}';
+  //   } else {
+  //     return 'all settled up';
+  //   }
+  // }
 
   // EXPENSE SPLITTING HELPERS
   static List<ExpenseSplit> _splitEqually(

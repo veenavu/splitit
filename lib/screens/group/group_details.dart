@@ -20,6 +20,33 @@ class _GroupDetailsState extends State<GroupDetails> {
   Expense? myExpense;
   String? phoneNumber;
 
+  double calculateNetAmount(Expense expense, String memberPhone) {
+    double netAmount = 0.0;
+
+    // If the member is the payer
+    if (expense.paidByMember.phone == memberPhone) {
+      // Add the total amount they paid
+      netAmount += expense.totalAmount;
+
+      // Subtract their own share from splits
+      for (var split in expense.splits) {
+        if (split.member.phone == memberPhone) {
+          netAmount -= split.amount;
+        }
+      }
+    } else {
+      // If they're not the payer, they only need to pay their split
+      for (var split in expense.splits) {
+        if (split.member.phone == memberPhone) {
+          netAmount = -split.amount; // Negative because they owe this amount
+        }
+      }
+    }
+
+    return netAmount;
+  }
+
+
   Future<void> getAllExpenses() async {
     final box = Hive.box(ExpenseManagerService.normalBox);
     phoneNumber = box.get("mobile");
@@ -197,16 +224,7 @@ class _GroupDetailsState extends State<GroupDetails> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            '₹${() {
-                              for (var split in expenses[index].splits) {
-                                if (split.member.phone == phoneNumber) {
-                                  return isYou
-                                      ? (expenses[index].totalAmount - split.amount).toStringAsFixed(3)
-                                      : split.amount.toStringAsFixed(3);
-                                }
-                              }
-                              return '0';
-                            }()}',
+                            '₹${calculateNetAmount(expenses[index], phoneNumber!).abs().toStringAsFixed(2)}',
                             style: const TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
