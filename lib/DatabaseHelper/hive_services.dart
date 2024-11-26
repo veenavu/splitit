@@ -11,18 +11,39 @@ class ExpenseManagerService {
   static const String memberBoxName = 'members';
   static const String expenseBoxName = 'expenses';
   static const String normalBox = 'normalBox';
+  static const String groupIdBox = 'groupId';
+  static const String memberIdBox = 'memberId';
+  static const String profileIdBox = 'profileId';
 
   // Initialize Hive and Register Adapters
   static Future<void> initHive() async {
     await Hive.initFlutter();
 
+
+    // First try to clear existing data (only needed first time after schema change)
+    try {
+      await clearAllData();
+    } catch (e) {
+      print('Error clearing data: $e');
+    }
+
     // Register Adapters
-    Hive.registerAdapter(ProfileAdapter());
-    Hive.registerAdapter(GroupAdapter());
-    Hive.registerAdapter(MemberAdapter());
+    if (!Hive.isAdapterRegistered(0)) {
+      Hive.registerAdapter(ProfileAdapter());
+    }
+    if (!Hive.isAdapterRegistered(1)) {
+      Hive.registerAdapter(GroupAdapter());
+    }
+    if (!Hive.isAdapterRegistered(2)) {
+      Hive.registerAdapter(MemberAdapter());
+    }
+    // ... register other adapters ...
     Hive.registerAdapter(DivisionMethodAdapter());
     Hive.registerAdapter(ExpenseAdapter());
     Hive.registerAdapter(ExpenseSplitAdapter());
+    Hive.registerAdapter(MemberIdAdapter());
+    Hive.registerAdapter(GroupIdAdapter());
+    Hive.registerAdapter(ProfileIdAdapter());
 
     // Open Boxes
     await Hive.openBox<Profile>(profileBoxName);
@@ -30,13 +51,45 @@ class ExpenseManagerService {
     await Hive.openBox<Member>(memberBoxName);
     await Hive.openBox<Expense>(expenseBoxName);
     await Hive.openBox(normalBox);
+    await Hive.openBox<int>(groupIdBox);
+    await Hive.openBox<int>(memberIdBox);
+    await Hive.openBox<int>(profileIdBox);
+
+    // // Register Adapters
+    // Hive.registerAdapter(ProfileAdapter());
+    // Hive.registerAdapter(GroupAdapter());
+    // Hive.registerAdapter(MemberAdapter());
+    // Hive.registerAdapter(DivisionMethodAdapter());
+    // Hive.registerAdapter(ExpenseAdapter());
+    // Hive.registerAdapter(ExpenseSplitAdapter());
+    // Hive.registerAdapter(MemberIdAdapter());
+    // Hive.registerAdapter(GroupIdAdapter());
+    // Hive.registerAdapter(ProfileIdAdapter());
+    //
+    //
+    // // Open Boxes
+    // var box = await Hive.openBox<Profile>(profileBoxName);
+    // var box1 =await Hive.openBox<Group>(groupBoxName);
+    // var box2 =await Hive.openBox<Member>(memberBoxName);
+    // var box3 =await Hive.openBox<Expense>(expenseBoxName);
+    // var box4 =await Hive.openBox(normalBox);
+    // var box5 =await Hive.openBox<int>(groupIdBox);
+    // var box6 =await Hive.openBox<int>(memberIdBox);
+    // var box7 =await Hive.openBox<int>(profileIdBox);
+
+
+
   }
 
   // PROFILE OPERATIONS
   static Future<void> saveProfile(Profile profile) async {
     final box = Hive.box<Profile>(profileBoxName);
+    final pidBox=Hive.box<int>(profileIdBox);
+    int nextId = await generateNextProfileId();
+    profile.pid=nextId;
     await box.add(profile);
   }
+
 
   static Profile? getProfileByPhone(String phone) {
     final box = Hive.box<Profile>(profileBoxName);
@@ -49,18 +102,103 @@ class ExpenseManagerService {
       }
     }
 
+
+
+
     return null; // Return null if no profile found with given phone number
+  }
+
+
+  // Add a method to get profile by ID
+  static Profile? getProfileById(int pid) {
+    final box = Hive.box<Profile>(profileBoxName);
+    for (var profile in box.values) {
+      if (profile.pid == pid) {
+        return profile;
+      }
+    }
+    return null;
   }
 
   static Future<void> updateProfile(Profile profile) async {
     await profile.save();
   }
 
+
+
+
+  static Future<int> generateNextMemberId() async {
+
+    final midBox = Hive.box(memberIdBox);
+    int currentId = midBox.get('lastId', defaultValue: 0)!;
+    int nextId = currentId + 1;
+    await midBox.put('lastId', nextId);
+    return nextId;
+  }
+
+
+
+  // Add this method to ExpenseManagerService
+  static Future<void> clearAllData() async {
+    await Hive.deleteBoxFromDisk(profileBoxName);
+    await Hive.deleteBoxFromDisk(groupBoxName);
+    await Hive.deleteBoxFromDisk(memberBoxName);
+    await Hive.deleteBoxFromDisk(expenseBoxName);
+    await Hive.deleteBoxFromDisk(normalBox);
+    await Hive.deleteBoxFromDisk(groupIdBox);
+    await Hive.deleteBoxFromDisk(memberIdBox);
+    await Hive.deleteBoxFromDisk(profileIdBox);
+  }
+
+
+
+
+
+
+
   // GROUP OPERATIONS
+  static Future<int> generateNextGroupId() async {
+
+    final gidBox = Hive.box(groupIdBox);
+    int currentId = gidBox.get('lastId', defaultValue: 0)!;
+    int nextId = currentId + 1;
+    await gidBox.put('lastId', nextId);
+    return nextId;
+  }
+
+
+  // Modify existing group-related methods to use ID
+  static Group? getGroupById(int groupId) {
+    final box = Hive.box<Group>(groupBoxName);
+    for (var group in box.values) {
+      if (group.gid == groupId) {
+        return group;
+      }
+    }
+    return null;
+  }
+
+
+
   static Future<void> saveTheGroup(Group group) async {
     final box = Hive.box<Group>(groupBoxName);
+    int nextId = await generateNextGroupId();
+    group.gid=nextId;
     await box.add(group);
   }
+
+  static Future<int> generateNextProfileId() async {
+    final pidBox = Hive.box<int>(profileIdBox);
+    int currentId = pidBox.get('lastId', defaultValue: 0)!;
+    int nextId = currentId + 1;
+    await pidBox.put('lastId', nextId);
+    return nextId;
+  }
+
+
+
+
+
 
   static List<Group> getAllGroups() {
     final box = Hive.box<Group>(groupBoxName);
@@ -76,6 +214,8 @@ class ExpenseManagerService {
     }
     return null;
   }
+
+
 
   static Future<void> updateGroup(Group group) async {
     await group.save();
@@ -308,9 +448,10 @@ class ExpenseManagerService {
   }
 
   static List<Expense> getExpensesByGroup(Group group) {
+    //final grpid=group.getGroupId();
     final box = Hive.box<Expense>(expenseBoxName);
     return box.values
-        .where((expense) => expense.group?.groupName.toLowerCase() == group.groupName.toLowerCase())
+        .where((expense) => expense.group?.gid == group.gid)
         .toList();
   }
 
@@ -328,18 +469,18 @@ class ExpenseManagerService {
     for (var expense in expenses) {
       try {
         // When member is the payer
-        if (expense.paidByMember.phone == member.phone) {
+        if (expense.paidByMember.mid== member.mid) {
           // Calculate total amount lent to others (excluding self splits)
           final lentAmount = expense.splits
-              .where((split) => split.member.phone != member.phone)
+              .where((split) => split.member.mid!= member.mid)
               .fold(0.0, (sum, split) => sum + (split.amount ?? 0.0));
           totalLent += lentAmount;
         }
 
         // When member owes money
-        final memberSplit = expense.splits.firstWhereOrNull((split) => split.member.phone == member.phone);
+        final memberSplit = expense.splits.firstWhereOrNull((split) => split.member.mid == member.mid);
 
-        if (memberSplit != null && expense.paidByMember.phone != member.phone) {
+        if (memberSplit != null && expense.paidByMember.mid != member.mid) {
           totalOwed += memberSplit.amount;
         }
       } catch (e) {
@@ -430,7 +571,7 @@ class ExpenseManagerService {
     double totalOwed = 0.0;
 
     // Track group-wise summaries
-    Map<String, ExpenseGroupSummary> groupSummaries = {};
+    Map<Object, ExpenseGroupSummary> groupSummaries = {};
 
     // Track category totals
     Map<String, double> categoryTotals = {};
@@ -461,7 +602,7 @@ class ExpenseManagerService {
         }
 
         // Update group summary
-        final groupKey = expense.group?.groupName ?? 'personal';
+        final groupKey = expense.group?.gid ?? 'personal';
         final existingSummary = groupSummaries[groupKey];
 
         if (existingSummary == null) {

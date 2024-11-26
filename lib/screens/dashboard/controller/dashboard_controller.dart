@@ -44,6 +44,7 @@ class DashboardController extends GetxController {
     if (userProfile.value == null) return;
 
     Member currentMember = Member(
+      mid: userProfile.value!.getProfileId(),
       name: userProfile.value!.name,
       phone: userProfile.value!.phone,
     );
@@ -71,6 +72,7 @@ class DashboardController extends GetxController {
     if (userProfile.value == null) return [];
 
     Member currentMember = Member(
+      mid: userProfile.value!.getProfileId(),
       name: userProfile.value!.name,
       phone: userProfile.value!.phone,
     );
@@ -91,7 +93,7 @@ class DashboardController extends GetxController {
     final phone = box.get("mobile");
 
     userProfile.value =
-        ExpenseManagerService.getProfileByPhone(phone) ?? Profile(name: "User", email: "noob", phone: "2173123");
+        ExpenseManagerService.getProfileByPhone(phone) ?? Profile(pid: 0, name: "User", email: "noob", phone: "2173123");
   }
 
   void onStartGroup(VoidCallback? callback, BuildContext context) {
@@ -104,6 +106,7 @@ class DashboardController extends GetxController {
     balanceText.value = userProfile.value != null
         ? ExpenseManagerService.getBalanceText(
             Member(
+              mid: userProfile.value!.getProfileId(),
               name: userProfile.value!.name,
               phone: userProfile.value!.phone,
             ),
@@ -115,6 +118,7 @@ class DashboardController extends GetxController {
   String getGroupBalanceText(Group group) {
     return ExpenseManagerService.getGroupBalanceText(
       Member(
+        mid: userProfile.value!.getProfileId(),
         name: userProfile.value!.name,
         phone: userProfile.value!.phone,
       ),

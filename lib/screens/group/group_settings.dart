@@ -52,8 +52,8 @@ class _GroupSettingsState extends State<GroupSettings> {
 
               // If result is true, fetch the updated group and update the UI
               if (result == true) {
-                final updatedGroup = await ExpenseManagerService.getGroupByName(
-                  widget.group.groupName,
+               final updatedGroup = await ExpenseManagerService.getGroupById(
+                  widget.group.gid
                 );
 
                 if (updatedGroup != null) {

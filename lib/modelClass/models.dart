@@ -1,30 +1,39 @@
 import 'package:equatable/equatable.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
-
 part 'models.g.dart';
+
 
 // Profile Model
 @HiveType(typeId: 0)
 class Profile extends HiveObject with EquatableMixin {
   @HiveField(0)
-  String name;
+  int pid;
 
   @HiveField(1)
-  String? imagePath;
+  String name;
 
   @HiveField(2)
-  String email;
+  String? imagePath;
 
   @HiveField(3)
+  String email;
+
+  @HiveField(4)
   String phone;
 
   Profile({
+    required this.pid,
     required this.name,
     this.imagePath,
     required this.email,
     required this.phone,
   });
+
+
+  int getProfileId(){
+    return pid;
+  }
 
   @override
   // TODO: implement props
@@ -35,24 +44,28 @@ class Profile extends HiveObject with EquatableMixin {
 @HiveType(typeId: 1)
 class Member extends HiveObject with EquatableMixin {
   @HiveField(0)
-  String name;
+  int mid;
 
   @HiveField(1)
-  String phone;
+  String name;
 
   @HiveField(2)
-  String? imagePath;
+  String phone;
 
   @HiveField(3)
-  List<Group>? groupsIncluded;
+  String? imagePath;
 
   @HiveField(4)
-  double totalAmountOwedByMe;
+  List<Group>? groupsIncluded;
 
   @HiveField(5)
+  double totalAmountOwedByMe;
+
+  @HiveField(6)
   DateTime createdAt;
 
   Member({
+    required this.mid ,
     required this.name,
     required this.phone,
     this.imagePath,
@@ -66,6 +79,12 @@ class Member extends HiveObject with EquatableMixin {
     return group.expenses
         .where((expense) => expense.isMemberInvolved(this))
         .toList();
+  }
+
+
+
+  int getMemberId(){
+    return mid;
   }
 
   // Helper method to get total amount spent in a group
@@ -82,28 +101,33 @@ class Member extends HiveObject with EquatableMixin {
 // Group Model
 @HiveType(typeId: 2)
 class Group extends HiveObject with EquatableMixin{
+
   @HiveField(0)
-  String groupName;
+  int gid;
 
   @HiveField(1)
-  String groupImage;
+  String groupName;
 
   @HiveField(2)
-  String? category;
+  String groupImage;
 
   @HiveField(3)
-  List<Member> members;
+  String? category;
 
   @HiveField(4)
-  List<Expense> expenses;
+  List<Member> members;
 
   @HiveField(5)
-  DateTime createdAt;
+  List<Expense> expenses;
 
   @HiveField(6)
+  DateTime createdAt;
+
+  @HiveField(7)
   List<String>? categories;
 
   Group({
+    required this.gid,
     required this.groupName,
     required this.groupImage,
     this.category,
@@ -127,12 +151,15 @@ class Group extends HiveObject with EquatableMixin{
     double owed = expenses.fold(0.0, (sum, expense) {
       var memberSplit = expense.splits
           .firstWhere((split) => split.member.key == member.key,
-          orElse: () => ExpenseSplit(member: member, amount: 0))
+          orElse: () => ExpenseSplit( member: member, amount: 0))
           .amount;
       return sum + memberSplit;
     });
 
     return paid - owed;
+  }
+  int getGroupId(){
+    return gid;
   }
 
   // Helper method to add expense category
@@ -188,15 +215,19 @@ enum DivisionMethod {
 @HiveType(typeId: 4)
 class ExpenseSplit extends HiveObject {
   @HiveField(0)
-  Member member;
+  int? esid;
 
   @HiveField(1)
-  double amount;
+  Member member;
 
   @HiveField(2)
+  double amount;
+
+  @HiveField(3)
   double? percentage;
 
   ExpenseSplit({
+    this.esid,
     required this.member,
     required this.amount,
     this.percentage,
@@ -220,36 +251,40 @@ class ExpenseSplit extends HiveObject {
 @HiveType(typeId: 5)
 class Expense extends HiveObject {
   @HiveField(0)
-  double totalAmount;
+  int? eid;
 
   @HiveField(1)
-  DivisionMethod divisionMethod;
+  double totalAmount;
 
   @HiveField(2)
-  Member paidByMember;
+  DivisionMethod divisionMethod;
 
   @HiveField(3)
-  List<ExpenseSplit> splits;
+  Member paidByMember;
 
   @HiveField(4)
-  Group? group;
+  List<ExpenseSplit> splits;
 
   @HiveField(5)
-  String description;
+  Group? group;
 
   @HiveField(6)
-  DateTime createdAt;
+  String description;
 
   @HiveField(7)
-  String? category;
+  DateTime createdAt;
 
   @HiveField(8)
-  String? note;
+  String? category;
 
   @HiveField(9)
+  String? note;
+
+  @HiveField(10)
   List<String>? attachments;
 
   Expense({
+    this.eid,
     required this.totalAmount,
     required this.divisionMethod,
     required this.paidByMember,
@@ -312,15 +347,41 @@ class Expense extends HiveObject {
   }
 }
 
+@HiveType(typeId: 6)
+class MemberId extends HiveObject {
+  @HiveField(0)
+  int memberId;
+
+  MemberId({required this.memberId});
+}
+
+@HiveType(typeId: 7)
+class GroupId extends HiveObject {
+  @HiveField(0)
+  int groupId;
+
+  GroupId({required this.groupId});
+}
+
+@HiveType(typeId: 8)
+class ProfileId extends HiveObject {
+  @HiveField(0)
+  int profileId;
+
+  ProfileId({required this.profileId});
+}
+
 
 
 
 class SettlementTransaction {
+  final int? sid;
   final Member from;
   final Member to;
   final double amount;
 
   SettlementTransaction({
+     this.sid,
     required this.from,
     required this.to,
     required this.amount,

@@ -1,6 +1,4 @@
 import 'dart:io';
-
-
 import 'package:flutter/material.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:get/get.dart';
@@ -12,16 +10,11 @@ import 'package:splitit/modelClass/models.dart' as custom;
 import 'package:splitit/modelClass/models.dart';
 import 'package:splitit/utils/common_functions.dart';
 
-
 class AddNewGroupPage extends StatefulWidget {
   const AddNewGroupPage({super.key});
-
-
   @override
   State<AddNewGroupPage> createState() => _AddNewGroupPageState();
 }
-
-
 class _AddNewGroupPageState extends State<AddNewGroupPage> {
   //ExpenseManagerService service=ExpenseManagerService();
   final TextEditingController _groupNameController = TextEditingController();
@@ -29,8 +22,6 @@ class _AddNewGroupPageState extends State<AddNewGroupPage> {
   String? _imagePath;
   List<Contact> selectedContacts = [];
   final List<String> _groupTypes = ['Trip', 'Home', 'Couple', 'Others'];
-
-
   Future<void> _pickImage() async {
     final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
@@ -40,8 +31,6 @@ class _AddNewGroupPageState extends State<AddNewGroupPage> {
       });
     }
   }
-
-
   Future<String?> _saveImagePath(File imageFile) async {
     try {
       final directory = await getApplicationDocumentsDirectory();
@@ -53,70 +42,53 @@ class _AddNewGroupPageState extends State<AddNewGroupPage> {
       return null;
     }
   }
-
-
-
-
-
-
   Future<List<custom.Member>> _getMembersFromContacts() async {
+    final memberid= await ExpenseManagerService.generateNextMemberId();
     return await Future.wait(selectedContacts.map((contact) async {
       String? imagePath;
       if (contact.photo != null) {
         imagePath = await _saveContactImage(contact.photo! as File, contact.displayName ?? 'contact_image');
       }
-
-
       return custom.Member(
         name: contact.displayName ?? 'Unnamed',
         phone: contact.phones.isNotEmpty ? contact.phones.first.number : 'No Phone',
         imagePath: imagePath,
+        mid: memberid,
       );
     }).toList());
   }
-
-
   Future<String?> _saveContactImage(File imageFile, String fileName) async {
     final directory = await getApplicationDocumentsDirectory();
     final filePath = '${directory.path}/$fileName.png';
     final savedImage = await imageFile.copy(filePath);
     return savedImage.path;
   }
-
-
   Future<void> _saveGroup() async {
+   final groupid= await ExpenseManagerService.generateNextGroupId();
+   final memberid= await ExpenseManagerService.generateNextMemberId();
     if (_groupNameController.text.isEmpty || _imagePath == null || _selectedType == null || selectedContacts.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Please fill in all fields and add members")),
       );
       return;
     }
-
-
     List<custom.Member> members = await _getMembersFromContacts();
     final box = Hive.box(ExpenseManagerService.normalBox);
     final phone = box.get("mobile");
-
-
     Profile? userProfile = ExpenseManagerService.getProfileByPhone(phone);
     if(userProfile != null) {
-      members.add(custom.Member(name:userProfile.name , phone: userProfile.phone, imagePath: userProfile.imagePath));
+      members.add(custom.Member( mid: memberid ,name:userProfile.name , phone: userProfile.phone, imagePath: userProfile.imagePath));
     }
-
-
     custom.Group group = custom.Group(
+      gid: groupid,
       groupName: _groupNameController.text,
       groupImage: _imagePath!,
       category: _selectedType,
       members: members,
     );
-
-
     await ExpenseManagerService.saveTheGroup(group);
     print("Navigating to GroupsScreen...");
-    Get.back();;
-
-
+    Get.back();
   }
 
 
@@ -309,11 +281,11 @@ class _AddNewGroupPageState extends State<AddNewGroupPage> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(color: Colors.purple, width: 2),
+                  borderSide: const BorderSide(color: Colors.purple, width: 2),
                 ),
                 errorBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(color: Colors.redAccent, width: 2),
+                  borderSide: const BorderSide(color: Colors.redAccent, width: 2),
                 ),
                 contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
               ),

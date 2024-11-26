@@ -119,8 +119,10 @@ class AuthController extends GetxController {
   }
 
   Future<void> _saveProfileData() async {
+    final proId= await ExpenseManagerService.generateNextProfileId();
     try {
       final profileData = Profile(
+        pid: proId,
         name: nameController.text,
         email: emailController.text,
         phone: signUpPhoneController.text,
