@@ -9,9 +9,9 @@ import 'package:splitit/screens/dashboard/controller/dashboard_controller.dart';
 import 'package:splitit/screens/group/group_editpage.dart';
 
 class GroupSettings extends StatefulWidget {
-  Group group;
+   Group group;
 
-  GroupSettings({super.key, required this.group});
+   GroupSettings({super.key, required this.group});
 
   @override
   State<GroupSettings> createState() => _GroupSettingsState();
@@ -52,8 +52,8 @@ class _GroupSettingsState extends State<GroupSettings> {
 
               // If result is true, fetch the updated group and update the UI
               if (result == true) {
-               final updatedGroup = await ExpenseManagerService.getGroupById(
-                  widget.group.gid
+               final updatedGroup = ExpenseManagerService.getGroupById(
+                  widget.group.id!,
                 );
 
                 if (updatedGroup != null) {

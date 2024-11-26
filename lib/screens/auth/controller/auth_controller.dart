@@ -54,9 +54,6 @@ class AuthController extends GetxController {
         // Save profile data
         await _saveProfileData();
 
-        // Set login status
-        SharedPreferences prefs = await SharedPreferences.getInstance();
-        await prefs.setBool('isLoggedIn', true);
 
         // Show success message
         ScaffoldMessenger.of(Get.context!).showSnackBar(
@@ -80,6 +77,7 @@ class AuthController extends GetxController {
 
         Get.offNamed(Routes.dashboard);
       } catch (e) {
+        print(e);
         // Hide loading indicator if showing
         Get.back();
 
@@ -119,10 +117,8 @@ class AuthController extends GetxController {
   }
 
   Future<void> _saveProfileData() async {
-    final proId= await ExpenseManagerService.generateNextProfileId();
     try {
       final profileData = Profile(
-        pid: proId,
         name: nameController.text,
         email: emailController.text,
         phone: signUpPhoneController.text,

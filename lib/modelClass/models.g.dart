@@ -17,7 +17,7 @@ class ProfileAdapter extends TypeAdapter<Profile> {
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
     return Profile(
-      pid: fields[0] as int,
+      id: fields[0] as int?,
       name: fields[1] as String,
       imagePath: fields[2] as String?,
       email: fields[3] as String,
@@ -30,7 +30,7 @@ class ProfileAdapter extends TypeAdapter<Profile> {
     writer
       ..writeByte(5)
       ..writeByte(0)
-      ..write(obj.pid)
+      ..write(obj.id)
       ..writeByte(1)
       ..write(obj.name)
       ..writeByte(2)
@@ -63,7 +63,7 @@ class MemberAdapter extends TypeAdapter<Member> {
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
     return Member(
-      mid: fields[0] as int,
+      id: fields[0] as int?,
       name: fields[1] as String,
       phone: fields[2] as String,
       imagePath: fields[3] as String?,
@@ -78,7 +78,7 @@ class MemberAdapter extends TypeAdapter<Member> {
     writer
       ..writeByte(7)
       ..writeByte(0)
-      ..write(obj.mid)
+      ..write(obj.id)
       ..writeByte(1)
       ..write(obj.name)
       ..writeByte(2)
@@ -115,7 +115,7 @@ class GroupAdapter extends TypeAdapter<Group> {
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
     return Group(
-      gid: fields[0] as int,
+      id: fields[0] as int?,
       groupName: fields[1] as String,
       groupImage: fields[2] as String,
       category: fields[3] as String?,
@@ -131,7 +131,7 @@ class GroupAdapter extends TypeAdapter<Group> {
     writer
       ..writeByte(8)
       ..writeByte(0)
-      ..write(obj.gid)
+      ..write(obj.id)
       ..writeByte(1)
       ..write(obj.groupName)
       ..writeByte(2)
@@ -170,7 +170,7 @@ class ExpenseSplitAdapter extends TypeAdapter<ExpenseSplit> {
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
     return ExpenseSplit(
-      esid: fields[0] as int?,
+      id: fields[0] as int?,
       member: fields[1] as Member,
       amount: fields[2] as double,
       percentage: fields[3] as double?,
@@ -182,7 +182,7 @@ class ExpenseSplitAdapter extends TypeAdapter<ExpenseSplit> {
     writer
       ..writeByte(4)
       ..writeByte(0)
-      ..write(obj.esid)
+      ..write(obj.id)
       ..writeByte(1)
       ..write(obj.member)
       ..writeByte(2)
@@ -213,7 +213,7 @@ class ExpenseAdapter extends TypeAdapter<Expense> {
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
     return Expense(
-      eid: fields[0] as int?,
+      id: fields[0] as int?,
       totalAmount: fields[1] as double,
       divisionMethod: fields[2] as DivisionMethod,
       paidByMember: fields[3] as Member,
@@ -232,7 +232,7 @@ class ExpenseAdapter extends TypeAdapter<Expense> {
     writer
       ..writeByte(11)
       ..writeByte(0)
-      ..write(obj.eid)
+      ..write(obj.id)
       ..writeByte(1)
       ..write(obj.totalAmount)
       ..writeByte(2)
@@ -262,108 +262,6 @@ class ExpenseAdapter extends TypeAdapter<Expense> {
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is ExpenseAdapter &&
-          runtimeType == other.runtimeType &&
-          typeId == other.typeId;
-}
-
-class MemberIdAdapter extends TypeAdapter<MemberId> {
-  @override
-  final int typeId = 6;
-
-  @override
-  MemberId read(BinaryReader reader) {
-    final numOfFields = reader.readByte();
-    final fields = <int, dynamic>{
-      for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
-    };
-    return MemberId(
-      memberId: fields[0] as int,
-    );
-  }
-
-  @override
-  void write(BinaryWriter writer, MemberId obj) {
-    writer
-      ..writeByte(1)
-      ..writeByte(0)
-      ..write(obj.memberId);
-  }
-
-  @override
-  int get hashCode => typeId.hashCode;
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is MemberIdAdapter &&
-          runtimeType == other.runtimeType &&
-          typeId == other.typeId;
-}
-
-class GroupIdAdapter extends TypeAdapter<GroupId> {
-  @override
-  final int typeId = 7;
-
-  @override
-  GroupId read(BinaryReader reader) {
-    final numOfFields = reader.readByte();
-    final fields = <int, dynamic>{
-      for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
-    };
-    return GroupId(
-      groupId: fields[0] as int,
-    );
-  }
-
-  @override
-  void write(BinaryWriter writer, GroupId obj) {
-    writer
-      ..writeByte(1)
-      ..writeByte(0)
-      ..write(obj.groupId);
-  }
-
-  @override
-  int get hashCode => typeId.hashCode;
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is GroupIdAdapter &&
-          runtimeType == other.runtimeType &&
-          typeId == other.typeId;
-}
-
-class ProfileIdAdapter extends TypeAdapter<ProfileId> {
-  @override
-  final int typeId = 8;
-
-  @override
-  ProfileId read(BinaryReader reader) {
-    final numOfFields = reader.readByte();
-    final fields = <int, dynamic>{
-      for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
-    };
-    return ProfileId(
-      profileId: fields[0] as int,
-    );
-  }
-
-  @override
-  void write(BinaryWriter writer, ProfileId obj) {
-    writer
-      ..writeByte(1)
-      ..writeByte(0)
-      ..write(obj.profileId);
-  }
-
-  @override
-  int get hashCode => typeId.hashCode;
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is ProfileIdAdapter &&
           runtimeType == other.runtimeType &&
           typeId == other.typeId;
 }

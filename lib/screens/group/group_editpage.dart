@@ -284,21 +284,19 @@ class _GroupEditPageState extends State<GroupEditPage> {
           showMemberAddingBottomSheet(
             context: context,
             onContactsSelected: (contacts) async {
-              final memberid= await ExpenseManagerService.generateNextMemberId();
               if (contacts != null && contacts.isNotEmpty) {
                 // Convert selected contacts to `mod.Member` objects
                 List<Member> selectedMembers = contacts.map((contact) {
                   return Member(
-
                     name: contact.displayName,
-                    phone: contact.phones.isNotEmpty ? contact.phones.first.number : '', mid: memberid,
+                    phone: contact.phones.isNotEmpty ? contact.phones.first.number : '',
                   );
                 }).toList();
 
                 // Filter out members already in the group
                 List<Member> uniqueMembers = selectedMembers.where((newMember) {
                   return !widget.groups.members.any((existingMember) =>
-                  existingMember.mid == newMember.mid);
+                  existingMember.id == newMember.id);
                 }).toList();
 
                 // Add unique members to the group

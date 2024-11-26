@@ -1,20 +1,14 @@
 import 'dart:io';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_contacts/contact.dart';
 import 'package:flutter_contacts/flutter_contacts.dart' as fl;
 import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
-import 'package:get/get_navigation/src/snackbar/snackbar.dart';
-import 'package:get/get_state_manager/src/simple/get_controllers.dart';
 import 'package:hive/hive.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
-
-import '../../../DatabaseHelper/hive_services.dart';
-import '../../../modelClass/models.dart';
-
+import 'package:splitit/DatabaseHelper/hive_services.dart';
+import 'package:splitit/modelClass/models.dart';
 
 class AddNewGroupController extends GetxController {
   // Observable variables
@@ -26,15 +20,17 @@ class AddNewGroupController extends GetxController {
 
   // Constants
   final List<String> groupTypes = ['Trip', 'Home', 'Couple', 'Others'];
+
   @override
   void onInit() {
     super.onInit();
     _initializeHiveAndCleanup();
   }
+
   Future<void> _initializeHiveAndCleanup() async {
     try {
       // Clear all existing data and reinitialize
-      await ExpenseManagerService.clearAllBoxesAndData();
+      // await ExpenseManagerService.clearAllBoxesAndData();
     } catch (e) {
       print('Error initializing Hive: $e');
       Get.snackbar(
@@ -46,10 +42,6 @@ class AddNewGroupController extends GetxController {
       );
     }
   }
-
-
-
-
 
   // Image Picker
   Future<void> pickImage() async {
@@ -74,14 +66,13 @@ class AddNewGroupController extends GetxController {
 
   // Contact Management
   void addSelectedContacts(List<fl.Contact>? contacts) {
-    if(contacts!= null){
+    if (contacts != null) {
       for (var contact in contacts) {
         if (!selectedContacts.contains(contact)) {
           selectedContacts.add(contact);
         }
       }
     }
-
   }
 
   void removeContact(int index) {
@@ -111,20 +102,15 @@ class AddNewGroupController extends GetxController {
   }
 
   Future<List<Member>> _convertContactsToMembers() async {
-    final memberid = await ExpenseManagerService.generateNextMemberId();
     return Future.wait(selectedContacts.map((contact) async {
       String? imagePath;
       if (contact.photo != null) {
-        imagePath = await _saveContactImage(
-            contact.photo! as File,
-            contact.displayName ?? 'contact_image'
-        );
+        imagePath = await _saveContactImage(File.fromRawPath(contact.photo!), contact.displayName ?? 'contact_image');
       }
       return Member(
-        name: contact.displayName ?? 'Unnamed',
+        name: contact.displayName,
         phone: contact.phones.isNotEmpty ? contact.phones.first.number : 'No Phone',
         imagePath: imagePath,
-        mid: memberid,
       );
     }).toList());
   }
@@ -148,7 +134,6 @@ class AddNewGroupController extends GetxController {
         selectedContacts.isNotEmpty;
   }
 
-
   // Group Saving
   Future<void> saveGroup() async {
     if (!validateInputs()) {
@@ -169,14 +154,12 @@ class AddNewGroupController extends GetxController {
       List<Member> members = await _convertContactsToMembers();
 
       // Add current user to group members
-      final box = await ExpenseManagerService.getBox(ExpenseManagerService.normalBox);
+      final box = Hive.box(ExpenseManagerService.normalBox);
       final phone = box.get("mobile");
       Profile? userProfile = ExpenseManagerService.getProfileByPhone(phone);
 
       if (userProfile != null) {
-        final memberid = await ExpenseManagerService.generateNextMemberId();
         members.add(Member(
-          mid: memberid,
           name: userProfile.name,
           phone: userProfile.phone,
           imagePath: userProfile.imagePath,
@@ -186,7 +169,6 @@ class AddNewGroupController extends GetxController {
 
       // Create and save group
       Group group = Group(
-        gid: 0, // Will be set in saveTheGroup
         groupName: groupNameController.text,
         groupImage: imagePath.value!,
         category: selectedType.value,
@@ -217,9 +199,6 @@ class AddNewGroupController extends GetxController {
       isLoading.value = false;
     }
   }
-
-
-
 
   @override
   void onClose() {
