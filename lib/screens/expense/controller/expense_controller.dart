@@ -139,13 +139,11 @@ class ExpenseController extends GetxController {
 
     // Initialize member controllers with amounts
     initializeMemberControllersWithCustomAmounts(expense);
-
     // Set group if exists
     if (expense.group != null) {
       selectedGroup.value = expense.group;
     }
   }
-
   void initializeMemberAmountControllers() {
     _memberAmountControllers.forEach((_, controller) => controller.dispose());
     _memberAmountControllers.clear();
@@ -154,12 +152,10 @@ class ExpenseController extends GetxController {
       _memberAmountControllers[member.phone] = TextEditingController();
     }
   }
-
   void fetchGroups() async {
     List<Group> fetchedGroups =  ExpenseManagerService.getAllGroups();
     groups.value = fetchedGroups;
   }
-
   void toggleMemberSelection(Member member) {
     if (selectedSplitOption.value == 'By Amount') {
       final controller = memberAmountControllers[member.phone];
@@ -181,7 +177,6 @@ class ExpenseController extends GetxController {
       }
     }
   }
-
   void onGroupChanged(Group? newGroup) {
     selectedGroup.value = newGroup;
     if (newGroup != null) {
@@ -193,7 +188,6 @@ class ExpenseController extends GetxController {
       selectedPayer.value = null;
     }
   }
-
   void onSplitOptionChanged(String? value) {
     if (value != null) {
       selectedSplitOption.value = value;
@@ -211,7 +205,6 @@ class ExpenseController extends GetxController {
       }
     }
   }
-
   bool validateExpense() {
     return _amountController.text.isNotEmpty &&
         selectedGroup.value != null &&
@@ -315,10 +308,8 @@ class ExpenseController extends GetxController {
           );
         }
       }
-
       Get.back();
       Get.find<DashboardController>().getBalanceText();
-
     } catch (e) {
       Get.snackbar(
         'Error',

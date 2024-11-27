@@ -403,48 +403,6 @@ try{
   }
 
 
-
-  // static String getGroupBalanceText(Member member, Group group) {
-  //   double totalLent = 0.0;
-  //   double totalOwed = 0.0;
-  //   final expenses = getExpensesByGroup(group);
-  //
-  //   for (var expense in expenses) {
-  //     try {
-  //       // When member is the payer
-  //       if (expense.paidByMember.phone == member.phone) {
-  //         // Calculate total amount lent to others (excluding self splits)
-  //         final lentAmount = expense.splits
-  //             .where((split) => split.member.phone != member.phone)
-  //             .fold(0.0, (sum, split) => sum + (split.amount ?? 0.0));
-  //         totalLent += lentAmount;
-  //       }
-  //
-  //       // When member owes money
-  //       final memberSplit = expense.splits.firstWhereOrNull((split) => split.member.id == member.id);
-  //
-  //       if (memberSplit != null && expense.paidByMember.id != member.id) {
-  //         totalOwed += memberSplit.amount;
-  //       }
-  //     } catch (e) {
-  //       print('Error processing expense: ${e.toString()}');
-  //       continue; // Skip problematic expenses instead of failing
-  //     }
-  //   }
-  //
-  //   // Handle potential floating point precision issues
-  //   final netAmount = (totalLent - totalOwed).roundToDouble();
-  //
-  //   // Use absolute value for negative amounts
-  //   if (netAmount > 0.0) {
-  //     return 'you get back ₹${netAmount.toStringAsFixed(2)}';
-  //   } else if (netAmount < 0.0) {
-  //     return 'you owe ₹${netAmount.abs().toStringAsFixed(2)}';
-  //   } else {
-  //     return 'all settled up';
-  //   }
-  // }
-
   // EXPENSE SPLITTING HELPERS
   static List<ExpenseSplit> _splitEqually(
     double totalAmount,
