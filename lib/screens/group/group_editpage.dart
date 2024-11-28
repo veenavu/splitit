@@ -120,43 +120,108 @@ class _GroupEditPageState extends State<GroupEditPage> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(15),
           ),
-          title: const Text(
-            "Delete Member",
-            style: TextStyle(
+          title: Text(
+            "Delete ${member.name}",
+            style: const TextStyle(
               fontWeight: FontWeight.bold,
               color: Colors.purple,
             ),
           ),
-          content: Text(
-            "Are you sure you want to delete ${member.name}?",
-            style: const TextStyle(fontSize: 16),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Get.back(),
-              child: const Text(
-                "Cancel",
-                style: TextStyle(color: Colors.grey),
-              ),
-            ),
-            TextButton(
-              onPressed: () async {
-                await _deleteMember(member, index);
-                Get.back();
-              },
-              child: const Text(
-                "Delete",
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                "Choose how to handle this member's expenses:",
                 style: TextStyle(
-                  color: Colors.red,
-                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
-            ),
-          ],
+              const SizedBox(height: 16),
+              // Cancel Button
+              _buildActionButton(
+                icon: Icons.cancel_outlined,
+                label: "Cancel",
+                description: "Keep member in the group",
+                onTap: () => Get.back(),
+                color: Colors.grey,
+              ),
+              const SizedBox(height: 8),
+              // Force Delete Button
+              _buildActionButton(
+                icon: Icons.delete_forever,
+                label: "Force Delete",
+                description: "Remove member and their expenses",
+                onTap: () => _forceDeleteMember(member, index),
+                color: Colors.red,
+              ),
+              const SizedBox(height: 8),
+              // Migrate Button
+              _buildActionButton(
+                icon: Icons.compare_arrows,
+                label: "Migrate Expenses",
+                description: "Convert to individual expenses",
+                onTap: () => _migrateMemberExpenses(member, index),
+                color: Colors.orange,
+              ),
+            ],
+          ),
         );
       },
     );
   }
+
+  Widget _buildActionButton({
+    required IconData icon,
+    required String label,
+    required String description,
+    required VoidCallback onTap,
+    required Color color,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+          decoration: BoxDecoration(
+            border: Border.all(color: color.withOpacity(0.3)),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, color: color),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: color,
+                      ),
+                    ),
+                    Text(
+                      description,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
 
   // Delete member function
   Future<void> _deleteMember(Member member, int index) async {
@@ -198,6 +263,129 @@ class _GroupEditPageState extends State<GroupEditPage> {
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red.withOpacity(0.1),
         colorText: Colors.red,
+      );
+    }
+  }
+  Future<void> _forceDeleteMember(Member member, int index) async {
+    try {
+      // Get all expenses for the group
+      final expenses = ExpenseManagerService.getExpensesByGroup(widget.groups);
+
+      // Delete all expenses where this member is involved
+      for (var expense in expenses) {
+        if (expense.paidByMember.phone == member.phone ||
+            expense.splits.any((split) => split.member.phone == member.phone)) {
+          await ExpenseManagerService.deleteExpense(expense);
+        }
+      }
+
+      // Remove member from group
+      List<Member> updatedMembers = List<Member>.from(widget.groups.members);
+      updatedMembers.removeAt(index);
+      widget.groups.members = updatedMembers;
+
+      // Update group in storage
+      await ExpenseManagerService.updateGroup(widget.groups);
+
+      // Update UI
+      setState(() {});
+
+      Get.back(); // Close dialog
+      Get.snackbar(
+        'Success',
+        '${member.name} and their expenses have been removed',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.green.withOpacity(0.1),
+        colorText: Colors.green,
+      );
+    } catch (e) {
+      Get.back(); // Close dialog
+      Get.snackbar(
+        'Error',
+        'Failed to delete member: ${e.toString()}',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.withOpacity(0.1),
+        colorText: Colors.red,
+      );
+    }
+  }
+
+// Migrate expenses implementation
+  Future<void> _migrateMemberExpenses(Member member, int index) async {
+    try {
+      // Get all expenses for the group
+      final expenses = ExpenseManagerService.getExpensesByGroup(widget.groups);
+
+      // Handle each expense involving this member
+      for (var expense in expenses) {
+        if (expense.paidByMember.phone == member.phone ||
+            expense.splits.any((split) => split.member.phone == member.phone)) {
+          // Convert group expense to individual expense
+          await _convertToIndividualExpense(expense, member);
+          // Delete the original group expense
+          await ExpenseManagerService.deleteExpense(expense);
+        }
+      }
+
+      // Remove member from group
+      List<Member> updatedMembers = List<Member>.from(widget.groups.members);
+      updatedMembers.removeAt(index);
+      widget.groups.members = updatedMembers;
+
+      // Update group in storage
+      await ExpenseManagerService.updateGroup(widget.groups);
+
+      // Update UI
+      setState(() {});
+
+      Get.back(); // Close dialog
+      Get.snackbar(
+        'Success',
+        '${member.name} removed and expenses migrated to individual',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.green.withOpacity(0.1),
+        colorText: Colors.green,
+      );
+    } catch (e) {
+      Get.back(); // Close dialog
+      Get.snackbar(
+        'Error',
+        'Failed to migrate expenses: ${e.toString()}',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.withOpacity(0.1),
+        colorText: Colors.red,
+      );
+    }
+  }
+
+  // Helper method to convert group expense to individual expense
+  Future<void> _convertToIndividualExpense(Expense groupExpense, Member member) async {
+    // Calculate the individual amount for this member
+    double memberAmount = 0.0;
+
+    if (groupExpense.paidByMember.phone == member.phone) {
+      // If member is the payer, they get credited
+      memberAmount = groupExpense.splits
+          .where((split) => split.member.phone != member.phone)
+          .fold(0.0, (sum, split) => sum + split.amount);
+    } else {
+      // If member owes money
+      final memberSplit = groupExpense.splits
+          .firstWhere((split) => split.member.phone == member.phone);
+      memberAmount = -memberSplit.amount; // Negative because they owe this amount
+    }
+
+    if (memberAmount != 0) {
+      // Create a new individual expense
+      await ExpenseManagerService.createExpense(
+        totalAmount: memberAmount.abs(),
+        divisionMethod: DivisionMethod.equal,
+        paidByMember: memberAmount > 0 ? member : groupExpense.paidByMember,
+        involvedMembers: [
+          memberAmount > 0 ? groupExpense.paidByMember : member
+        ],
+        description: "${groupExpense.description} (Migrated)",
+        group: null, // No group for individual expense
       );
     }
   }
