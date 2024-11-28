@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:hive/hive.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:splitit/DatabaseHelper/hive_services.dart';
 import 'package:splitit/modelClass/models.dart';
@@ -21,6 +22,8 @@ class _GroupEditPageState extends State<GroupEditPage> {
   late TextEditingController _groupNameController;
   File? _imageFile;
   String? _selectedType;
+
+  String? currentUserPhone;
   final List<String> _groupTypes = ['Trip', 'Home', 'Couple', 'Others'];
 
   @override
@@ -31,6 +34,9 @@ class _GroupEditPageState extends State<GroupEditPage> {
     if (widget.groups.groupImage.isNotEmpty) {
       _imageFile = File(widget.groups.groupImage);
     }
+    // Get current user's phone number
+    final box = Hive.box(ExpenseManagerService.normalBox);
+    currentUserPhone = box.get("mobile");
   }
 
   @override
@@ -113,6 +119,18 @@ class _GroupEditPageState extends State<GroupEditPage> {
 
   // Delete member dialog
   void _showDeleteMemberDialog(Member member, int index) {
+    // Check if this is the current user
+    if (member.phone == currentUserPhone) {
+      Get.snackbar(
+        'Cannot Delete',
+        'You cannot remove yourself from the group',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.withOpacity(0.1),
+        colorText: Colors.red,
+      );
+      return;
+    }
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -139,7 +157,6 @@ class _GroupEditPageState extends State<GroupEditPage> {
                 ),
               ),
               const SizedBox(height: 16),
-              // Cancel Button
               _buildActionButton(
                 icon: Icons.cancel_outlined,
                 label: "Cancel",
@@ -148,7 +165,6 @@ class _GroupEditPageState extends State<GroupEditPage> {
                 color: Colors.grey,
               ),
               const SizedBox(height: 8),
-              // Force Delete Button
               _buildActionButton(
                 icon: Icons.delete_forever,
                 label: "Force Delete",
@@ -157,7 +173,6 @@ class _GroupEditPageState extends State<GroupEditPage> {
                 color: Colors.red,
               ),
               const SizedBox(height: 8),
-              // Migrate Button
               _buildActionButton(
                 icon: Icons.compare_arrows,
                 label: "Migrate Expenses",
@@ -222,50 +237,61 @@ class _GroupEditPageState extends State<GroupEditPage> {
     );
   }
 
+  Widget _buildMembersList() {
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: widget.groups.members.length,
+      itemBuilder: (context, index) {
+        final member = widget.groups.members[index];
+        final isCurrentUser = member.phone == currentUserPhone;
 
-  // Delete member function
-  Future<void> _deleteMember(Member member, int index) async {
-    try {
-      // Check if member has any associated expenses
-      final expenses = ExpenseManagerService.getExpensesByGroup(widget.groups);
-      bool hasExpenses = expenses.any((expense) =>
-      expense.paidByMember.phone == member.phone ||
-          expense.splits.any((split) => split.member.phone == member.phone));
-
-      if (hasExpenses) {
-        Get.snackbar(
-          'Cannot Delete Member',
-          'This member has associated expenses in the group',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red.withOpacity(0.1),
-          colorText: Colors.red,
+        return Card(
+          elevation: 2,
+          margin: const EdgeInsets.symmetric(vertical: 4),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: ListTile(
+            leading: CircleAvatar(
+              backgroundColor: isCurrentUser ? Colors.purple : Colors.purple.shade100,
+              child: Text(
+                member.name[0].toUpperCase(),
+                style: TextStyle(
+                  color: isCurrentUser ? Colors.white : Colors.purple,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            title: Text(
+              member.name + (isCurrentUser ? ' (You)' : ''),
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+            subtitle: Text(
+              member.phone,
+              style: TextStyle(
+                color: Colors.grey.shade600,
+                fontSize: 14,
+              ),
+            ),
+            trailing: isCurrentUser ? null : IconButton(
+              icon: const Icon(
+                Icons.delete_outline,
+                color: Colors.red,
+              ),
+              onPressed: () => _showDeleteMemberDialog(member, index),
+            ),
+          ),
         );
-        return;
-      }
-
-      setState(() {
-        widget.groups.members.removeAt(index);
-      });
-
-      await ExpenseManagerService.updateGroup(widget.groups);
-
-      Get.snackbar(
-        'Success',
-        '${member.name} has been removed from the group',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green.withOpacity(0.1),
-        colorText: Colors.green,
-      );
-    } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to delete member: ${e.toString()}',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.withOpacity(0.1),
-        colorText: Colors.red,
-      );
-    }
+      },
+    );
   }
+
+
+
   Future<void> _forceDeleteMember(Member member, int index) async {
     try {
       // Get all expenses for the group
@@ -557,54 +583,7 @@ class _GroupEditPageState extends State<GroupEditPage> {
               const SizedBox(height: 8),
 
               // Members List
-              ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: widget.groups.members.length,
-                itemBuilder: (context, index) {
-                  final member = widget.groups.members[index];
-                  return Card(
-                    elevation: 2,
-                    margin: const EdgeInsets.symmetric(vertical: 4),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: Colors.purple.shade100,
-                        child: Text(
-                          member.name[0].toUpperCase(),
-                          style: const TextStyle(
-                            color: Colors.purple,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      title: Text(
-                        member.name,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                      subtitle: Text(
-                        member.phone,
-                        style: TextStyle(
-                          color: Colors.grey.shade600,
-                          fontSize: 14,
-                        ),
-                      ),
-                      trailing: IconButton(
-                        icon: const Icon(
-                          Icons.delete_outline,
-                          color: Colors.red,
-                        ),
-                        onPressed: () => _showDeleteMemberDialog(member, index),
-                      ),
-                    ),
-                  );
-                },
-              ),
+              _buildMembersList()
             ],
           ),
         ),
