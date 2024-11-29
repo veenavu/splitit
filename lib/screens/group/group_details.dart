@@ -6,6 +6,8 @@ import 'package:splitit/modelClass/models.dart';
 import 'package:splitit/screens/expense/add_expense_page.dart';
 import 'package:splitit/screens/group/group_settings.dart';
 
+import '../../routes/app_routes.dart';
+
 class GroupDetails extends StatefulWidget {
   final Group groupItem;
 
@@ -146,9 +148,10 @@ class _GroupDetailsState extends State<GroupDetails> {
                 return GestureDetector(
                   onTap: () {
 
-                    Get.to(() => AddExpensePage(
-                          expense: expenses[index],
-                        ))?.then((value) => getAllExpenses());
+                    // Get.to(() => AddExpensePage(
+                    //       expense: expenses[index],
+                    //     ))?.then((value) => getAllExpenses());
+                    Get.toNamed(Routes.displayExpense, arguments: {'expense': expenses[index]});
                   },
                   onLongPress: () async {
                     showDialog(

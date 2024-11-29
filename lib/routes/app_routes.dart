@@ -9,4 +9,5 @@ abstract class Routes {
   static const groupDetails = '/group-details';
   static const addExpense = '/add-expense';
   static const friends = '/friends';
+  static const displayExpense = '/display-expense';
 }
