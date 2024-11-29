@@ -5,6 +5,8 @@ import 'package:splitit/modelClass/models.dart';
 import 'package:splitit/screens/dashboard/controller/dashboard_controller.dart';
 import 'package:splitit/screens/dashboard/dashboard.dart';
 
+import '../../dashboard/controller/friendsPage_controller.dart';
+
 class ExpenseController extends GetxController {
   final _descriptionController = TextEditingController();
   final _amountController = TextEditingController();
@@ -146,6 +148,11 @@ class ExpenseController extends GetxController {
           );
         }
       }
+      // In your expense controller after saving/updating/deleting an expense
+      Get.find<FriendsController>().loadMembers();
+
+// In your settlement controller after completing a settlement
+      Get.find<FriendsController>().loadMembers();
 
       // Refresh the dashboard after saving
       Get.find<DashboardController>().getBalanceText();

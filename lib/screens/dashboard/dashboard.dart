@@ -80,6 +80,7 @@ class Dashboard extends StatelessWidget {
               BottomNavigationBar(
                 currentIndex: controller.selectedIndex.value,
                 onTap: (index) {
+
                   controller.selectedIndex.value = index;
                 },
                 selectedItemColor: Theme
@@ -102,6 +103,8 @@ class Dashboard extends StatelessWidget {
                     label: 'Groups',
                   ),
                   const BottomNavigationBarItem(
+
+
                     icon: Icon(Icons.person, color: Colors.black),
                     label: 'Friends',
                   ),

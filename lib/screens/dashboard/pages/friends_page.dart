@@ -6,6 +6,7 @@ import '../controller/friendsPage_controller.dart';
 class FriendsPage extends GetView<FriendsController> {
   const FriendsPage({Key? key}) : super(key: key);
 
+
   @override
   Widget build(BuildContext context) {
     // Ensure controller is initialized

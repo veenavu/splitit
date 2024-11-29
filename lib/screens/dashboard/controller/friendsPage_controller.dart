@@ -1,5 +1,3 @@
-
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -28,31 +26,53 @@ class FriendsController extends GetxController {
   void loadMembers() {
     try {
       isLoading.value = true;
+      final currentUserPhone = userProfile.value?.phone;
+      if (currentUserPhone == null) return;
 
-      // Get all groups
-      final groups = ExpenseManagerService.getAllGroups();
+      // Get all expenses from all groups
+      List<Expense> allExpenses = ExpenseManagerService.getAllExpenses();
 
-      // Create a map to store unique members and their balances
+      // Create maps to store member data
       Map<String, Member> uniqueMembers = {};
       Map<String, double> memberTotalBalances = {};
 
-      // Process each group
-      for (var group in groups) {
-        for (var member in group.members) {
-          // Skip if it's the current user
-          if (member.phone == userProfile.value?.phone) continue;
+      // Process all expenses
+      for (var expense in allExpenses) {
+        try {
+          // When current user is the payer
+          if (expense.paidByMember.phone == currentUserPhone) {
+            // Get all splits except current user's
+            for (var split in expense.splits) {
+              if (split.member.phone != currentUserPhone) {
+                uniqueMembers[split.member.phone] = split.member;
+                memberTotalBalances[split.member.phone] =
+                    (memberTotalBalances[split.member.phone] ?? 0) + split.amount;
+              }
+            }
+          }
 
-          // Store unique member
-          uniqueMembers[member.phone] = member;
+          // When someone else paid
+          if (expense.paidByMember.phone != currentUserPhone) {
+            // Add payer to unique members
+            uniqueMembers[expense.paidByMember.phone] = expense.paidByMember;
 
-          // Calculate balance for this member in this group
-          double groupBalance = ExpenseManagerService.getGroupBalance(group, member);
-          memberTotalBalances[member.phone] =
-              (memberTotalBalances[member.phone] ?? 0) + groupBalance;
+            // Find current user's split
+            var currentUserSplit = expense.splits.firstWhere(
+                    (split) => split.member.phone == currentUserPhone,
+                orElse: () => ExpenseSplit(member: expense.paidByMember, amount: 0)
+            );
+
+            // Subtract what current user owes to the payer
+            memberTotalBalances[expense.paidByMember.phone] =
+                (memberTotalBalances[expense.paidByMember.phone] ?? 0) - currentUserSplit.amount;
+          }
+        } catch (e) {
+          print('Error processing expense: ${e.toString()}');
+          continue;
         }
       }
 
-      // Convert to list of maps with member and balance info
+      // Convert to list format for the view
       memberBalances.value = uniqueMembers.entries.map((entry) {
         return {
           'member': entry.value,
@@ -61,16 +81,16 @@ class FriendsController extends GetxController {
       }).toList();
 
       // Sort by absolute balance value (highest first)
-      memberBalances.sort((a, b) =>
-          b['balance'].abs().compareTo(a['balance'].abs()));
+      memberBalances.sort((a, b) => b['balance'].abs().compareTo(a['balance'].abs()));
 
+    } catch (e) {
+      print('Error loading members: $e');
     } finally {
       isLoading.value = false;
     }
   }
 
   void navigateToSettlement(Member member, double balance) {
-    // TODO: Implement settlement navigation
     Get.toNamed('/settlement', arguments: {
       'member': member,
       'balance': balance,
