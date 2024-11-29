@@ -45,8 +45,7 @@ class FriendsController extends GetxController {
             for (var split in expense.splits) {
               if (split.member.phone != currentUserPhone) {
                 uniqueMembers[split.member.phone] = split.member;
-                memberTotalBalances[split.member.phone] =
-                    (memberTotalBalances[split.member.phone] ?? 0) + split.amount;
+                memberTotalBalances[split.member.phone] = (memberTotalBalances[split.member.phone] ?? 0) + split.amount;
               }
             }
           }
@@ -57,14 +56,10 @@ class FriendsController extends GetxController {
             uniqueMembers[expense.paidByMember.phone] = expense.paidByMember;
 
             // Find current user's split
-            var currentUserSplit = expense.splits.firstWhere(
-                    (split) => split.member.phone == currentUserPhone,
-                orElse: () => ExpenseSplit(member: expense.paidByMember, amount: 0)
-            );
+            var currentUserSplit = expense.splits.firstWhere((split) => split.member.phone == currentUserPhone, orElse: () => ExpenseSplit(member: expense.paidByMember, amount: 0));
 
             // Subtract what current user owes to the payer
-            memberTotalBalances[expense.paidByMember.phone] =
-                (memberTotalBalances[expense.paidByMember.phone] ?? 0) - currentUserSplit.amount;
+            memberTotalBalances[expense.paidByMember.phone] = (memberTotalBalances[expense.paidByMember.phone] ?? 0) - currentUserSplit.amount;
           }
         } catch (e) {
           print('Error processing expense: ${e.toString()}');
@@ -82,7 +77,6 @@ class FriendsController extends GetxController {
 
       // Sort by absolute balance value (highest first)
       memberBalances.sort((a, b) => b['balance'].abs().compareTo(a['balance'].abs()));
-
     } catch (e) {
       print('Error loading members: $e');
     } finally {
