@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../DatabaseHelper/hive_services.dart';
 import '../../modelClass/models.dart';
+import '../../routes/app_routes.dart';
 
 
 class ExpenseDisplayPage extends StatelessWidget {
@@ -36,7 +37,7 @@ class ExpenseDisplayPage extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.edit, color: Colors.white),
             onPressed: () {
-              Get.toNamed('/add-expense', arguments: {'expense': expense});
+              Get.toNamed(Routes.ediitExpense, arguments: {'expense': expense});
             },
             tooltip: 'Edit Expense',
           ),
