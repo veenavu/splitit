@@ -64,17 +64,17 @@ class AppPages {
         name: Routes.displayExpense,
         page:  () {
           final args = Get.arguments;
-          final expense = args['expense'] as Expense;
-          return ExpenseDisplayPage(expense: expense);
+          // final expense = args['expense'] as Expense;
+          return const ExpenseDisplayPage();
         },
     ),
     GetPage(
       name: Routes.ediitExpense,
       page: () {
         final args = Get.arguments;
-        final expense = args['expense'] as Expense;
-        final group = args['group'] as Group;
-        return EditExpensePage(expense: expense, group: group,);
+        // final expense = args['expense'] as Expense;
+        // final group = args['group'] as Group;
+        return EditExpensePage(/*expense: expense, group: group,*/);
       },
     ),
 

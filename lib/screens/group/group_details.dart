@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:splitit/DatabaseHelper/hive_services.dart';
 import 'package:splitit/modelClass/models.dart';
-import 'package:splitit/screens/expense/add_expense_page.dart';
+import 'package:splitit/screens/expense/controller/expense_controller.dart';
 import 'package:splitit/screens/group/group_settings.dart';
 
 import '../../routes/app_routes.dart';
@@ -48,7 +48,6 @@ class _GroupDetailsState extends State<GroupDetails> {
     return netAmount;
   }
 
-
   Future<void> getAllExpenses() async {
     final box = Hive.box(ExpenseManagerService.normalBox);
     phoneNumber = box.get("mobile");
@@ -66,6 +65,8 @@ class _GroupDetailsState extends State<GroupDetails> {
 
   @override
   Widget build(BuildContext context) {
+    final expenseController = Get.put(ExpenseController());
+
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -147,11 +148,11 @@ class _GroupDetailsState extends State<GroupDetails> {
                 bool isYou = phoneNumber == expenses[index].paidByMember.phone;
                 return GestureDetector(
                   onTap: () {
-
-                    // Get.to(() => AddExpensePage(
-                    //       expense: expenses[index],
-                    //     ))?.then((value) => getAllExpenses());
-                    Get.toNamed(Routes.displayExpense, arguments: {'expense': expenses[index]});
+                    expenseController.onExpenseSelected(expenses[index]);
+                    _navigateToExpenseDisplay(() {
+                      getAllExpenses();
+                    });
+                    // Get.toNamed(Routes.displayExpense,/* arguments: {'expense': expenses[index]}*/);
                   },
                   onLongPress: () async {
                     showDialog(
@@ -256,6 +257,12 @@ class _GroupDetailsState extends State<GroupDetails> {
     );
   }
 
+  _navigateToExpenseDisplay(VoidCallback callback) {
+    Get.toNamed(Routes.displayExpense)!.then((value) {
+      callback.call();
+    });
+  }
+
   Widget _buildButton(String text, Color color, {VoidCallback? onPressed}) {
     return ElevatedButton(
       onPressed: onPressed,
@@ -282,7 +289,4 @@ class _GroupDetailsState extends State<GroupDetails> {
       ),
     );
   }
-
-
-
 }

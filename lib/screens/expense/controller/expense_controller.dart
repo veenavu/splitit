@@ -1,9 +1,9 @@
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:splitit/DatabaseHelper/hive_services.dart';
 import 'package:splitit/modelClass/models.dart';
 import 'package:splitit/screens/dashboard/controller/dashboard_controller.dart';
-import 'package:splitit/screens/dashboard/dashboard.dart';
 
 import '../../dashboard/controller/friendsPage_controller.dart';
 
@@ -19,6 +19,14 @@ class ExpenseController extends GetxController {
   final Rxn<Group> selectedGroup = Rxn<Group>();
   final selectedPayer = Rx<Member?>(null);
   final RxString selectedSplitOption = 'Equally'.obs;
+
+ late Expense selectedExpense;
+
+
+  onExpenseSelected(Expense expense) {
+    selectedExpense = expense ;
+    print(selectedExpense.description);
+  }
 
   RxDouble remaining = 0.0.obs;
 
@@ -104,6 +112,7 @@ class ExpenseController extends GetxController {
         }
 
         if (existingExpense != null) {
+          selectedExpense = existingExpense;
           await ExpenseManagerService.updateExpense(
             expense: existingExpense,
             totalAmount: totalAmount,
@@ -128,6 +137,7 @@ class ExpenseController extends GetxController {
       } else {
         // Handle equal split
         if (existingExpense != null) {
+          selectedExpense = existingExpense;
           await ExpenseManagerService.updateExpense(
             expense: existingExpense,
             totalAmount: totalAmount,
@@ -149,7 +159,7 @@ class ExpenseController extends GetxController {
         }
       }
       // In your expense controller after saving/updating/deleting an expense
-      Get.find<FriendsController>().loadMembers();
+      Get.put(FriendsController()).loadMembers();
 
 // In your settlement controller after completing a settlement
       Get.find<FriendsController>().loadMembers();

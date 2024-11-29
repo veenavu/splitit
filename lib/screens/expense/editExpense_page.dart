@@ -12,12 +12,14 @@ import 'package:splitit/modelClass/models.dart';
 import 'package:splitit/screens/expense/controller/expense_controller.dart';
 
 class EditExpensePage extends StatelessWidget {
-  final Expense expense;
-  final Group group;
+  // final Expense expense;
+  // final Group group;
 
-  EditExpensePage({super.key, required this.expense,required this.group}){
+  EditExpensePage({super.key, /*required this.expense,required this.group*/}){
     final controller = Get.put(ExpenseController());
     // Initialize only specific fields
+    var expense = controller.selectedExpense;
+    controller.initializeExpenseData(controller.selectedExpense);
     controller.descriptionController.text = expense.description;
     controller.amountController.text = expense.totalAmount.toString();
     controller.selectedGroup.value = expense.group;
@@ -30,7 +32,8 @@ class EditExpensePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.find<ExpenseController>();
-
+    var expense = controller.selectedExpense;
+    var group = controller.selectedExpense.group!;
     return Scaffold(
       resizeToAvoidBottomInset: false,
       backgroundColor: Colors.grey[100],

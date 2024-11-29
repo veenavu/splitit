@@ -1,21 +1,43 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:splitit/screens/expense/controller/expense_controller.dart';
+
 import '../../DatabaseHelper/hive_services.dart';
 import '../../modelClass/models.dart';
 import '../../routes/app_routes.dart';
 import '../dashboard/controller/dashboard_controller.dart';
 
 
-class ExpenseDisplayPage extends StatelessWidget {
-  final Expense expense;
+class ExpenseDisplayPage extends StatefulWidget {
+  // final Expense expense;
 
   const ExpenseDisplayPage({
     Key? key,
-    required this.expense,
+    // required this.expense,
   }) : super(key: key);
 
   @override
+  State<ExpenseDisplayPage> createState() => _ExpenseDisplayPageState();
+}
+
+class _ExpenseDisplayPageState extends State<ExpenseDisplayPage> {
+  @override
+  void initState() {
+    // TODO: implement initState
+    // final expenseController =;
+    //
+    // expense = expenseController.selectedExpense!.value;
+    super.initState();
+  }
+
+  getInitData(){
+
+  }
+  @override
   Widget build(BuildContext context) {
+    Expense expense = Get.find<ExpenseController>().selectedExpense;
+
+    // final expense = expenseController.selectedExpense.value;
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -38,7 +60,12 @@ class ExpenseDisplayPage extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.edit, color: Colors.white),
             onPressed: () {
-              Get.toNamed(Routes.ediitExpense, arguments: {'expense': expense, 'group': expense.group});
+              _navigateToEditPage((){
+                setState(() {
+                  expense = Get.find<ExpenseController>().selectedExpense;
+                });
+              });
+              // Get.toNamed(Routes.ediitExpense, arguments: {'expense': expense, 'group': expense.group});
             },
             tooltip: 'Edit Expense',
           ),
@@ -255,7 +282,7 @@ class ExpenseDisplayPage extends StatelessWidget {
                     // const SizedBox(height: 12),
                     // _buildInfoRow(
                     //   'Category',
-                    //   expense.category ?? 'Uncategorized',
+                    //   expense!.category ?? 'Uncategorized',
                     //   Icons.category,
                     // ),
                     const SizedBox(height: 12),
@@ -317,6 +344,13 @@ class ExpenseDisplayPage extends StatelessWidget {
         backgroundColor: Colors.purple,
       ),
     );
+  }
+
+  _navigateToEditPage(VoidCallback callback){
+    Get.toNamed(Routes.ediitExpense, /*arguments: {'expense': expense, 'group': expense!.group}*/)?.then((value){
+      callback.call();
+    });
+
   }
 
   Widget _buildInfoRow(String label, String value, IconData icon) {
@@ -384,7 +418,7 @@ class ExpenseDisplayPage extends StatelessWidget {
             TextButton(
               onPressed: () async {
                 try {
-                  await ExpenseManagerService.deleteExpense(expense);
+              await ExpenseManagerService.deleteExpense(Get.find<ExpenseController>().selectedExpense);
                   Get.back();  // Close dialog
                   Get.back();  // Return to previous screen
                   Get.snackbar(
