@@ -117,85 +117,6 @@ class _GroupEditPageState extends State<GroupEditPage> {
     }
   }
 
-  // Delete member dialog
-  void _showDeleteMemberDialog(Member member, int index) {
-    // Check if this is the current user
-    if (member.phone == currentUserPhone) {
-      Get.snackbar(
-        'Cannot Delete',
-        'You cannot remove yourself from the group',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.withOpacity(0.1),
-        colorText: Colors.red,
-      );
-      return;
-    }
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15),
-          ),
-          title: Text(
-            "Delete ${member.name}",
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Colors.purple,
-            ),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                "Choose how to handle this member's expenses:",
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: 16),
-              _buildActionButton(
-                icon: Icons.cancel_outlined,
-                label: "Cancel",
-                description: "Keep member in the group",
-                onTap: () => Get.back(),
-                color: Colors.grey,
-              ),
-              const SizedBox(height: 8),
-              _buildActionButton(
-                icon: Icons.compare_arrows,
-                label: "Migrate Expenses",
-                description: "Convert to individual expenses",
-                onTap: () => _migrateMemberExpenses(member, index),
-                color: Colors.orange,
-              ),
-              const SizedBox(height: 8),
-              _buildActionButton(
-                icon: Icons.delete_forever,
-                label: "Force Delete",
-                description: "Remove member and their expenses",
-                onTap: () => _forceDeleteMember(member, index),
-                color: Colors.red,
-              ),
-
-              const SizedBox(height: 8),
-              _buildActionButton(
-                icon: Icons.person_remove_alt_1,
-                label: "Remove member with unchanged Expense",
-                description: "Convert to individual expenses",
-                onTap: () => _RemoveMemberUnchangedExpense(member, index),
-                color: Colors.red,
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
   Widget _buildActionButton({
     required IconData icon,
     required String label,
@@ -286,314 +207,112 @@ class _GroupEditPageState extends State<GroupEditPage> {
                 fontSize: 14,
               ),
             ),
-            trailing: isCurrentUser ? null : IconButton(
-              icon: const Icon(
-                Icons.delete_outline,
-                color: Colors.red,
-              ),
-              onPressed: () => _showDeleteMemberDialog(member, index),
-            ),
+            trailing: isCurrentUser
+                ? null
+                : IconButton(
+                    icon: const Icon(
+                      Icons.delete_outline,
+                      color: Colors.red,
+                    ),
+                    onPressed: () => _showDeleteMemberDialog(member, index),
+                  ),
           ),
         );
       },
     );
   }
 
+  void _showDeleteMemberDialog(Member member, int index) {
+    // Get member's balance in the group
+    final double memberBalance = ExpenseManagerService.getGroupBalance(widget.groups, member);
 
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          title: Text(
+            'Remove ${member.name}',
+            style: const TextStyle(
+              color: Colors.deepPurple,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (memberBalance != 0)
+                Text(
+                  'Cannot remove ${member.name} as they have pending balance of ₹${memberBalance.abs().toStringAsFixed(2)}',
+                  style: const TextStyle(color: Colors.red),
+                )
+              else
+                Text(
+                  'Are you sure you want to remove ${member.name} from the group?',
+                  style: const TextStyle(fontSize: 16),
+                ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Get.back(),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(color: Colors.grey),
+              ),
+            ),
+            if (memberBalance == 0)
+              TextButton(
+                onPressed: () async {
+                  try {
+                    // Remove member from the group
+                    widget.groups.members.removeAt(index);
 
-  Future<void> _forceDeleteMember(Member member, int index) async {
-    try {
-      // Get all expenses for the group
-      final expenses = ExpenseManagerService.getExpensesByGroup(widget.groups);
+                    // Save the updated group
+                    await ExpenseManagerService.updateGroup(widget.groups);
 
-      // Handle each expense that involves the member being deleted
-      for (var expense in expenses) {
-        bool memberIsPayer = expense.paidByMember.phone == member.phone;
-        bool memberInSplits = expense.splits.any((split) => split.member.phone == member.phone);
+                    Get.back();
 
-        if (memberIsPayer || memberInSplits) {
-          // Get the split amount for the member being deleted
-          double memberSplitAmount = 0.0;
-          for (var split in expense.splits) {
-            if (split.member.phone == member.phone) {
-              memberSplitAmount = split.amount;
-              break;
-            }
-          }
+                    // Show success message
+                    Get.snackbar(
+                      'Success',
+                      '${member.name} has been removed from the group',
+                      snackPosition: SnackPosition.BOTTOM,
+                      backgroundColor: Colors.green.withOpacity(0.1),
+                      colorText: Colors.green,
+                      duration: const Duration(seconds: 2),
+                    );
 
-          // Calculate new total amount by subtracting member's split
-          double newTotalAmount = expense.totalAmount - memberSplitAmount;
+                    // Refresh the UI
+                    setState(() {});
 
-          if (memberIsPayer) {
-            // If deleted member was the payer, find a new payer from remaining members
-            Member? newPayer = expense.splits
-                .where((split) => split.member.phone != member.phone)
-                .firstOrNull
-                ?.member;
-
-            if (newPayer != null) {
-              // Create new splits excluding the deleted member
-              List<ExpenseSplit> newSplits = expense.splits
-                  .where((split) => split.member.phone != member.phone)
-                  .map((split) {
-                // Calculate new split amount proportionally
-                double ratio = split.amount / (expense.totalAmount - memberSplitAmount);
-                return ExpenseSplit(
-                  member: split.member,
-                  amount: newTotalAmount * ratio,
-                  percentage: split.percentage,
-                );
-              })
-                  .toList();
-
-              // Update the expense with new payer and adjusted splits
-              await ExpenseManagerService.updateExpense(
-                expense: expense,
-                totalAmount: newTotalAmount,
-                divisionMethod: expense.divisionMethod,
-                paidByMember: newPayer,
-                involvedMembers: newSplits.map((split) => split.member).toList(),
-                customAmounts: newSplits.map((split) => split.amount).toList(),
-                description: expense.description,
-                group: widget.groups,
-              );
-            } else {
-              // If no other members in splits, delete the expense
-              await ExpenseManagerService.deleteExpense(expense);
-            }
-          } else if (memberInSplits) {
-            // If member was only in splits, create new splits without the member
-            List<ExpenseSplit> newSplits = expense.splits
-                .where((split) => split.member.phone != member.phone)
-                .map((split) {
-              // Calculate new split amount proportionally
-              double ratio = split.amount / (expense.totalAmount - memberSplitAmount);
-              return ExpenseSplit(
-                member: split.member,
-                amount: newTotalAmount * ratio,
-                percentage: split.percentage,
-              );
-            })
-                .toList();
-
-            // Update the expense with adjusted total and splits
-            await ExpenseManagerService.updateExpense(
-              expense: expense,
-              totalAmount: newTotalAmount,
-              divisionMethod: expense.divisionMethod,
-              paidByMember: expense.paidByMember,
-              involvedMembers: newSplits.map((split) => split.member).toList(),
-              customAmounts: newSplits.map((split) => split.amount).toList(),
-              description: expense.description,
-              group: widget.groups,
-            );
-          }
-        }
-      }
-
-      // Remove member from group
-      List<Member> updatedMembers = List<Member>.from(widget.groups.members);
-      updatedMembers.removeAt(index);
-      widget.groups.members = updatedMembers;
-
-      // Update group in storage
-      await ExpenseManagerService.updateGroup(widget.groups);
-
-      // Update UI
-      setState(() {});
-
-      Get.back(); // Close dialog
-      Get.snackbar(
-        'Success',
-        '${member.name} has been removed and expenses have been adjusted',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green.withOpacity(0.1),
-        colorText: Colors.green,
-      );
-    } catch (e) {
-      Get.back(); // Close dialog
-      Get.snackbar(
-        'Error',
-        'Failed to delete member: ${e.toString()}',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.withOpacity(0.1),
-        colorText: Colors.red,
-      );
-    }
-  }
-
-// Migrate expenses implementation
-  Future<void> _migrateMemberExpenses(Member member, int index) async {
-    try {
-      // Get all expenses for the group
-      final expenses = ExpenseManagerService.getExpensesByGroup(widget.groups);
-
-      // Handle each expense involving this member
-      for (var expense in expenses) {
-        if (expense.paidByMember.phone == member.phone ||
-            expense.splits.any((split) => split.member.phone == member.phone)) {
-          // Convert group expense to individual expense
-          await _convertToIndividualExpense(expense, member);
-          // Delete the original group expense
-          await ExpenseManagerService.deleteExpense(expense);
-        }
-      }
-
-      // Remove member from group
-      List<Member> updatedMembers = List<Member>.from(widget.groups.members);
-      updatedMembers.removeAt(index);
-      widget.groups.members = updatedMembers;
-
-      // Update group in storage
-      await ExpenseManagerService.updateGroup(widget.groups);
-
-      // Update UI
-      setState(() {});
-
-      Get.back(); // Close dialog
-      Get.snackbar(
-        'Success',
-        '${member.name} removed and expenses migrated to individual',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green.withOpacity(0.1),
-        colorText: Colors.green,
-      );
-    } catch (e) {
-      Get.back(); // Close dialog
-      Get.snackbar(
-        'Error',
-        'Failed to migrate expenses: ${e.toString()}',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.withOpacity(0.1),
-        colorText: Colors.red,
-      );
-    }
-  }
-
-
-  Future<void> _RemoveMemberUnchangedExpense(Member member, int index) async {
-    try {
-      // Get all expenses for the group
-      final expenses = ExpenseManagerService.getExpensesByGroup(widget.groups);
-
-      // Handle each expense
-      for (var expense in expenses) {
-        bool isMemberPayer = expense.paidByMember.phone == member.phone;
-        bool isMemberInSplits = expense.splits.any((split) => split.member.phone == member.phone);
-
-        if (isMemberPayer) {
-          // If member is payer, delete the expense as it no longer makes sense to keep
-          await ExpenseManagerService.deleteExpense(expense);
-          continue;
-        }
-
-        if (isMemberInSplits) {
-          // Get member's split amount that needs to be redistributed
-          double amountToRedistribute = expense.splits
-              .firstWhere((split) => split.member.phone == member.phone)
-              .amount;
-
-          // Get remaining members (excluding the deleted member)
-          List<ExpenseSplit> remainingSplits = expense.splits
-              .where((split) => split.member.phone != member.phone)
-              .toList();
-
-          // Calculate total amount of remaining splits
-          double totalRemainingSplitsAmount = remainingSplits.fold(
-            0.0,
-                (sum, split) => sum + split.amount,
-          );
-
-          // Create new splits with redistributed amount
-          List<ExpenseSplit> newSplits = remainingSplits.map((split) {
-            // Calculate proportion of this split compared to total remaining
-            double proportion = split.amount / totalRemainingSplitsAmount;
-
-            // Add proportional share of redistributed amount
-            double newAmount = split.amount + (amountToRedistribute * proportion);
-
-            return ExpenseSplit(
-              member: split.member,
-              amount: newAmount,
-              percentage: (newAmount / expense.totalAmount) * 100,
-            );
-          }).toList();
-
-          // Update the expense with new splits
-          await ExpenseManagerService.updateExpense(
-            expense: expense,
-            totalAmount: expense.totalAmount, // Keep original total
-            divisionMethod: DivisionMethod.unequal, // Switch to unequal as splits are now custom
-            paidByMember: expense.paidByMember,
-            involvedMembers: newSplits.map((split) => split.member).toList(),
-            customAmounts: newSplits.map((split) => split.amount).toList(),
-            description: expense.description,
-            group: widget.groups,
-          );
-        }
-      }
-
-      // Remove member from group
-      List<Member> updatedMembers = List<Member>.from(widget.groups.members);
-      updatedMembers.removeAt(index);
-      widget.groups.members = updatedMembers;
-
-      // Update group in storage
-      await ExpenseManagerService.updateGroup(widget.groups);
-
-      // Update UI
-      setState(() {});
-
-      Get.back(); // Close dialog
-      Get.snackbar(
-        'Success',
-        '${member.name} has been removed and their expenses have been redistributed',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green.withOpacity(0.1),
-        colorText: Colors.green,
-      );
-    } catch (e) {
-      Get.back(); // Close dialog
-      Get.snackbar(
-        'Error',
-        'Failed to remove member: ${e.toString()}',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.withOpacity(0.1),
-        colorText: Colors.red,
-      );
-    }
-  }
-
-  // Helper method to convert group expense to individual expense
-  Future<void> _convertToIndividualExpense(Expense groupExpense, Member member) async {
-    // Calculate the individual amount for this member
-    double memberAmount = 0.0;
-
-    if (groupExpense.paidByMember.phone == member.phone) {
-      // If member is the payer, they get credited
-      memberAmount = groupExpense.splits
-          .where((split) => split.member.phone != member.phone)
-          .fold(0.0, (sum, split) => sum + split.amount);
-    } else {
-      // If member owes money
-      final memberSplit = groupExpense.splits
-          .firstWhere((split) => split.member.phone == member.phone);
-      memberAmount = -memberSplit.amount; // Negative because they owe this amount
-    }
-
-    if (memberAmount != 0) {
-      // Create a new individual expense
-      await ExpenseManagerService.createExpense(
-        totalAmount: memberAmount.abs(),
-        divisionMethod: DivisionMethod.equal,
-        paidByMember: memberAmount > 0 ? member : groupExpense.paidByMember,
-        involvedMembers: [
-          memberAmount > 0 ? groupExpense.paidByMember : member
-        ],
-        description: "${groupExpense.description} (Migrated)",
-        group: null, // No group for individual expense
-      );
-    }
+                  } catch (e) {
+                    Get.back();
+                    Get.snackbar(
+                      'Error',
+                      'Failed to remove member: ${e.toString()}',
+                      snackPosition: SnackPosition.BOTTOM,
+                      backgroundColor: Colors.red.withOpacity(0.1),
+                      colorText: Colors.red,
+                      duration: const Duration(seconds: 3),
+                    );
+                  }
+                },
+                child: const Text(
+                  'Remove',
+                  style: TextStyle(
+                    color: Colors.red,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    );
   }
 
   // Build group type selection chip
@@ -680,12 +399,8 @@ class _GroupEditPageState extends State<GroupEditPage> {
                       CircleAvatar(
                         radius: 50,
                         backgroundColor: Colors.purple.shade100,
-                        backgroundImage: _imageFile != null
-                            ? FileImage(_imageFile!)
-                            : null,
-                        child: _imageFile == null
-                            ? const Icon(Icons.group, size: 50, color: Colors.purple)
-                            : null,
+                        backgroundImage: _imageFile != null ? FileImage(_imageFile!) : null,
+                        child: _imageFile == null ? const Icon(Icons.group, size: 50, color: Colors.purple) : null,
                       ),
                       Positioned(
                         bottom: 0,
