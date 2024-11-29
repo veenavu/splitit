@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../DatabaseHelper/hive_services.dart';
 import '../../modelClass/models.dart';
 import '../../routes/app_routes.dart';
+import '../dashboard/controller/dashboard_controller.dart';
 
 
 class ExpenseDisplayPage extends StatelessWidget {
@@ -37,7 +38,7 @@ class ExpenseDisplayPage extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.edit, color: Colors.white),
             onPressed: () {
-              Get.toNamed(Routes.ediitExpense, arguments: {'expense': expense});
+              Get.toNamed(Routes.ediitExpense, arguments: {'expense': expense, 'group': expense.group});
             },
             tooltip: 'Edit Expense',
           ),
@@ -279,7 +280,38 @@ class ExpenseDisplayPage extends StatelessWidget {
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showDeleteConfirmation(context),
+        onPressed: () async {
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: const Text("Delete Expense"),
+                content: const Text("Do you want to delete this expense?"),
+                actions: <Widget>[
+                  TextButton(
+                    onPressed: () {
+                      Get.back();
+                    },
+                    child: const Text("Cancel"),
+                  ),
+                  TextButton(
+                    onPressed: () async {
+                      await ExpenseManagerService.deleteExpense(expense);
+                      Get.back();
+                      Get.find<DashboardController>().loadGroups();
+                      Get.find<DashboardController>().getBalanceText();
+                      // Navigate back to dashboard
+                      Get.until((route) => Get.currentRoute == Routes.dashboard);
+
+
+                    },
+                    child: const Text("Yes", style: TextStyle(color: Colors.red)),
+                  ),
+                ],
+              );
+            },
+          );
+        },
         icon: const Icon(Icons.delete,color: Colors.white,),
         label: const Text('Delete Expense',style: TextStyle(color: Colors.white),),
         backgroundColor: Colors.purple,

@@ -73,7 +73,8 @@ class AppPages {
       page: () {
         final args = Get.arguments;
         final expense = args['expense'] as Expense;
-        return ExpenseEditPage(expense: expense);
+        final group = args['group'] as Group;
+        return EditExpensePage(expense: expense, group: group,);
       },
     ),
 
