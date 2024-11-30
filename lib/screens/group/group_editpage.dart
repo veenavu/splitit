@@ -141,56 +141,6 @@ class _GroupEditPageState extends State<GroupEditPage> {
   }
 
 
-  // Widget _buildActionButton({
-  //   required IconData icon,
-  //   required String label,
-  //   required String description,
-  //   required VoidCallback onTap,
-  //   required Color color,
-  // }) {
-  //   return Material(
-  //     color: Colors.transparent,
-  //     child: InkWell(
-  //       onTap: onTap,
-  //       borderRadius: BorderRadius.circular(8),
-  //       child: Container(
-  //         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-  //         decoration: BoxDecoration(
-  //           border: Border.all(color: color.withOpacity(0.3)),
-  //           borderRadius: BorderRadius.circular(8),
-  //         ),
-  //         child: Row(
-  //           children: [
-  //             Icon(icon, color: color),
-  //             const SizedBox(width: 12),
-  //             Expanded(
-  //               child: Column(
-  //                 crossAxisAlignment: CrossAxisAlignment.start,
-  //                 children: [
-  //                   Text(
-  //                     label,
-  //                     style: TextStyle(
-  //                       fontWeight: FontWeight.bold,
-  //                       color: color,
-  //                     ),
-  //                   ),
-  //                   Text(
-  //                     description,
-  //                     style: const TextStyle(
-  //                       fontSize: 12,
-  //                       color: Colors.grey,
-  //                     ),
-  //                   ),
-  //                 ],
-  //               ),
-  //             ),
-  //           ],
-  //         ),
-  //       ),
-  //     ),
-  //   );
-  // }
-
   Widget _buildMembersList() {
     return ListView.builder(
       shrinkWrap: true,
