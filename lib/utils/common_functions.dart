@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-
 void showMemberAddingBottomSheet({
   required BuildContext context,
   Function(List<Contact>?)? onContactsSelected,
@@ -91,7 +90,6 @@ void showMemberAddingBottomSheet({
 
   onContactsSelected?.call(result);
 }
-
 
 class MemberAdding extends StatefulWidget {
   final Function(List<Contact>) onContactsSelected;
@@ -236,61 +234,56 @@ class _MemberAddingState extends State<MemberAdding> {
         Expanded(
           child: _isLoading
               ? const Center(
-            child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.purple),
-            ),
-          )
-              : _contacts.isEmpty
-              ? const Center(
-            child: Text('No contacts found'),
-          )
-              : ListView.builder(
-            itemCount: _getFilteredContacts().length,
-            itemBuilder: (context, index) {
-              final contact = _getFilteredContacts()[index];
-              final isSelected = _selectedContacts.contains(contact);
-
-              return ListTile(
-                leading: CircleAvatar(
-                  backgroundColor: Colors.purple.shade100,
-                  child: Text(
-                    contact.displayName.isNotEmpty
-                        ? contact.displayName[0].toUpperCase()
-                        : '?',
-                    style: TextStyle(
-                      color: isSelected ? Colors.white : Colors.purple,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.purple),
                   ),
-                ),
-                title: Text(
-                  contact.displayName,
-                  style: TextStyle(
-                    fontWeight:
-                    isSelected ? FontWeight.bold : FontWeight.normal,
-                  ),
-                ),
-                subtitle: Text(
-                  contact.phones.isNotEmpty
-                      ? contact.phones.first.number
-                      : 'No phone number',
-                  style: TextStyle(
-                    color: Colors.grey.shade600,
-                  ),
-                ),
-                trailing: isSelected
-                    ? const Icon(
-                  Icons.check_circle,
-                  color: Colors.purple,
                 )
-                    : const Icon(
-                  Icons.check_circle_outline,
-                  color: Colors.grey,
-                ),
-                onTap: () => _toggleContactSelection(contact),
-              );
-            },
-          ),
+              : _contacts.isEmpty
+                  ? const Center(
+                      child: Text('No contacts found'),
+                    )
+                  : ListView.builder(
+                      itemCount: _getFilteredContacts().length,
+                      itemBuilder: (context, index) {
+                        final contact = _getFilteredContacts()[index];
+                        final isSelected = _selectedContacts.contains(contact);
+
+                        return ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: Colors.purple.shade100,
+                            child: Text(
+                              contact.displayName.isNotEmpty ? contact.displayName[0].toUpperCase() : '?',
+                              style: TextStyle(
+                                color: isSelected ? Colors.white : Colors.purple,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          title: Text(
+                            contact.displayName,
+                            style: TextStyle(
+                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            ),
+                          ),
+                          subtitle: Text(
+                            contact.phones.isNotEmpty ? contact.phones.first.number : 'No phone number',
+                            style: TextStyle(
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                          trailing: isSelected
+                              ? const Icon(
+                                  Icons.check_circle,
+                                  color: Colors.purple,
+                                )
+                              : const Icon(
+                                  Icons.check_circle_outline,
+                                  color: Colors.grey,
+                                ),
+                          onTap: () => _toggleContactSelection(contact),
+                        );
+                      },
+                    ),
         ),
       ],
     );
@@ -303,63 +296,4 @@ class _MemberAddingState extends State<MemberAdding> {
   }
 }
 
-
-
-
-
 //__________________________________________________________________
-
-
-class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
-  final String title;
-  final List<Widget> actions;
-  final bool centerTitle;
-  final Color backgroundColor;
-  final Gradient? gradient;
-  final double elevation;
-  final BorderRadius? borderRadius;
-
-  const CustomAppBar({
-    Key? key,
-    required this.title,
-    this.actions = const [],
-    this.centerTitle = false,
-    this.backgroundColor = Colors.purple,
-    this.gradient,
-    this.elevation = 4,
-    this.borderRadius,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return AppBar(
-      title: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-        ),
-      ),
-      centerTitle: centerTitle,
-      actions: actions,
-      backgroundColor: backgroundColor,
-      elevation: elevation,
-      flexibleSpace: gradient != null
-          ? Container(
-        decoration: BoxDecoration(
-          gradient: gradient,
-        ),
-      )
-          : null,
-      shape: borderRadius != null
-          ? RoundedRectangleBorder(
-        borderRadius: borderRadius!,
-      )
-          : null,
-    );
-  }
-
-  @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
-}

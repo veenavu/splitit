@@ -51,16 +51,15 @@ class SignUpPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 40.0),
                     Obx(() {
-                        return GestureDetector(
-                          onTap: authController.pickImage,
-                          child: CircleAvatar(
-                            radius: 50,
-                            backgroundImage: authController.imagePath != null ? FileImage(File(authController.imagePath!.value)) : null,
-                            child: authController.imagePath == null ? const Icon(Icons.add_a_photo, size: 50) : null,
-                          ),
-                        );
-                      }
-                    ),
+                      return GestureDetector(
+                        onTap: authController.pickImage,
+                        child: CircleAvatar(
+                          radius: 50,
+                          backgroundImage: authController.imagePath != null ? FileImage(File(authController.imagePath!.value)) : null,
+                          child: authController.imagePath == null ? const Icon(Icons.add_a_photo, size: 50) : null,
+                        ),
+                      );
+                    }),
                     const SizedBox(height: 40.0),
 
                     // Name Input Field
@@ -144,7 +143,7 @@ class SignUpPage extends StatelessWidget {
                         height: 50,
                         child: Builder(
                           builder: (context) => ElevatedButton(
-                            onPressed: (){
+                            onPressed: () {
                               authController.signup();
                             },
                             child: const Text(
@@ -168,6 +167,4 @@ class SignUpPage extends StatelessWidget {
       ),
     );
   }
-
-
 }

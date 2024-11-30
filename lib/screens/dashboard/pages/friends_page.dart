@@ -6,7 +6,6 @@ import '../controller/friendsPage_controller.dart';
 class FriendsPage extends GetView<FriendsController> {
   const FriendsPage({Key? key}) : super(key: key);
 
-
   @override
   Widget build(BuildContext context) {
     // Ensure controller is initialized
@@ -39,24 +38,24 @@ class FriendsPage extends GetView<FriendsController> {
         ],
       ),
       child: Obx(() => Row(
-        children: [
-          Text(
-            'Friends (${controller.memberBalances.length})',
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.purple,
-            ),
-          ),
-          const Spacer(),
-          IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () {
-              // TODO: Implement search functionality
-            },
-          ),
-        ],
-      )),
+            children: [
+              Text(
+                'Friends (${controller.memberBalances.length})',
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.purple,
+                ),
+              ),
+              const Spacer(),
+              IconButton(
+                icon: const Icon(Icons.search),
+                onPressed: () {
+                  // TODO: Implement search functionality
+                },
+              ),
+            ],
+          )),
     );
   }
 
@@ -131,24 +130,24 @@ class FriendsPage extends GetView<FriendsController> {
                 ),
                 trailing: balance != 0
                     ? ElevatedButton(
-                  onPressed: () => controller.navigateToSettlement(member, balance),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.purple,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                  ),
-                  child: const Text('Settle Up'),
-                )
+                        onPressed: () => controller.navigateToSettlement(member, balance),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.purple,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                        ),
+                        child: const Text('Settle Up'),
+                      )
                     : const Icon(
-                  Icons.check_circle,
-                  color: Colors.green,
-                ),
+                        Icons.check_circle,
+                        color: Colors.green,
+                      ),
               ),
             );
           },

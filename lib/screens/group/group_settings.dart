@@ -10,9 +10,9 @@ import 'package:splitit/screens/dashboard/controller/dashboard_controller.dart';
 import 'package:splitit/screens/group/group_editpage.dart';
 
 class GroupSettings extends StatefulWidget {
-   Group group;
+  Group group;
 
-   GroupSettings({super.key, required this.group});
+  GroupSettings({super.key, required this.group});
 
   @override
   State<GroupSettings> createState() => _GroupSettingsState();
@@ -20,6 +20,7 @@ class GroupSettings extends StatefulWidget {
 
 class _GroupSettingsState extends State<GroupSettings> {
   String? currentUserPhone;
+
   void getCurrentUserPhone() {
     final box = Hive.box(ExpenseManagerService.normalBox);
     currentUserPhone = box.get("mobile");
@@ -39,16 +40,12 @@ class _GroupSettingsState extends State<GroupSettings> {
       // When member is the payer
       if (expense.paidByMember.phone == member.phone) {
         // Calculate amount lent to others (excluding self splits)
-        final lentAmount = expense.splits
-            .where((split) => split.member.phone != member.phone)
-            .fold(0.0, (sum, split) => sum + split.amount);
+        final lentAmount = expense.splits.where((split) => split.member.phone != member.phone).fold(0.0, (sum, split) => sum + split.amount);
         balance += lentAmount;
       }
 
       // When member owes money
-      final memberSplit = expense.splits.firstWhereOrNull(
-              (split) => split.member.phone == member.phone
-      );
+      final memberSplit = expense.splits.firstWhereOrNull((split) => split.member.phone == member.phone);
 
       if (memberSplit != null && expense.paidByMember.phone != member.phone) {
         balance -= memberSplit.amount;
@@ -71,9 +68,6 @@ class _GroupSettingsState extends State<GroupSettings> {
       return 'All settled up';
     }
   }
-
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -109,7 +103,7 @@ class _GroupSettingsState extends State<GroupSettings> {
 
               // If result is true, fetch the updated group and update the UI
               if (result == true) {
-               final updatedGroup = ExpenseManagerService.getGroupById(
+                final updatedGroup = ExpenseManagerService.getGroupById(
                   widget.group.id!,
                 );
 
@@ -322,15 +316,15 @@ class _GroupSettingsState extends State<GroupSettings> {
                             color: Colors.black87,
                           ),
                         ),
-                       // subtitle: buildMemberBalanceSubtitle(currentUserPhone, member, member.balance),
+                        // subtitle: buildMemberBalanceSubtitle(currentUserPhone, member, member.balance),
                         subtitle: Text(
                           buildMemberBalanceSubtitle(currentUserPhone ?? '', member),
                           style: TextStyle(
                             color: buildMemberBalanceSubtitle(currentUserPhone ?? '', member).contains('owe')
                                 ? Colors.red
                                 : buildMemberBalanceSubtitle(currentUserPhone ?? '', member).contains('get')
-                                ? Colors.green
-                                : Colors.grey,
+                                    ? Colors.green
+                                    : Colors.grey,
                             fontSize: 14,
                           ),
                         ),

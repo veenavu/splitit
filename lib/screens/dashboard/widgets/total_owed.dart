@@ -18,8 +18,8 @@ class TotalOwed extends StatelessWidget {
               color: amount.contains("owe")
                   ? Colors.red
                   : amount.contains("settle")
-                  ? Colors.grey
-                  : Colors.green,
+                      ? Colors.grey
+                      : Colors.green,
               fontWeight: FontWeight.bold,
             ),
           ),

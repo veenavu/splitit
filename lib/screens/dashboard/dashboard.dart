@@ -24,8 +24,7 @@ class Dashboard extends StatelessWidget {
         return Scaffold(
           appBar: AppBar(
             automaticallyImplyLeading: false,
-            title: Obx(() =>
-                Text(
+            title: Obx(() => Text(
                   'Welcome, ${controller.userProfile.value?.name ?? 'User'}',
                   style: const TextStyle(
                     fontSize: 20,
@@ -76,16 +75,12 @@ class Dashboard extends StatelessWidget {
             ),
           ),
           body: controller.pages[controller.selectedIndex.value],
-          bottomNavigationBar: Obx(() =>
-              BottomNavigationBar(
+          bottomNavigationBar: Obx(() => BottomNavigationBar(
                 currentIndex: controller.selectedIndex.value,
                 onTap: (index) {
-
                   controller.selectedIndex.value = index;
                 },
-                selectedItemColor: Theme
-                    .of(context)
-                    .primaryColor,
+                selectedItemColor: Theme.of(context).primaryColor,
                 unselectedItemColor: Colors.black,
                 selectedLabelStyle: const TextStyle(
                   color: Color(0xff5f0967),
@@ -103,8 +98,6 @@ class Dashboard extends StatelessWidget {
                     label: 'Groups',
                   ),
                   const BottomNavigationBarItem(
-
-
                     icon: Icon(Icons.person, color: Colors.black),
                     label: 'Friends',
                   ),
@@ -113,13 +106,12 @@ class Dashboard extends StatelessWidget {
                     label: 'Activity',
                   ),
                   BottomNavigationBarItem(
-                    icon: controller.userProfile.value?.imagePath != null &&
-                        controller.userProfile.value!.imagePath!.isNotEmpty
+                    icon: controller.userProfile.value?.imagePath != null && controller.userProfile.value!.imagePath!.isNotEmpty
                         ? CircleAvatar(
-                      radius: 12,
-                      backgroundImage: FileImage(File(controller.userProfile.value!.imagePath!)),
-                      backgroundColor: Colors.transparent,
-                    )
+                            radius: 12,
+                            backgroundImage: FileImage(File(controller.userProfile.value!.imagePath!)),
+                            backgroundColor: Colors.transparent,
+                          )
                         : const Icon(Icons.account_circle, color: Colors.black),
                     label: controller.userProfile.value?.name ?? "Account",
                   ),

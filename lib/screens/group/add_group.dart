@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_contacts/flutter_contacts.dart' as fl;
 import 'package:get/get.dart';
 
-
 import '../../utils/common_functions.dart';
 import 'controller/group_controller.dart';
 
@@ -64,55 +63,55 @@ class AddNewGroupPage extends GetView<AddNewGroupController> {
             GestureDetector(
               onTap: controller.pickImage,
               child: Obx(() => Container(
-                width: 120,
-                height: 120,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    colors: [Colors.purple.shade200, Colors.purple.shade400],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 10,
-                      spreadRadius: 2,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: controller.imagePath.value != null
-                    ? ClipOval(
-                  child: Image.file(
-                    File(controller.imagePath.value!),
-                    fit: BoxFit.cover,
                     width: 120,
                     height: 120,
-                  ),
-                )
-                    : const Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.add_photo_alternate,
-                        size: 40,
-                        color: Colors.white,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        colors: [Colors.purple.shade200, Colors.purple.shade400],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
                       ),
-                      SizedBox(height: 8),
-                      Text(
-                        "Add Image",
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 10,
+                          spreadRadius: 2,
+                          offset: const Offset(0, 4),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-              )),
+                      ],
+                    ),
+                    child: controller.imagePath.value != null
+                        ? ClipOval(
+                            child: Image.file(
+                              File(controller.imagePath.value!),
+                              fit: BoxFit.cover,
+                              width: 120,
+                              height: 120,
+                            ),
+                          )
+                        : const Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.add_photo_alternate,
+                                  size: 40,
+                                  color: Colors.white,
+                                ),
+                                SizedBox(height: 8),
+                                Text(
+                                  "Add Image",
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                  )),
             ),
 
             const SizedBox(height: 50),
@@ -160,73 +159,61 @@ class AddNewGroupPage extends GetView<AddNewGroupController> {
               alignment: Alignment.centerLeft,
               child: Text(
                 'Type',
-                style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.purple
-                ),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.purple),
               ),
             ),
             const SizedBox(height: 10),
             Wrap(
               spacing: 8.0,
-              children: controller.groupTypes.map((type) => Obx(() => RawChip(
-                label: Text(
-                  type,
-                  style: TextStyle(
-                    color: controller.selectedType.value == type
-                        ? Colors.white
-                        : Colors.purple,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                selected: controller.selectedType.value == type,
-                onSelected: (bool selected) {
-                  controller.updateSelectedType(selected ? type : null);
-                },
-                selectedColor: Colors.purple,
-                backgroundColor: Colors.purple.shade50,
-                showCheckmark: false,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                elevation: 4,
-                shadowColor: Colors.black.withOpacity(0.1),
-                pressElevation: 6,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              ))).toList(),
+              children: controller.groupTypes
+                  .map((type) => Obx(() => RawChip(
+                        label: Text(
+                          type,
+                          style: TextStyle(
+                            color: controller.selectedType.value == type ? Colors.white : Colors.purple,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        selected: controller.selectedType.value == type,
+                        onSelected: (bool selected) {
+                          controller.updateSelectedType(selected ? type : null);
+                        },
+                        selectedColor: Colors.purple,
+                        backgroundColor: Colors.purple.shade50,
+                        showCheckmark: false,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        elevation: 4,
+                        shadowColor: Colors.black.withOpacity(0.1),
+                        pressElevation: 6,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      )))
+                  .toList(),
             ),
 
             const SizedBox(height: 20),
             // Selected Contacts List
             Expanded(
               child: Obx(() => ListView.builder(
-                itemCount: controller.selectedContacts.length,
-                itemBuilder: (context, index) {
-                  final contact = controller.selectedContacts[index];
-                  return ListTile(
-                    leading: CircleAvatar(
-                      backgroundImage: contact.photo != null
-                          ? MemoryImage(contact.photo!)
-                          : null,
-                      child: contact.photo == null
-                          ? const Icon(Icons.person)
-                          : null,
-                    ),
-                    title: Text(contact.displayName ?? 'No Name'),
-                    subtitle: Text(
-                        contact.phones.isNotEmpty
-                            ? contact.phones.first.number
-                            : 'No Phone'
-                    ),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.remove_circle_outline),
-                      color: Colors.red,
-                      onPressed: () => controller.removeContact(index),
-                    ),
-                  );
-                },
-              )),
+                    itemCount: controller.selectedContacts.length,
+                    itemBuilder: (context, index) {
+                      final contact = controller.selectedContacts[index];
+                      return ListTile(
+                        leading: CircleAvatar(
+                          backgroundImage: contact.photo != null ? MemoryImage(contact.photo!) : null,
+                          child: contact.photo == null ? const Icon(Icons.person) : null,
+                        ),
+                        title: Text(contact.displayName ?? 'No Name'),
+                        subtitle: Text(contact.phones.isNotEmpty ? contact.phones.first.number : 'No Phone'),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.remove_circle_outline),
+                          color: Colors.red,
+                          onPressed: () => controller.removeContact(index),
+                        ),
+                      );
+                    },
+                  )),
             ),
           ],
         ),
@@ -244,10 +231,7 @@ class AddNewGroupPage extends GetView<AddNewGroupController> {
             SizedBox(width: 8),
             Text(
               "Add Members",
-              style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold
-              ),
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
             ),
           ],
         ),
@@ -256,4 +240,3 @@ class AddNewGroupPage extends GetView<AddNewGroupController> {
     );
   }
 }
-

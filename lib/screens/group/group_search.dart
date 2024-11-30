@@ -89,7 +89,6 @@ class GroupSearchDelegate extends SearchDelegate<String> {
         );
       },
     );
-
   }
 
   @override

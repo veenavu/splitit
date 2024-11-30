@@ -21,7 +21,6 @@ class DashboardController extends GetxController {
   RxList<Group> filteredGroups = RxList<Group>.empty(growable: true);
   var isLoading = false.obs; // Observable boolean for loading state
 
-
   final List<Widget> pages = [
     const GroupListPage(),
     GetBuilder<FriendsController>(
@@ -101,13 +100,11 @@ class DashboardController extends GetxController {
     }).toList();
   }
 
-
   Future<void> getProfile() async {
     final box = Hive.box(ExpenseManagerService.normalBox);
     final phone = box.get("mobile");
 
-    userProfile.value =
-        ExpenseManagerService.getProfileByPhone(phone) ?? Profile(id: 0, name: "User", email: "noob", phone: "2173123");
+    userProfile.value = ExpenseManagerService.getProfileByPhone(phone) ?? Profile(id: 0, name: "User", email: "noob", phone: "2173123");
   }
 
   void onStartGroup(VoidCallback? callback, BuildContext context) {

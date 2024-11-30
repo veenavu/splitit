@@ -27,15 +27,10 @@ class AppPages {
       name: Routes.getStarted,
       page: () => const GetStartedPage(),
     ),
+    GetPage(name: Routes.login, page: () => const LoginPage(), binding: AuthBinding()),
     GetPage(
-        name: Routes.login,
-        page: () => const LoginPage(),
-        binding: AuthBinding()
-
-    ),
-    GetPage(
-        name: Routes.signup,
-        page: () => const SignUpPage(),
+      name: Routes.signup,
+      page: () => const SignUpPage(),
     ),
     GetPage(
       name: Routes.dashboard,
@@ -47,26 +42,22 @@ class AppPages {
       page: () => const AddNewGroupPage(),
       binding: AddNewGroupBinding(),
     ),
-
     GetPage(
       name: Routes.addExpense,
       page: () => AddExpensePage(),
-
     ),
-
     GetPage(
-        name: Routes.friends,
-        page: () => const FriendsPage(),
-        binding: FriendsBinding(),
+      name: Routes.friends,
+      page: () => const FriendsPage(),
+      binding: FriendsBinding(),
     ),
-    
     GetPage(
-        name: Routes.displayExpense,
-        page:  () {
-          final args = Get.arguments;
-          // final expense = args['expense'] as Expense;
-          return const ExpenseDisplayPage();
-        },
+      name: Routes.displayExpense,
+      page: () {
+        final args = Get.arguments;
+        // final expense = args['expense'] as Expense;
+        return const ExpenseDisplayPage();
+      },
     ),
     GetPage(
       name: Routes.ediitExpense,
@@ -77,6 +68,5 @@ class AppPages {
         return EditExpensePage(/*expense: expense, group: group,*/);
       },
     ),
-
   ];
 }

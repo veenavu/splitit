@@ -91,11 +91,12 @@ class _GroupEditPageState extends State<GroupEditPage> {
         );
         return;
       }
-       print("entered abov eupdate group function");
+      print("entered abov eupdate group function");
 
       // Create a new Group instance with updated values
       final updatedGroup = Group(
-        id: widget.groups.id,  // Keep the same ID
+        id: widget.groups.id,
+        // Keep the same ID
         groupName: _groupNameController.text,
         groupImage: _imageFile?.path ?? widget.groups.groupImage,
         category: _selectedType,
@@ -125,10 +126,8 @@ class _GroupEditPageState extends State<GroupEditPage> {
       Get.offAllNamed(Routes.dashboard);
       print("entered after navigation");
 
-
       // // Navigate back
       // Get.back(result: true);
-
     } catch (e) {
       Get.snackbar(
         'Error',
@@ -139,7 +138,6 @@ class _GroupEditPageState extends State<GroupEditPage> {
       );
     }
   }
-
 
   Widget _buildMembersList() {
     return ListView.builder(
@@ -262,7 +260,6 @@ class _GroupEditPageState extends State<GroupEditPage> {
 
                     // Refresh the UI
                     setState(() {});
-
                   } catch (e) {
                     Get.back();
                     Get.snackbar(

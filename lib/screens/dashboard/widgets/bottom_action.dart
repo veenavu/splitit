@@ -14,9 +14,7 @@ class BottomActions extends StatelessWidget {
         padding: const EdgeInsets.all(16.0),
         child: FloatingActionButton.extended(
           onPressed: () {
-
-            Get.toNamed(Routes.addExpense)?.then(
-                    (onValue) => onStartGroupComplete.call());
+            Get.toNamed(Routes.addExpense)?.then((onValue) => onStartGroupComplete.call());
           },
           tooltip: "Add Expense",
           icon: const Icon(

@@ -34,7 +34,6 @@ class AuthController extends GetxController {
         _clearData();
         box.put("isLoggedIn", true);
 
-
         Get.offNamed(Routes.dashboard);
         // Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const Dashboard()));
       } else {
@@ -53,7 +52,6 @@ class AuthController extends GetxController {
 
         // Save profile data
         await _saveProfileData();
-
 
         // Show success message
         ScaffoldMessenger.of(Get.context!).showSnackBar(

@@ -59,10 +59,7 @@ class GroupEditController extends GetxController {
   Future<void> deleteMember(Member member) async {
     // Check if member has any associated expenses in the group
     final expenses = ExpenseManagerService.getExpensesByGroup(group);
-    bool hasExpenses = expenses.any((expense) =>
-    expense.paidByMember.phone == member.phone ||
-        expense.splits.any((split) => split.member.phone == member.phone)
-    );
+    bool hasExpenses = expenses.any((expense) => expense.paidByMember.phone == member.phone || expense.splits.any((split) => split.member.phone == member.phone));
 
     if (hasExpenses) {
       Get.snackbar(
@@ -84,7 +81,8 @@ class GroupEditController extends GetxController {
     try {
       // Create a new Group instance with updated values
       final updatedGroup = Group(
-        id: group.id,  // Keep the same ID
+        id: group.id,
+        // Keep the same ID
         groupName: groupNameController.text,
         groupImage: imagePath.value,
         category: selectedType.value,
@@ -200,21 +198,17 @@ class GroupEditPage extends GetView<GroupEditController> {
 
   Widget _buildGroupImage() {
     return Obx(() => GestureDetector(
-      onTap: () {
-        // Implement image selection logic
-      },
-      child: Center(
-        child: CircleAvatar(
-          radius: 50,
-          backgroundImage: controller.imagePath.value.isNotEmpty
-              ? FileImage(File(controller.imagePath.value))
-              : null,
-          child: controller.imagePath.value.isEmpty
-              ? const Icon(Icons.add_a_photo, size: 40)
-              : null,
-        ),
-      ),
-    ));
+          onTap: () {
+            // Implement image selection logic
+          },
+          child: Center(
+            child: CircleAvatar(
+              radius: 50,
+              backgroundImage: controller.imagePath.value.isNotEmpty ? FileImage(File(controller.imagePath.value)) : null,
+              child: controller.imagePath.value.isEmpty ? const Icon(Icons.add_a_photo, size: 40) : null,
+            ),
+          ),
+        ));
   }
 
   Widget _buildGroupNameField() {
@@ -237,15 +231,17 @@ class GroupEditPage extends GetView<GroupEditController> {
         const SizedBox(height: 8),
         Wrap(
           spacing: 8.0,
-          children: controller.groupTypes.map((type) => Obx(() {
-            return ChoiceChip(
-              label: Text(type),
-              selected: controller.selectedType.value == type,
-              onSelected: (selected) {
-                controller.updateSelectedType(selected ? type : null);
-              },
-            );
-          })).toList(),
+          children: controller.groupTypes
+              .map((type) => Obx(() {
+                    return ChoiceChip(
+                      label: Text(type),
+                      selected: controller.selectedType.value == type,
+                      onSelected: (selected) {
+                        controller.updateSelectedType(selected ? type : null);
+                      },
+                    );
+                  }))
+              .toList(),
         ),
       ],
     );
@@ -258,24 +254,24 @@ class GroupEditPage extends GetView<GroupEditController> {
         const Text('Members', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
         Obx(() => ListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: controller.members.length,
-          itemBuilder: (context, index) {
-            final member = controller.members[index];
-            return ListTile(
-              leading: CircleAvatar(
-                child: Text(member.name[0].toUpperCase()),
-              ),
-              title: Text(member.name),
-              subtitle: Text(member.phone),
-              trailing: IconButton(
-                icon: const Icon(Icons.delete),
-                onPressed: () => controller.deleteMember(member),
-              ),
-            );
-          },
-        )),
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: controller.members.length,
+              itemBuilder: (context, index) {
+                final member = controller.members[index];
+                return ListTile(
+                  leading: CircleAvatar(
+                    child: Text(member.name[0].toUpperCase()),
+                  ),
+                  title: Text(member.name),
+                  subtitle: Text(member.phone),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete),
+                    onPressed: () => controller.deleteMember(member),
+                  ),
+                );
+              },
+            )),
       ],
     );
   }

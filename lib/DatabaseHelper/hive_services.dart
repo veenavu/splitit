@@ -18,25 +18,25 @@ class ExpenseManagerService {
   // Initialize Hive and Register Adapters
 
   static Future<void> initHive() async {
-try{
-  await Hive.initFlutter();
-  // Register Adapters
-  Hive.registerAdapter(ProfileAdapter());
-  Hive.registerAdapter(GroupAdapter());
-  Hive.registerAdapter(MemberAdapter());
-  Hive.registerAdapter(DivisionMethodAdapter());
-  Hive.registerAdapter(ExpenseAdapter());
-  Hive.registerAdapter(ExpenseSplitAdapter());
-  // Open Boxes
-  await Hive.openBox<Profile>(profileBoxName);
-  await Hive.openBox<Group>(groupBoxName);
-  await Hive.openBox<Member>(memberBoxName);
-  await Hive.openBox<Expense>(expenseBoxName);
-  await Hive.openBox<int>(counterBoxName);
-  await Hive.openBox(normalBox);
-}catch(e){
-  print(e);
-}
+    try {
+      await Hive.initFlutter();
+      // Register Adapters
+      Hive.registerAdapter(ProfileAdapter());
+      Hive.registerAdapter(GroupAdapter());
+      Hive.registerAdapter(MemberAdapter());
+      Hive.registerAdapter(DivisionMethodAdapter());
+      Hive.registerAdapter(ExpenseAdapter());
+      Hive.registerAdapter(ExpenseSplitAdapter());
+      // Open Boxes
+      await Hive.openBox<Profile>(profileBoxName);
+      await Hive.openBox<Group>(groupBoxName);
+      await Hive.openBox<Member>(memberBoxName);
+      await Hive.openBox<Expense>(expenseBoxName);
+      await Hive.openBox<int>(counterBoxName);
+      await Hive.openBox(normalBox);
+    } catch (e) {
+      print(e);
+    }
   }
 
   static int _getNextId(String type) {
@@ -159,9 +159,7 @@ try{
         // When member is the payer
         if (expense.paidByMember.phone == member.phone) {
           // Calculate amount lent to others (excluding self)
-          final lentAmount = expense.splits
-              .where((split) => split.member.phone != member.phone)
-              .fold(0.0, (sum, split) => sum + split.amount);
+          final lentAmount = expense.splits.where((split) => split.member.phone != member.phone).fold(0.0, (sum, split) => sum + split.amount);
           totalLent += lentAmount;
         }
 
@@ -191,9 +189,7 @@ try{
         // When member is the payer
         if (expense.paidByMember.phone == member.phone) {
           // Calculate amount lent to others (excluding self)
-          final lentAmount = expense.splits
-              .where((split) => split.member.phone != member.phone)
-              .fold(0.0, (sum, split) => sum + split.amount);
+          final lentAmount = expense.splits.where((split) => split.member.phone != member.phone).fold(0.0, (sum, split) => sum + split.amount);
           totalLent += lentAmount;
         }
 
@@ -221,9 +217,7 @@ try{
       // When member is the payer
       if (expense.paidByMember.phone == member.phone) {
         // Calculate amount lent to others (excluding self)
-        final lentAmount = expense.splits
-            .where((split) => split.member.phone != member.phone)
-            .fold(0.0, (sum, split) => sum + split.amount);
+        final lentAmount = expense.splits.where((split) => split.member.phone != member.phone).fold(0.0, (sum, split) => sum + split.amount);
         totalLent += lentAmount;
       }
 
@@ -370,7 +364,6 @@ try{
     await expense.delete();
   }
 
-
   static String getGroupBalanceText(Member member, Group group) {
     double totalLent = 0.0;
     double totalOwed = 0.0;
@@ -385,8 +378,7 @@ try{
 
           // Find member's own share in this expense
           double ownShare = 0.0;
-          final selfSplit = expense.splits
-              .firstWhereOrNull((split) => split.member.phone == member.phone);
+          final selfSplit = expense.splits.firstWhereOrNull((split) => split.member.phone == member.phone);
           if (selfSplit != null) {
             ownShare = selfSplit.amount;
           }
@@ -397,8 +389,7 @@ try{
 
         // When member owes money (someone else paid)
         if (expense.paidByMember.phone != member.phone) {
-          final memberSplit = expense.splits
-              .firstWhereOrNull((split) => split.member.phone == member.phone);
+          final memberSplit = expense.splits.firstWhereOrNull((split) => split.member.phone == member.phone);
 
           if (memberSplit != null) {
             totalOwed += memberSplit.amount;
@@ -422,7 +413,6 @@ try{
       return 'all settled up';
     }
   }
-
 
   // EXPENSE SPLITTING HELPERS
   static List<ExpenseSplit> _splitEqually(
@@ -505,9 +495,7 @@ try{
 
         // Calculate amount lent in this expense
         if (expense.paidByMember.phone == member.phone) {
-          lentInExpense = expense.splits
-              .where((split) => split.member.phone != member.phone)
-              .fold(0.0, (sum, split) => sum + (split.amount ?? 0.0));
+          lentInExpense = expense.splits.where((split) => split.member.phone != member.phone).fold(0.0, (sum, split) => sum + (split.amount ?? 0.0));
           totalLent += lentInExpense;
 
           // Track category

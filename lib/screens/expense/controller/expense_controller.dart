@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:splitit/DatabaseHelper/hive_services.dart';
@@ -20,11 +19,10 @@ class ExpenseController extends GetxController {
   final selectedPayer = Rx<Member?>(null);
   final RxString selectedSplitOption = 'Equally'.obs;
 
- late Expense selectedExpense;
-
+  late Expense selectedExpense;
 
   onExpenseSelected(Expense expense) {
-    selectedExpense = expense ;
+    selectedExpense = expense;
     print(selectedExpense.description);
   }
 

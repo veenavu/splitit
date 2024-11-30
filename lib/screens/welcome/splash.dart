@@ -13,8 +13,6 @@ class SplashPage extends StatefulWidget {
 }
 
 class _SplashPageState extends State<SplashPage> {
-
-
   @override
   void initState() {
     Future.delayed(const Duration(seconds: 2), () {
@@ -23,18 +21,17 @@ class _SplashPageState extends State<SplashPage> {
     super.initState();
   }
 
-
-  _navigateToNextPage(){
+  _navigateToNextPage() {
     final box = Hive.box(ExpenseManagerService.normalBox);
     final isLoggedIn = box.get("isLoggedIn", defaultValue: false);
 
-    if(isLoggedIn){
+    if (isLoggedIn) {
       Get.offNamed(Routes.dashboard);
-    }else{
+    } else {
       Get.offNamed(Routes.getStarted);
     }
-
   }
+
   @override
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.sizeOf(context).width;

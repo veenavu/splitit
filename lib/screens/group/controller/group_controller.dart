@@ -128,10 +128,7 @@ class AddNewGroupController extends GetxController {
   }
 
   bool validateInputs() {
-    return groupNameController.text.isNotEmpty &&
-        imagePath.value != null &&
-        selectedType.value != null &&
-        selectedContacts.isNotEmpty;
+    return groupNameController.text.isNotEmpty && imagePath.value != null && selectedType.value != null && selectedContacts.isNotEmpty;
   }
 
   // Group Saving

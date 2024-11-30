@@ -7,7 +7,8 @@ class GroupSettingsController extends GetxController {
 
   GroupSettingsController(Group initialGroup) : group = Rx<Group>(initialGroup);
 
-  void updateGroupData() {  // Renamed from refreshGroup to updateGroupData
+  void updateGroupData() {
+    // Renamed from refreshGroup to updateGroupData
     final updatedGroup = ExpenseManagerService.getGroupById(group.value.id!);
     if (updatedGroup != null) {
       group.value = updatedGroup;

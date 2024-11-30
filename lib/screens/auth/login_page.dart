@@ -92,9 +92,8 @@ class LoginPage extends StatelessWidget {
                     TextButton(
                         onPressed: () {
                           Get.offNamed(Routes.signup);
-                          },
-                        child: Text("Don't have an account? Sign up",
-                            style: GoogleFonts.lato(color: Colors.white, fontSize: 16))),
+                        },
+                        child: Text("Don't have an account? Sign up", style: GoogleFonts.lato(color: Colors.white, fontSize: 16))),
                   ],
                 ),
               ),

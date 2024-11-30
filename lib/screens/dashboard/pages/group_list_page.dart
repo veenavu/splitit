@@ -21,8 +21,8 @@ class GroupListPage extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Obx(() => TotalOwed(
-                amount: controller.balanceText.value,
-              )),
+                    amount: controller.balanceText.value,
+                  )),
               IconButton(
                 onPressed: () async {
                   // Get the RenderBox of the IconButton
@@ -85,11 +85,11 @@ class GroupListPage extends StatelessWidget {
                   if (result != null) {
                     switch (result) {
                       case 'all_groups':
-                      // Handle All Groups selection
+                        // Handle All Groups selection
                         controller.changeFilter(0);
                         break;
                       case 'groups_you_owe':
-                      // Handle Groups you owe selection
+                        // Handle Groups you owe selection
                         controller.changeFilter(1);
                         break;
                       case 'groups_owe_you':
@@ -105,30 +105,30 @@ class GroupListPage extends StatelessWidget {
           ),
           Expanded(
             child: Obx(() => ListView.builder(
-              itemCount: controller.filteredGroups.length,
-              itemBuilder: (context, index) {
-                final groupItem = controller.filteredGroups[index];
-                return GestureDetector(
-                  onTap: () {
-                    Get.to(()=> GroupDetails(groupItem: groupItem))?.then((value) {
-                      controller.loadGroups();
-                    });
+                  itemCount: controller.filteredGroups.length,
+                  itemBuilder: (context, index) {
+                    final groupItem = controller.filteredGroups[index];
+                    return GestureDetector(
+                      onTap: () {
+                        Get.to(() => GroupDetails(groupItem: groupItem))?.then((value) {
+                          controller.loadGroups();
+                        });
+                      },
+                      child: ExpenseListItem(
+                        title: groupItem.groupName,
+                        subtitle: controller.getGroupBalanceText(groupItem),
+                        showGroupImage: index % 2 == 0 ? false : true,
+                        details: const [],
+                        icon: Icons.article,
+                        iconColor: Colors.red[700]!,
+                        groupImage: groupItem.groupImage,
+                      ),
+                    );
                   },
-                  child: ExpenseListItem(
-                    title: groupItem.groupName,
-                    subtitle: controller.getGroupBalanceText(groupItem),
-                    showGroupImage: index % 2 == 0 ? false : true,
-                    details: const [],
-                    icon: Icons.article,
-                    iconColor: Colors.red[700]!,
-                    groupImage: groupItem.groupImage,
-                  ),
-                );
-              },
-            )),
+                )),
           ),
           BottomActions(
-            onStartGroupComplete: (){
+            onStartGroupComplete: () {
               controller.loadGroups();
             },
           ),

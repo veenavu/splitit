@@ -7,7 +7,6 @@ import '../../modelClass/models.dart';
 import '../../routes/app_routes.dart';
 import '../dashboard/controller/dashboard_controller.dart';
 
-
 class ExpenseDisplayPage extends StatefulWidget {
   // final Expense expense;
 
@@ -30,9 +29,8 @@ class _ExpenseDisplayPageState extends State<ExpenseDisplayPage> {
     super.initState();
   }
 
-  getInitData(){
+  getInitData() {}
 
-  }
   @override
   Widget build(BuildContext context) {
     Expense expense = Get.find<ExpenseController>().selectedExpense;
@@ -60,7 +58,7 @@ class _ExpenseDisplayPageState extends State<ExpenseDisplayPage> {
           IconButton(
             icon: const Icon(Icons.edit, color: Colors.white),
             onPressed: () {
-              _navigateToEditPage((){
+              _navigateToEditPage(() {
                 setState(() {
                   expense = Get.find<ExpenseController>().selectedExpense;
                 });
@@ -164,9 +162,7 @@ class _ExpenseDisplayPageState extends State<ExpenseDisplayPage> {
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
-                            expense.divisionMethod == DivisionMethod.equal
-                                ? 'Split Equally'
-                                : 'Custom Split',
+                            expense.divisionMethod == DivisionMethod.equal ? 'Split Equally' : 'Custom Split',
                             style: TextStyle(
                               color: Colors.purple.shade700,
                               fontWeight: FontWeight.bold,
@@ -200,9 +196,7 @@ class _ExpenseDisplayPageState extends State<ExpenseDisplayPage> {
 
                         return ListTile(
                           leading: CircleAvatar(
-                            backgroundColor: isPayer
-                                ? Colors.green.shade100
-                                : Colors.purple.shade100,
+                            backgroundColor: isPayer ? Colors.green.shade100 : Colors.purple.shade100,
                             child: Icon(
                               isPayer ? Icons.arrow_upward : Icons.arrow_downward,
                               color: isPayer ? Colors.green : Colors.purple,
@@ -329,8 +323,6 @@ class _ExpenseDisplayPageState extends State<ExpenseDisplayPage> {
                       Get.find<DashboardController>().getBalanceText();
                       // Navigate back to dashboard
                       Get.until((route) => Get.currentRoute == Routes.dashboard);
-
-
                     },
                     child: const Text("Yes", style: TextStyle(color: Colors.red)),
                   ),
@@ -339,18 +331,25 @@ class _ExpenseDisplayPageState extends State<ExpenseDisplayPage> {
             },
           );
         },
-        icon: const Icon(Icons.delete,color: Colors.white,),
-        label: const Text('Delete Expense',style: TextStyle(color: Colors.white),),
+        icon: const Icon(
+          Icons.delete,
+          color: Colors.white,
+        ),
+        label: const Text(
+          'Delete Expense',
+          style: TextStyle(color: Colors.white),
+        ),
         backgroundColor: Colors.purple,
       ),
     );
   }
 
-  _navigateToEditPage(VoidCallback callback){
-    Get.toNamed(Routes.ediitExpense, /*arguments: {'expense': expense, 'group': expense!.group}*/)?.then((value){
+  _navigateToEditPage(VoidCallback callback) {
+    Get.toNamed(
+      Routes.ediitExpense, /*arguments: {'expense': expense, 'group': expense!.group}*/
+    )?.then((value) {
       callback.call();
     });
-
   }
 
   Widget _buildInfoRow(String label, String value, IconData icon) {
@@ -418,9 +417,9 @@ class _ExpenseDisplayPageState extends State<ExpenseDisplayPage> {
             TextButton(
               onPressed: () async {
                 try {
-              await ExpenseManagerService.deleteExpense(Get.find<ExpenseController>().selectedExpense);
-                  Get.back();  // Close dialog
-                  Get.back();  // Return to previous screen
+                  await ExpenseManagerService.deleteExpense(Get.find<ExpenseController>().selectedExpense);
+                  Get.back(); // Close dialog
+                  Get.back(); // Return to previous screen
                   Get.snackbar(
                     'Success',
                     'Expense deleted successfully',
