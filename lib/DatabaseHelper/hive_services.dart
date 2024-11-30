@@ -111,7 +111,28 @@ try{
   }
 
   static Future<void> updateGroup(Group group) async {
-    await group.save();
+    try {
+      final box = Hive.box<Group>(groupBoxName);
+
+      // Find the index of the group in the box
+      int? index;
+      for (int i = 0; i < box.length; i++) {
+        if (box.getAt(i)?.id == group.id) {
+          index = i;
+          break;
+        }
+      }
+
+      if (index != null) {
+        // Update the group at the found index
+        await box.putAt(index, group);
+      } else {
+        throw Exception('Group not found in database');
+      }
+    } catch (e) {
+      print('Error updating group: $e');
+      throw Exception('Failed to update group: ${e.toString()}');
+    }
   }
 
   static Future<void> deleteGroup(Group group) async {

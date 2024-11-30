@@ -68,6 +68,7 @@ class _GroupEditPageState extends State<GroupEditPage> {
 
   // Update group function
   Future<void> _updateTheGroup() async {
+    print('Entered _updateTheGroup in group edit page');
     try {
       if (_groupNameController.text.isEmpty) {
         Get.snackbar(
@@ -90,15 +91,28 @@ class _GroupEditPageState extends State<GroupEditPage> {
         );
         return;
       }
+       print("entered abov eupdate group function");
 
-      widget.groups.groupName = _groupNameController.text;
-      widget.groups.category = _selectedType;
+      // Create a new Group instance with updated values
+      final updatedGroup = Group(
+        id: widget.groups.id,  // Keep the same ID
+        groupName: _groupNameController.text,
+        groupImage: _imageFile?.path ?? widget.groups.groupImage,
+        category: _selectedType,
+        members: widget.groups.members,
+        expenses: widget.groups.expenses,
+        categories: widget.groups.categories,
+        createdAt: widget.groups.createdAt,
+      );
 
-      await ExpenseManagerService.updateGroup(widget.groups);
+      // Update the group in the database
+      await ExpenseManagerService.updateGroup(updatedGroup);
+      print("entered after eupdate group function");
+      // Refresh the dashboard
 
       Get.find<DashboardController>().loadGroups();
-      Get.back(result: true);
 
+      // Show success message
       Get.snackbar(
         'Success',
         'Group updated successfully',
@@ -106,6 +120,15 @@ class _GroupEditPageState extends State<GroupEditPage> {
         backgroundColor: Colors.green.withOpacity(0.1),
         colorText: Colors.green,
       );
+      print("entered before navigation");
+
+      Get.offAllNamed(Routes.dashboard);
+      print("entered after navigation");
+
+
+      // // Navigate back
+      // Get.back(result: true);
+
     } catch (e) {
       Get.snackbar(
         'Error',
@@ -117,55 +140,56 @@ class _GroupEditPageState extends State<GroupEditPage> {
     }
   }
 
-  Widget _buildActionButton({
-    required IconData icon,
-    required String label,
-    required String description,
-    required VoidCallback onTap,
-    required Color color,
-  }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-          decoration: BoxDecoration(
-            border: Border.all(color: color.withOpacity(0.3)),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Row(
-            children: [
-              Icon(icon, color: color),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      label,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: color,
-                      ),
-                    ),
-                    Text(
-                      description,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+
+  // Widget _buildActionButton({
+  //   required IconData icon,
+  //   required String label,
+  //   required String description,
+  //   required VoidCallback onTap,
+  //   required Color color,
+  // }) {
+  //   return Material(
+  //     color: Colors.transparent,
+  //     child: InkWell(
+  //       onTap: onTap,
+  //       borderRadius: BorderRadius.circular(8),
+  //       child: Container(
+  //         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+  //         decoration: BoxDecoration(
+  //           border: Border.all(color: color.withOpacity(0.3)),
+  //           borderRadius: BorderRadius.circular(8),
+  //         ),
+  //         child: Row(
+  //           children: [
+  //             Icon(icon, color: color),
+  //             const SizedBox(width: 12),
+  //             Expanded(
+  //               child: Column(
+  //                 crossAxisAlignment: CrossAxisAlignment.start,
+  //                 children: [
+  //                   Text(
+  //                     label,
+  //                     style: TextStyle(
+  //                       fontWeight: FontWeight.bold,
+  //                       color: color,
+  //                     ),
+  //                   ),
+  //                   Text(
+  //                     description,
+  //                     style: const TextStyle(
+  //                       fontSize: 12,
+  //                       color: Colors.grey,
+  //                     ),
+  //                   ),
+  //                 ],
+  //               ),
+  //             ),
+  //           ],
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  // }
 
   Widget _buildMembersList() {
     return ListView.builder(

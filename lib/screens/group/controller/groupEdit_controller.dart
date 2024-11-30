@@ -82,14 +82,20 @@ class GroupEditController extends GetxController {
     if (!validateChanges()) return false;
 
     try {
-      // Update group properties
-      group.groupName = groupNameController.text;
-      group.groupImage = imagePath.value;
-      group.category = selectedType.value;
-      group.members = members.toList();
+      // Create a new Group instance with updated values
+      final updatedGroup = Group(
+        id: group.id,  // Keep the same ID
+        groupName: groupNameController.text,
+        groupImage: imagePath.value,
+        category: selectedType.value,
+        members: members.toList(),
+        expenses: group.expenses,
+        categories: group.categories,
+        createdAt: group.createdAt,
+      );
 
-      // Save to database
-      await ExpenseManagerService.updateGroup(group);
+      // Update in database
+      await ExpenseManagerService.updateGroup(updatedGroup);
 
       Get.snackbar(
         'Success',
