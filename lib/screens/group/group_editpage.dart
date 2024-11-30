@@ -140,7 +140,8 @@ class _GroupEditPageState extends State<GroupEditPage> {
   }
 
   Widget _buildMembersList() {
-    return ListView.builder(
+    return Padding(padding: EdgeInsets.fromLTRB(10, 10, 10, 100),
+      child: ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: widget.groups.members.length,
@@ -191,6 +192,7 @@ class _GroupEditPageState extends State<GroupEditPage> {
           ),
         );
       },
+    )
     );
   }
 
