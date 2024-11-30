@@ -36,7 +36,7 @@ class _SplashPageState extends State<SplashPage> {
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.sizeOf(context).width;
     double screenHeight = MediaQuery.sizeOf(context).height;
-    bool isMobile = screenWidth < 600; // Define mobile breakpoint
+    bool isMobile = screenWidth < 600;
 
     return Scaffold(
       body: Container(
@@ -49,8 +49,8 @@ class _SplashPageState extends State<SplashPage> {
           ),
         ),
         padding: EdgeInsets.symmetric(
-          horizontal: screenWidth * 0.05, // Responsive horizontal padding
-          vertical: screenHeight * 0.05, // Responsive vertical padding
+          horizontal: screenWidth * 0.05,
+          vertical: screenHeight * 0.05,
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -65,7 +65,7 @@ class _SplashPageState extends State<SplashPage> {
                 fontStyle: FontStyle.italic,
               ),
             ),
-            SizedBox(height: screenHeight * 0.03), // Responsive spacing
+            SizedBox(height: screenHeight * 0.03),
             Text(
               'Welcome to our app! Let’s get started by exploring the features.',
               textAlign: TextAlign.center,
@@ -74,7 +74,7 @@ class _SplashPageState extends State<SplashPage> {
                 color: Colors.white,
               ),
             ),
-            SizedBox(height: screenHeight * 0.2), // Adjust spacing for layout
+            SizedBox(height: screenHeight * 0.2),
           ],
         ),
       ),

@@ -10,7 +10,7 @@ class GetStartedPage extends StatelessWidget {
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
-    bool isMobile = screenWidth < 600; // Define mobile breakpoint
+    bool isMobile = screenWidth < 600;
 
     return Scaffold(
       body: Container(
@@ -23,8 +23,8 @@ class GetStartedPage extends StatelessWidget {
           ),
         ),
         padding: EdgeInsets.symmetric(
-          horizontal: screenWidth * 0.05, // Responsive horizontal padding
-          vertical: screenHeight * 0.05, // Responsive vertical padding
+          horizontal: screenWidth * 0.05,
+          vertical: screenHeight * 0.05,
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -39,7 +39,7 @@ class GetStartedPage extends StatelessWidget {
                 fontStyle: FontStyle.italic,
               ),
             ),
-            SizedBox(height: screenHeight * 0.03), // Responsive spacing
+            SizedBox(height: screenHeight * 0.03),
             Text(
               'Welcome to our app! Let’s get started by exploring the features.',
               textAlign: TextAlign.center,
@@ -48,10 +48,10 @@ class GetStartedPage extends StatelessWidget {
                 color: Colors.white,
               ),
             ),
-            SizedBox(height: screenHeight * 0.2), // Adjust spacing for layout
+            SizedBox(height: screenHeight * 0.2),
             Container(
               width: isMobile ? screenWidth * 0.8 : screenWidth * 0.5,
-              height: screenHeight * 0.07, // Responsive button height
+              height: screenHeight * 0.07,
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
                   colors: [Color(0xFF5F0967), Color(0xFFBD11CD)],
@@ -64,8 +64,6 @@ class GetStartedPage extends StatelessWidget {
                 onPressed: () {
                   //Navigate to the Login screen
                   Get.offNamed(Routes.login);
-
-                  // Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const LoginPage()));
                 },
                 style: ElevatedButton.styleFrom(
                   shape: RoundedRectangleBorder(
@@ -85,7 +83,7 @@ class GetStartedPage extends StatelessWidget {
                 ),
               ),
             ),
-            SizedBox(height: screenHeight * 0.03), // Responsive spacing
+            SizedBox(height: screenHeight * 0.03),
           ],
         ),
       ),
