@@ -1,130 +1,224 @@
+// settlement_service.dart
 
-import 'package:get/get.dart';
 import 'package:hive/hive.dart';
-
 import '../../DatabaseHelper/hive_services.dart';
 import '../../modelClass/models.dart';
+// settlement_service.dart
 
-class SettlementService extends GetxService {
-  static const String settlementBoxName = 'settlements';
 
-  Future<void> settleExpenses({
-    required Member profileOwner,
-    required Member otherMember,
-    required double settlementAmount,
-    List<Expense>? specificExpenses,
+class SettlementService {
+  /// Records a settlement between two members
+  static Future<Settlement> recordSettlement({
+    required Member payer,
+    required Member receiver,
+    required double amount,
+    required List<Group> groups,
   }) async {
-    // Get relevant expenses
-    final allExpenses = specificExpenses ?? ExpenseManagerService.getAllExpenses();
+    // Step 1: Get all unsettled expenses involving both members from specified groups
+    List<Expense> unsettledExpenses = _getUnsettledExpenses(
+      payer: payer,
+      receiver: receiver,
+      groups: groups,
+    );
 
-    // Filter expenses involving both members
-    final relevantExpenses = allExpenses.where((expense) {
-      final isProfileOwnerPayer = expense.paidByMember.phone == profileOwner.phone;
-      final isOtherMemberPayer = expense.paidByMember.phone == otherMember.phone;
-      final isProfileOwnerInSplit = expense.splits
-          .any((split) => split.member.phone == profileOwner.phone);
-      final isOtherMemberInSplit = expense.splits
-          .any((split) => split.member.phone == otherMember.phone);
+    // Step 2: Sort expenses by creation date (oldest first)
+    unsettledExpenses.sort((a, b) => a.createdAt.compareTo(b.createdAt));
 
-      return (isProfileOwnerPayer && isOtherMemberInSplit) ||
-          (isOtherMemberPayer && isProfileOwnerInSplit);
-    }).toList();
+    // Step 3: Process the settlement
+    final settlementResult = await _processSettlement(
+      payer: payer,
+      receiver: receiver,
+      amount: amount,
+      expenses: unsettledExpenses,
+    );
 
-    double remainingSettlement = settlementAmount;
-    List<ExpenseSettlement> expenseSettlements = [];
+    // Step 4: Create and save the settlement record
+    final settlement = Settlement(
+      payer: payer,
+      receiver: receiver,
+      amount: amount,
+      expenseSettlements: settlementResult.expenseSettlements,
+    );
 
-    // Process expenses where profileOwner is the payer
-    for (var expense in relevantExpenses) {
-      if (remainingSettlement <= 0) break;
+    // Save the settlement
+    final box = Hive.box<Settlement>('settlements');
+    await box.add(settlement);
 
-      if (expense.paidByMember.phone == profileOwner.phone) {
-        final otherMemberSplit = expense.splits.firstWhere(
-              (split) => split.member.phone == otherMember.phone,
-          orElse: () => ExpenseSplit(member: otherMember, amount: 0),
-        );
+    return settlement;
+  }
 
-        if (otherMemberSplit.amount > 0) {
-          final settlementForThisExpense = remainingSettlement > otherMemberSplit.amount
-              ? otherMemberSplit.amount
-              : remainingSettlement;
+  /// Get all unsettled expenses involving both members from specified groups
+  static List<Expense> _getUnsettledExpenses({
+    required Member payer,
+    required Member receiver,
+    required List<Group> groups,
+  }) {
+    List<Expense> relevantExpenses = [];
 
-          expenseSettlements.add(ExpenseSettlement(
+    for (var group in groups) {
+      final expenses = ExpenseManagerService.getExpensesByGroup(group);
+
+      for (var expense in expenses) {
+        // Check if both members are involved in this expense
+        bool isPayerInvolved = expense.paidByMember.phone == payer.phone ||
+            expense.splits.any((split) => split.member.phone == payer.phone);
+
+        bool isReceiverInvolved = expense.paidByMember.phone == receiver.phone ||
+            expense.splits.any((split) => split.member.phone == receiver.phone);
+
+        if (isPayerInvolved && isReceiverInvolved) {
+          // Calculate remaining unsettled amount for this expense
+          double unsettledAmount = _calculateUnsettledAmount(
             expense: expense,
-            settledAmount: settlementForThisExpense,
-          ));
-
-          remainingSettlement -= settlementForThisExpense;
-        }
-      }
-    }
-
-    // Process expenses where otherMember is the payer
-    if (remainingSettlement > 0) {
-      for (var expense in relevantExpenses) {
-        if (remainingSettlement <= 0) break;
-
-        if (expense.paidByMember.phone == otherMember.phone) {
-          final profileOwnerSplit = expense.splits.firstWhere(
-                (split) => split.member.phone == profileOwner.phone,
-            orElse: () => ExpenseSplit(member: profileOwner, amount: 0),
+            payer: payer,
+            receiver: receiver,
           );
 
-          if (profileOwnerSplit.amount > 0) {
-            final settlementForThisExpense = remainingSettlement > profileOwnerSplit.amount
-                ? profileOwnerSplit.amount
-                : remainingSettlement;
-
-            expenseSettlements.add(ExpenseSettlement(
-              expense: expense,
-              settledAmount: settlementForThisExpense,
-            ));
-
-            remainingSettlement -= settlementForThisExpense;
+          if (unsettledAmount > 0) {
+            relevantExpenses.add(expense);
           }
         }
       }
     }
 
-    // Create and save settlement record
-    if (expenseSettlements.isNotEmpty) {
-      final settlement = Settlement(
-        payer: otherMember,
-        receiver: profileOwner,
-        amount: settlementAmount - remainingSettlement,
-        expenseSettlements: expenseSettlements,
+    return relevantExpenses;
+  }
+
+  /// Calculate the unsettled amount between payer and receiver for an expense
+  static double _calculateUnsettledAmount({
+    required Expense expense,
+    required Member payer,
+    required Member receiver,
+  }) {
+    double amount = 0.0;
+
+    // Case 1: Receiver paid, Payer owes
+    if (expense.paidByMember.phone == receiver.phone) {
+      final payerSplit = _findSplit(expense.splits, payer.phone);
+      if (payerSplit != null) {
+        amount += payerSplit.amount;
+      }
+    }
+
+    // Case 2: Payer paid, Receiver owes
+    if (expense.paidByMember.phone == payer.phone) {
+      final receiverSplit = _findSplit(expense.splits, receiver.phone);
+      if (receiverSplit != null) {
+        amount -= receiverSplit.amount;
+      }
+    }
+
+    return amount.abs();
+  }
+
+  /// Helper method to find split for a member
+  static ExpenseSplit? _findSplit(List<ExpenseSplit> splits, String phone) {
+    try {
+      return splits.firstWhere((split) => split.member.phone == phone);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Process the settlement and return settlement details
+  static Future<SettlementResult> _processSettlement({
+    required Member payer,
+    required Member receiver,
+    required double amount,
+    required List<Expense> expenses,
+  }) async {
+    double remainingAmount = amount;
+    List<ExpenseSettlement> expenseSettlements = [];
+
+    // Sort expenses by smallest unsettled amount first
+    expenses.sort((a, b) {
+      double amountA = _calculateUnsettledAmount(
+        expense: a,
+        payer: payer,
+        receiver: receiver,
+      );
+      double amountB = _calculateUnsettledAmount(
+        expense: b,
+        payer: payer,
+        receiver: receiver,
+      );
+      return amountA.compareTo(amountB);
+    });
+
+    for (var expense in expenses) {
+      if (remainingAmount <= 0) break;
+
+      double unsettledAmount = _calculateUnsettledAmount(
+        expense: expense,
+        payer: payer,
+        receiver: receiver,
       );
 
-      final box = await Hive.openBox<Settlement>(settlementBoxName);
-      await box.add(settlement);
+      if (unsettledAmount <= 0) continue;
 
-      // Update member balances
-      await _updateMemberBalances(settlement);
+      // Determine how much of this expense can be settled
+      double settleAmount = unsettledAmount <= remainingAmount
+          ? unsettledAmount
+          : remainingAmount;
+
+      // Create settlement record for this expense
+      expenseSettlements.add(
+        ExpenseSettlement(
+          expense: expense,
+          settledAmount: settleAmount,
+        ),
+      );
+
+      // Update expense splits to reflect settlement
+      await _updateExpenseSplits(
+        expense: expense,
+        payer: payer,
+        receiver: receiver,
+        settledAmount: settleAmount,
+      );
+
+      remainingAmount -= settleAmount;
     }
+
+    return SettlementResult(
+      expenseSettlements: expenseSettlements,
+      remainingAmount: remainingAmount,
+    );
   }
 
-  Future<void> _updateMemberBalances(Settlement settlement) async {
-    final membersBox = Hive.box<Member>(ExpenseManagerService.memberBoxName);
-
-    // Update payer's balance
-    final payer = membersBox.get(settlement.payer.phone);
-    if (payer != null) {
-      payer.totalAmountOwedByMe -= settlement.amount;
-      await payer.save();
-    }
-
-    // Update receiver's balance
-    final receiver = membersBox.get(settlement.receiver.phone);
-    if (receiver != null) {
-      receiver.totalAmountOwedByMe += settlement.amount;
-      await receiver.save();
+  /// Update expense splits to reflect the settlement
+  static Future<void> _updateExpenseSplits({
+    required Expense expense,
+    required Member payer,
+    required Member receiver,
+    required double settledAmount,
+  }) async {
+    // Update splits based on who paid the expense
+    if (expense.paidByMember.phone == receiver.phone) {
+      // Receiver paid, updating payer's split
+      final payerSplit = _findSplit(expense.splits, payer.phone);
+      if (payerSplit != null) {
+        payerSplit.amount -= settledAmount;
+        await expense.save();
+      }
+    } else if (expense.paidByMember.phone == payer.phone) {
+      // Payer paid, updating receiver's split
+      final receiverSplit = _findSplit(expense.splits, receiver.phone);
+      if (receiverSplit != null) {
+        receiverSplit.amount -= settledAmount;
+        await expense.save();
+      }
     }
   }
+}
 
-  List<Settlement> getSettlementsByMember(Member member) {
-    final box = Hive.box<Settlement>(settlementBoxName);
-    return box.values.where((settlement) =>
-    settlement.payer.phone == member.phone ||
-        settlement.receiver.phone == member.phone
-    ).toList();
-  }
+/// Class to hold settlement processing results
+class SettlementResult {
+  final List<ExpenseSettlement> expenseSettlements;
+  final double remainingAmount;
+
+  SettlementResult({
+    required this.expenseSettlements,
+    required this.remainingAmount,
+  });
 }
