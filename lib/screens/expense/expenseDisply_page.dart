@@ -20,6 +20,11 @@ class ExpenseDisplayPage extends StatefulWidget {
 }
 
 class _ExpenseDisplayPageState extends State<ExpenseDisplayPage> {
+  late Expense expense;
+  final ExpenseController expenseController = Get.find<ExpenseController>();
+
+
+
   @override
   void initState() {
     // TODO: implement initState
@@ -27,13 +32,33 @@ class _ExpenseDisplayPageState extends State<ExpenseDisplayPage> {
     //
     // expense = expenseController.selectedExpense!.value;
     super.initState();
+    expense = expenseController.selectedExpense;
+    // Listen for changes to the expense
+    ever(expenseController.groups, (_) {
+      if (mounted) {
+        setState(() {
+          expense = expenseController.selectedExpense;
+        });
+      }
+    });
+
+  }
+  void refreshExpense() {
+    setState(() {
+      expense = expenseController.selectedExpense;
+    });
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
   }
 
   getInitData() {}
 
   @override
   Widget build(BuildContext context) {
-    Expense expense = Get.find<ExpenseController>().selectedExpense;
+    //Expense expense = Get.find<ExpenseController>().selectedExpense;
 
     // final expense = expenseController.selectedExpense.value;
     return Scaffold(

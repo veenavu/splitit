@@ -40,16 +40,30 @@ class DashboardController extends GetxController {
   }
 
   Future<void> loadGroups() async {
-    isLoading.value = true; // Start loading
+    isLoading.value = true;
     try {
-      final allGroups = await ExpenseManagerService.getAllGroups(); // Fetch data
-      groups.value = allGroups; // Update groups
-      getBalanceText(); // Call related functions
+      final allGroups = ExpenseManagerService.getAllGroups();
+      groups.value = allGroups;
+
+      // Ensure balances are up to date
+      for (var group in groups) {
+        if (userProfile.value != null) {
+          final currentMember = Member(
+            name: userProfile.value!.name,
+            phone: userProfile.value!.phone,
+          );
+          final balance = ExpenseManagerService.getGroupBalance(group, currentMember);
+          // Update any cached balance information
+        }
+      }
+
+      getBalanceText();
       applyFilter();
+      update();
     } catch (e) {
-      Get.snackbar('Error', 'Failed to load groups: $e'); // Handle errors
+      print('Error loading groups: $e');
     } finally {
-      isLoading.value = false; // Stop loading
+      isLoading.value = false;
     }
   }
 

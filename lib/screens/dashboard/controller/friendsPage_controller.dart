@@ -1,8 +1,11 @@
+// In friendsPage_controller.dart
+
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:hive_flutter/hive_flutter.dart';
+import 'package:hive/hive.dart';
+
 import '../../../DatabaseHelper/hive_services.dart';
 import '../../../modelClass/models.dart';
+import 'package:get/get.dart';
 
 class FriendsController extends GetxController {
   RxList<Member> allMembers = <Member>[].obs;
@@ -23,7 +26,7 @@ class FriendsController extends GetxController {
     userProfile.value = ExpenseManagerService.getProfileByPhone(phone);
   }
 
-  void loadMembers() {
+  Future<void> loadMembers() async {
     try {
       isLoading.value = true;
       final currentUserPhone = userProfile.value?.phone;
@@ -56,10 +59,14 @@ class FriendsController extends GetxController {
             uniqueMembers[expense.paidByMember.phone] = expense.paidByMember;
 
             // Find current user's split
-            var currentUserSplit = expense.splits.firstWhere((split) => split.member.phone == currentUserPhone, orElse: () => ExpenseSplit(member: expense.paidByMember, amount: 0));
+            var currentUserSplit = expense.splits.firstWhere(
+                    (split) => split.member.phone == currentUserPhone,
+                orElse: () => ExpenseSplit(member: expense.paidByMember, amount: 0)
+            );
 
             // Subtract what current user owes to the payer
-            memberTotalBalances[expense.paidByMember.phone] = (memberTotalBalances[expense.paidByMember.phone] ?? 0) - currentUserSplit.amount;
+            memberTotalBalances[expense.paidByMember.phone] =
+                (memberTotalBalances[expense.paidByMember.phone] ?? 0) - currentUserSplit.amount;
           }
         } catch (e) {
           print('Error processing expense: ${e.toString()}');
@@ -68,7 +75,7 @@ class FriendsController extends GetxController {
       }
 
       // Convert to list format for the view
-      memberBalances.value = uniqueMembers.entries.map((entry) {
+      List<Map<String, dynamic>> updatedBalances = uniqueMembers.entries.map((entry) {
         return {
           'member': entry.value,
           'balance': memberTotalBalances[entry.key] ?? 0.0,
@@ -76,19 +83,33 @@ class FriendsController extends GetxController {
       }).toList();
 
       // Sort by absolute balance value (highest first)
-      memberBalances.sort((a, b) => b['balance'].abs().compareTo(a['balance'].abs()));
+      updatedBalances.sort((a, b) =>
+          b['balance'].abs().compareTo(a['balance'].abs())
+      );
+
+      // Update the observable list
+      memberBalances.value = updatedBalances;
+      update(); // Force UI update
+
     } catch (e) {
       print('Error loading members: $e');
+      rethrow; // Propagate error for handling in UI
     } finally {
       isLoading.value = false;
     }
   }
 
-  void navigateToSettlement(Member member, double balance) {
-    Get.toNamed('/settlement', arguments: {
-      'member': member,
-      'balance': balance,
-    });
+  double getMemberBalance(Member member) {
+    try {
+      final memberData = memberBalances.firstWhere(
+            (data) => (data['member'] as Member).phone == member.phone,
+        orElse: () => {'balance': 0.0},
+      );
+      return memberData['balance'] ?? 0.0;
+    } catch (e) {
+      print('Error getting member balance: $e');
+      return 0.0;
+    }
   }
 
   String getBalanceText(double balance) {
@@ -104,5 +125,9 @@ class FriendsController extends GetxController {
     if (balance > 0) return Colors.green;
     if (balance < 0) return Colors.red;
     return Colors.grey;
+  }
+
+  void refreshData() {
+    loadMembers();
   }
 }

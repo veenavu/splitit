@@ -7,6 +7,7 @@ import 'package:splitit/screens/expense/controller/expense_controller.dart';
 import 'package:splitit/screens/group/group_settings.dart';
 
 import '../../routes/app_routes.dart';
+import '../dashboard/controller/dashboard_controller.dart';
 import '../settlement/settlement_binding/settlement_binding.dart';
 import '../settlement/settlement_page.dart';
 
@@ -54,15 +55,23 @@ class _GroupDetailsState extends State<GroupDetails> {
     final box = Hive.box(ExpenseManagerService.normalBox);
     phoneNumber = box.get("mobile");
     final groupExpenses = ExpenseManagerService.getExpensesByGroup(widget.groupItem);
-    setState(() {
-      expenses = groupExpenses;
-    });
+    if (mounted) {
+      setState(() {
+        expenses = groupExpenses;
+      });
+    }
   }
 
   @override
   void initState() {
-    getAllExpenses();
     super.initState();
+    getAllExpenses();
+    // Add listener for settlement updates
+    ever(Get.find<DashboardController>().groups, (_) {
+      if (mounted) {
+        getAllExpenses();
+      }
+    });
   }
 
   @override
