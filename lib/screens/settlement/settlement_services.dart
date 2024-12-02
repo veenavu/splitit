@@ -1,30 +1,62 @@
-// settlement_service.dart
-
+// Updated SettlementService
+import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 import '../../DatabaseHelper/hive_services.dart';
 import '../../modelClass/models.dart';
-// settlement_service.dart
-
+import '../dashboard/controller/dashboard_controller.dart';
+import '../dashboard/controller/friendsPage_controller.dart';
 
 class SettlementService {
-  /// Records a settlement between two members
+  /// Records a settlement and updates all relevant UI components
+  static Future<Settlement> recordAndUpdateSettlement({
+    required Member payer,
+    required Member receiver,
+    required double amount,
+    required List<Group> groups,
+  }) async {
+    try {
+      // Step 1: Record the settlement
+      final settlement = await recordSettlement(
+        payer: payer,
+        receiver: receiver,
+        amount: amount,
+        groups: groups,
+      );
+
+      // Step 2: Update expense splits
+      await _updateExpenseSplits(settlement);
+
+      // Step 3: Update group balances
+      await _updateGroupBalances(settlement);
+
+      // Step 4: Update UI components
+      _updateUIComponents();
+
+      return settlement;
+    } catch (e) {
+      print('Error in recordAndUpdateSettlement: $e');
+      rethrow;
+    }
+  }
+
+  /// Records a basic settlement between two members
   static Future<Settlement> recordSettlement({
     required Member payer,
     required Member receiver,
     required double amount,
     required List<Group> groups,
   }) async {
-    // Step 1: Get all unsettled expenses involving both members from specified groups
+    // Get all unsettled expenses involving both members from specified groups
     List<Expense> unsettledExpenses = _getUnsettledExpenses(
       payer: payer,
       receiver: receiver,
       groups: groups,
     );
 
-    // Step 2: Sort expenses by creation date (oldest first)
+    // Sort expenses by creation date (oldest first)
     unsettledExpenses.sort((a, b) => a.createdAt.compareTo(b.createdAt));
 
-    // Step 3: Process the settlement
+    // Process the settlement
     final settlementResult = await _processSettlement(
       payer: payer,
       receiver: receiver,
@@ -32,7 +64,7 @@ class SettlementService {
       expenses: unsettledExpenses,
     );
 
-    // Step 4: Create and save the settlement record
+    // Create and save the settlement record
     final settlement = Settlement(
       payer: payer,
       receiver: receiver,
@@ -41,13 +73,13 @@ class SettlementService {
     );
 
     // Save the settlement
-    final box = Hive.box<Settlement>('settlements');
+    final box = Hive.box<Settlement>(ExpenseManagerService.settlementBoxName);
     await box.add(settlement);
 
     return settlement;
   }
 
-  /// Get all unsettled expenses involving both members from specified groups
+  /// Get unsettled expenses between members
   static List<Expense> _getUnsettledExpenses({
     required Member payer,
     required Member receiver,
@@ -59,7 +91,6 @@ class SettlementService {
       final expenses = ExpenseManagerService.getExpensesByGroup(group);
 
       for (var expense in expenses) {
-        // Check if both members are involved in this expense
         bool isPayerInvolved = expense.paidByMember.phone == payer.phone ||
             expense.splits.any((split) => split.member.phone == payer.phone);
 
@@ -67,7 +98,6 @@ class SettlementService {
             expense.splits.any((split) => split.member.phone == receiver.phone);
 
         if (isPayerInvolved && isReceiverInvolved) {
-          // Calculate remaining unsettled amount for this expense
           double unsettledAmount = _calculateUnsettledAmount(
             expense: expense,
             payer: payer,
@@ -84,7 +114,70 @@ class SettlementService {
     return relevantExpenses;
   }
 
-  /// Calculate the unsettled amount between payer and receiver for an expense
+  static Future<void> _updateExpenseSplits(Settlement settlement) async {
+    for (var expenseSettlement in settlement.expenseSettlements) {
+      final expense = expenseSettlement.expense;
+      final settledAmount = expenseSettlement.settledAmount;
+
+      // Update the splits based on who paid
+      if (expense.paidByMember.phone == settlement.receiver.phone) {
+        // Receiver paid, update payer's split
+        final payerSplit = _findSplit(expense.splits, settlement.payer.phone);
+        if (payerSplit != null) {
+          payerSplit.amount -= settledAmount;
+          await expense.save();
+        }
+      } else if (expense.paidByMember.phone == settlement.payer.phone) {
+        // Payer paid, update receiver's split
+        final receiverSplit = _findSplit(expense.splits, settlement.receiver.phone);
+        if (receiverSplit != null) {
+          receiverSplit.amount -= settledAmount;
+          await expense.save();
+        }
+      }
+    }
+  }
+
+  static Future<void> _updateGroupBalances(Settlement settlement) async {
+    // Group settlements by group for efficient updates
+    Map<int?, double> settledAmountsByGroup = {};
+
+    for (var expenseSettlement in settlement.expenseSettlements) {
+      final groupId = expenseSettlement.expense.group?.id;
+      if (groupId != null) {
+        settledAmountsByGroup[groupId] = (settledAmountsByGroup[groupId] ?? 0) +
+            expenseSettlement.settledAmount;
+      }
+    }
+
+    // Update each affected group
+    for (var entry in settledAmountsByGroup.entries) {
+      final group = ExpenseManagerService.getGroupById(entry.key!);
+      if (group != null) {
+        await ExpenseManagerService.updateGroup(group);
+      }
+    }
+  }
+
+  static void _updateUIComponents() {
+    try {
+      // Update Dashboard text
+      final dashboardController = Get.find<DashboardController>();
+      dashboardController.getBalanceText();
+      dashboardController.loadGroups();
+      dashboardController.applyFilter(); // Refresh filtered groups
+
+      // Update Friends list
+      if (Get.isRegistered<FriendsController>()) {
+        final friendsController = Get.find<FriendsController>();
+        friendsController.loadMembers();
+      }
+    } catch (e) {
+      print('Error updating UI components: $e');
+    }
+  }
+
+  /// Calculate unsettled amount between members for an expense
   static double _calculateUnsettledAmount({
     required Expense expense,
     required Member payer,
@@ -111,15 +204,6 @@ class SettlementService {
     return amount.abs();
   }
 
-  /// Helper method to find split for a member
-  static ExpenseSplit? _findSplit(List<ExpenseSplit> splits, String phone) {
-    try {
-      return splits.firstWhere((split) => split.member.phone == phone);
-    } catch (e) {
-      return null;
-    }
-  }
-
   /// Process the settlement and return settlement details
   static Future<SettlementResult> _processSettlement({
     required Member payer,
@@ -129,21 +213,6 @@ class SettlementService {
   }) async {
     double remainingAmount = amount;
     List<ExpenseSettlement> expenseSettlements = [];
-
-    // Sort expenses by smallest unsettled amount first
-    expenses.sort((a, b) {
-      double amountA = _calculateUnsettledAmount(
-        expense: a,
-        payer: payer,
-        receiver: receiver,
-      );
-      double amountB = _calculateUnsettledAmount(
-        expense: b,
-        payer: payer,
-        receiver: receiver,
-      );
-      return amountA.compareTo(amountB);
-    });
 
     for (var expense in expenses) {
       if (remainingAmount <= 0) break;
@@ -156,25 +225,15 @@ class SettlementService {
 
       if (unsettledAmount <= 0) continue;
 
-      // Determine how much of this expense can be settled
       double settleAmount = unsettledAmount <= remainingAmount
           ? unsettledAmount
           : remainingAmount;
 
-      // Create settlement record for this expense
       expenseSettlements.add(
         ExpenseSettlement(
           expense: expense,
           settledAmount: settleAmount,
         ),
-      );
-
-      // Update expense splits to reflect settlement
-      await _updateExpenseSplits(
-        expense: expense,
-        payer: payer,
-        receiver: receiver,
-        settledAmount: settleAmount,
       );
 
       remainingAmount -= settleAmount;
@@ -186,28 +245,11 @@ class SettlementService {
     );
   }
 
-  /// Update expense splits to reflect the settlement
-  static Future<void> _updateExpenseSplits({
-    required Expense expense,
-    required Member payer,
-    required Member receiver,
-    required double settledAmount,
-  }) async {
-    // Update splits based on who paid the expense
-    if (expense.paidByMember.phone == receiver.phone) {
-      // Receiver paid, updating payer's split
-      final payerSplit = _findSplit(expense.splits, payer.phone);
-      if (payerSplit != null) {
-        payerSplit.amount -= settledAmount;
-        await expense.save();
-      }
-    } else if (expense.paidByMember.phone == payer.phone) {
-      // Payer paid, updating receiver's split
-      final receiverSplit = _findSplit(expense.splits, receiver.phone);
-      if (receiverSplit != null) {
-        receiverSplit.amount -= settledAmount;
-        await expense.save();
-      }
+  static ExpenseSplit? _findSplit(List<ExpenseSplit> splits, String phone) {
+    try {
+      return splits.firstWhere((split) => split.member.phone == phone);
+    } catch (e) {
+      return null;
     }
   }
 }
