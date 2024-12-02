@@ -142,38 +142,42 @@ class MemberSettlementPage extends GetView<MemberSettlementController> {
   Widget _buildSettleButton(bool isUserOwing) {
     return Padding(
       padding: const EdgeInsets.all(16),
-      child: ElevatedButton(
-        onPressed: () {
-          final amount = controller.isCustomAmount.value
-              ? controller.customAmount.value
-              : totalBalance.abs();
+      child: Obx(() => ElevatedButton(
+        onPressed: controller.isProcessing.value
+            ? null
+            : () {
+              final amount = controller.isCustomAmount.value
+                  ? controller.customAmount.value
+                  : totalBalance.abs();
 
-          final selectedGroups = controller.groupBalances
-              .where((g) => !g['isSettled'])
-              .map((g) => g['group'] as Group)
-              .toList();
+              final selectedGroups = controller.groupBalances
+                  .where((g) => !g['isSettled'])
+                  .map((g) => g['group'] as Group)
+                  .toList();
 
-          controller.recordSettlement(
-            payer: isUserOwing
-                ? controller.currentUser.value!.toMember()
-                : member,
-            receiver: isUserOwing
-                ? member
-                : controller.currentUser.value!.toMember(),
-            amount: amount,
-            selectedGroups: selectedGroups,
-          );
-        //  Get.back();
+              controller.recordSettlement(
+                payer: isUserOwing
+                    ? controller.currentUser.value!.toMember()
+                    : member,
+                receiver: isUserOwing
+                    ? member
+                    : controller.currentUser.value!.toMember(),
+                amount: amount,
+                selectedGroups: selectedGroups,
+              );
+              Get.back();
+
         },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.purple,
-          minimumSize: const Size(double.infinity, 50),
-        ),
-        child: const Text(
-          'Record Settlement',
-          style: TextStyle(fontSize: 18),
-        ),
+    style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.purple,
+        minimumSize: const Size(double.infinity, 50),
       ),
+        child: controller.isProcessing.value
+            ? const CircularProgressIndicator(color: Colors.white)
+            : const Text('Record Settlement'),
+      ))
+
+
     );
   }
 }
