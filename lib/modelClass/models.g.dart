@@ -266,6 +266,92 @@ class ExpenseAdapter extends TypeAdapter<Expense> {
           typeId == other.typeId;
 }
 
+class SettlementAdapter extends TypeAdapter<Settlement> {
+  @override
+  final int typeId = 6;
+
+  @override
+  Settlement read(BinaryReader reader) {
+    final numOfFields = reader.readByte();
+    final fields = <int, dynamic>{
+      for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
+    };
+    return Settlement(
+      id: fields[0] as int?,
+      payer: fields[1] as Member,
+      receiver: fields[2] as Member,
+      amount: fields[3] as double,
+      expenseSettlements: (fields[5] as List).cast<ExpenseSettlement>(),
+      settledAt: fields[4] as DateTime?,
+    );
+  }
+
+  @override
+  void write(BinaryWriter writer, Settlement obj) {
+    writer
+      ..writeByte(6)
+      ..writeByte(0)
+      ..write(obj.id)
+      ..writeByte(1)
+      ..write(obj.payer)
+      ..writeByte(2)
+      ..write(obj.receiver)
+      ..writeByte(3)
+      ..write(obj.amount)
+      ..writeByte(4)
+      ..write(obj.settledAt)
+      ..writeByte(5)
+      ..write(obj.expenseSettlements);
+  }
+
+  @override
+  int get hashCode => typeId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SettlementAdapter &&
+          runtimeType == other.runtimeType &&
+          typeId == other.typeId;
+}
+
+class ExpenseSettlementAdapter extends TypeAdapter<ExpenseSettlement> {
+  @override
+  final int typeId = 7;
+
+  @override
+  ExpenseSettlement read(BinaryReader reader) {
+    final numOfFields = reader.readByte();
+    final fields = <int, dynamic>{
+      for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
+    };
+    return ExpenseSettlement(
+      expense: fields[0] as Expense,
+      settledAmount: fields[1] as double,
+    );
+  }
+
+  @override
+  void write(BinaryWriter writer, ExpenseSettlement obj) {
+    writer
+      ..writeByte(2)
+      ..writeByte(0)
+      ..write(obj.expense)
+      ..writeByte(1)
+      ..write(obj.settledAmount);
+  }
+
+  @override
+  int get hashCode => typeId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ExpenseSettlementAdapter &&
+          runtimeType == other.runtimeType &&
+          typeId == other.typeId;
+}
+
 class DivisionMethodAdapter extends TypeAdapter<DivisionMethod> {
   @override
   final int typeId = 3;

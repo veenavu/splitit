@@ -7,6 +7,8 @@ import 'package:splitit/screens/expense/controller/expense_controller.dart';
 import 'package:splitit/screens/group/group_settings.dart';
 
 import '../../routes/app_routes.dart';
+import '../settlement/settlement_binding/settlement_binding.dart';
+import '../settlement/settlement_page.dart';
 
 class GroupDetails extends StatefulWidget {
   final Group groupItem;
@@ -134,7 +136,17 @@ class _GroupDetailsState extends State<GroupDetails> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween, // Balanced spacing
               children: [
-                _buildButton('Settle Up', Colors.purple.shade100),
+                _buildButton(
+                    'Settle Up',
+                    Colors.purple,
+                    onPressed: () {
+                      Get.to(
+                            () => SettlementPage(group: widget.groupItem),
+                        binding: SettlementBinding(),
+                        arguments: {'group': widget.groupItem}, // Pass group as arguments
+                      );
+                    }
+                ),
                 _buildButton('Balance', Colors.purple.shade100),
                 _buildButton('Total', Colors.purple.shade100),
               ],
@@ -152,7 +164,7 @@ class _GroupDetailsState extends State<GroupDetails> {
                     _navigateToExpenseDisplay(() {
                       getAllExpenses();
                     });
-                    // Get.toNamed(Routes.displayExpense,/* arguments: {'expense': expenses[index]}*/);
+
                   },
                   onLongPress: () async {
                     showDialog(

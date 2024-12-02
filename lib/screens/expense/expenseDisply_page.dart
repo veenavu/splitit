@@ -273,12 +273,7 @@ class _ExpenseDisplayPageState extends State<ExpenseDisplayPage> {
                       expense.group?.groupName ?? 'Personal Expense',
                       Icons.group,
                     ),
-                    // const SizedBox(height: 12),
-                    // _buildInfoRow(
-                    //   'Category',
-                    //   expense!.category ?? 'Uncategorized',
-                    //   Icons.category,
-                    // ),
+
                     const SizedBox(height: 12),
                     _buildInfoRow(
                       'Date',
@@ -346,7 +341,7 @@ class _ExpenseDisplayPageState extends State<ExpenseDisplayPage> {
 
   _navigateToEditPage(VoidCallback callback) {
     Get.toNamed(
-      Routes.ediitExpense, /*arguments: {'expense': expense, 'group': expense!.group}*/
+      Routes.ediitExpense,
     )?.then((value) {
       callback.call();
     });
@@ -388,66 +383,5 @@ class _ExpenseDisplayPageState extends State<ExpenseDisplayPage> {
     return '${date.day}/${date.month}/${date.year}';
   }
 
-  void _showDeleteConfirmation(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          title: const Text(
-            'Delete Expense',
-            style: TextStyle(
-              color: Colors.red,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          content: const Text(
-            'Are you sure you want to delete this expense? This action cannot be undone.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text(
-                'Cancel',
-                style: TextStyle(color: Colors.grey),
-              ),
-            ),
-            TextButton(
-              onPressed: () async {
-                try {
-                  await ExpenseManagerService.deleteExpense(Get.find<ExpenseController>().selectedExpense);
-                  Get.back(); // Close dialog
-                  Get.back(); // Return to previous screen
-                  Get.snackbar(
-                    'Success',
-                    'Expense deleted successfully',
-                    snackPosition: SnackPosition.BOTTOM,
-                    backgroundColor: Colors.green.withOpacity(0.1),
-                    colorText: Colors.green,
-                  );
-                } catch (e) {
-                  Get.snackbar(
-                    'Error',
-                    'Failed to delete expense: ${e.toString()}',
-                    snackPosition: SnackPosition.BOTTOM,
-                    backgroundColor: Colors.red.withOpacity(0.1),
-                    colorText: Colors.red,
-                  );
-                }
-              },
-              child: const Text(
-                'Delete',
-                style: TextStyle(
-                  color: Colors.red,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
+  
 }

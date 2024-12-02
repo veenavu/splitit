@@ -11,6 +11,7 @@ class ExpenseManagerService {
   static const String expenseBoxName = 'expenses';
   static const String normalBox = 'normalBox';
   static const String counterBoxName = 'counters';
+  static const String settlementBoxName = 'settlements';
 
   //Add a Map to track open Boxes
   static final Map<String, Box> _openBoxes = {};
@@ -27,6 +28,9 @@ class ExpenseManagerService {
       Hive.registerAdapter(DivisionMethodAdapter());
       Hive.registerAdapter(ExpenseAdapter());
       Hive.registerAdapter(ExpenseSplitAdapter());
+      Hive.registerAdapter(SettlementAdapter()) ;
+      Hive.registerAdapter(ExpenseSettlementAdapter());
+
       // Open Boxes
       await Hive.openBox<Profile>(profileBoxName);
       await Hive.openBox<Group>(groupBoxName);
@@ -34,6 +38,7 @@ class ExpenseManagerService {
       await Hive.openBox<Expense>(expenseBoxName);
       await Hive.openBox<int>(counterBoxName);
       await Hive.openBox(normalBox);
+      await Hive.openBox<Settlement>(settlementBoxName);
     } catch (e) {
       print(e);
     }
@@ -477,6 +482,40 @@ class ExpenseManagerService {
     }
   }
 
+
+  static Future<void> updateBalancesAfterSettlement(Settlement settlement) async {
+    try {
+      // Update member balances
+      final membersBox = Hive.box<Member>(memberBoxName);
+
+      // Update payer's balance
+      final payer = membersBox.get(settlement.payer.phone);
+      if (payer != null) {
+        payer.totalAmountOwedByMe -= settlement.amount;
+        await payer.save();
+      }
+
+      // Update receiver's balance
+      final receiver = membersBox.get(settlement.receiver.phone);
+      if (receiver != null) {
+        receiver.totalAmountOwedByMe += settlement.amount;
+        await receiver.save();
+      }
+
+      // Update affected groups
+      for (var expenseSettlement in settlement.expenseSettlements) {
+        if (expenseSettlement.expense.group != null) {
+          final group = expenseSettlement.expense.group!;
+          await updateGroup(group);
+        }
+      }
+
+    } catch (e) {
+      print('Error updating balances after settlement: $e');
+      throw Exception('Failed to update balances: ${e.toString()}');
+    }
+  }
+
   static MemberNetWorth getMemberNetWorth(Member member) {
     final expenses = getAllExpenses();
     double totalLent = 0.0;
@@ -546,6 +585,95 @@ class ExpenseManagerService {
       categoryTotals: categoryTotals,
     );
   }
+
+  // In ExpenseManagerService class, add these methods:
+
+  static Future<void> settleExpense(Expense expense, Member payer, Member receiver, double settledAmount) async {
+    try {
+      // Find the split for the payer
+      var payerSplit = expense.splits.firstWhere(
+            (split) => split.member.phone == payer.phone,
+        orElse: () => throw Exception('Payer split not found'),
+      );
+
+      // Reduce the amount in the split
+      payerSplit.amount -= settledAmount;
+
+      // Update the expense in the database
+      await expense.save();
+
+      // Update member balances
+      await _updateMemberBalancesAfterSettlement(payer, receiver, settledAmount);
+    } catch (e) {
+      throw Exception('Failed to settle expense: ${e.toString()}');
+    }
+  }
+
+  static Future<void> _updateMemberBalancesAfterSettlement(
+      Member payer,
+      Member receiver,
+      double amount
+      ) async {
+    final membersBox = Hive.box<Member>(memberBoxName);
+
+    // Update payer's balance
+    final payerMember = membersBox.get(payer.phone);
+    if (payerMember != null) {
+      payerMember.totalAmountOwedByMe -= amount;
+      await payerMember.save();
+    }
+
+    // Update receiver's balance
+    final receiverMember = membersBox.get(receiver.phone);
+    if (receiverMember != null) {
+      receiverMember.totalAmountOwedByMe += amount;
+      await receiverMember.save();
+    }
+  }
+
+// Add a method to record settlements with full expense history
+  static Future<void> recordDetailedSettlement({
+    required Member payer,
+    required Member receiver,
+    required double amount,
+    required List<Expense> settledExpenses,
+    required List<double> settledAmounts,
+  }) async {
+    try {
+      // Create settlement record
+      final settlement = Settlement(
+        payer: payer,
+        receiver: receiver,
+        amount: amount,
+        expenseSettlements: List.generate(
+          settledExpenses.length,
+              (i) => ExpenseSettlement(
+            expense: settledExpenses[i],
+            settledAmount: settledAmounts[i],
+          ),
+        ),
+      );
+
+      // Save settlement record
+      final settlementBox = Hive.box<Settlement>(settlementBoxName);
+      await settlementBox.add(settlement);
+
+      // Update each expense and member balances
+      for (var i = 0; i < settledExpenses.length; i++) {
+        await settleExpense(
+          settledExpenses[i],
+          payer,
+          receiver,
+          settledAmounts[i],
+        );
+      }
+    } catch (e) {
+      throw Exception('Failed to record settlement: ${e.toString()}');
+    }
+  }
+
+
+
 }
 
 class MemberNetWorth {

@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../modelClass/models.dart';
+import '../../settlement/memberSettlement_page.dart';
+import '../../settlement/settleement_controller/memberSettlement_controller.dart';
+import '../../settlement/settlement_binding/settlement_binding.dart';
+import '../../settlement/settlement_page.dart';
 import '../controller/friendsPage_controller.dart';
 
 class FriendsPage extends GetView<FriendsController> {
@@ -130,7 +134,15 @@ class FriendsPage extends GetView<FriendsController> {
                 ),
                 trailing: balance != 0
                     ? ElevatedButton(
-                        onPressed: () => controller.navigateToSettlement(member, balance),
+                  onPressed: () {
+                    Get.put(MemberSettlementController());
+                    Get.to(
+                          () => MemberSettlementPage(
+                        member: member,
+                        totalBalance: balance,
+                      ),
+                    );
+                  },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.purple,
                           foregroundColor: Colors.white,

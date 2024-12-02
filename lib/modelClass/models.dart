@@ -347,16 +347,70 @@ class Expense extends HiveObject {
   }
 }
 
+
+@HiveType(typeId: 6)
+class Settlement extends HiveObject {
+  @HiveField(0)
+  final int? id;
+
+  @HiveField(1)
+  final Member payer;
+
+  @HiveField(2)
+  final Member receiver;
+
+  @HiveField(3)
+  final double amount;
+
+  @HiveField(4)
+  final DateTime settledAt;
+
+  @HiveField(5)
+  final List<ExpenseSettlement> expenseSettlements;
+
+  Settlement({
+    this.id,
+    required this.payer,
+    required this.receiver,
+    required this.amount,
+    required this.expenseSettlements,
+    DateTime? settledAt,
+  }) : settledAt = settledAt ?? DateTime.now();
+
+  String getSettlementStatus(){
+    return payer.name == receiver.name ? 'Self Settlement' :  'Group Settlement';
+  }
+  DateTime get date => settledAt;
+
+}
+
+@HiveType(typeId: 7)
+class ExpenseSettlement extends HiveObject {
+  @HiveField(0)
+  final Expense expense;
+
+  @HiveField(1)
+  final double settledAmount;
+
+  ExpenseSettlement({
+    required this.expense,
+    required this.settledAmount,
+  });
+}
+
+
+
+
+
+
 class SettlementTransaction {
-  final int? sid;
-  final Member from;
-  final Member to;
+  final Member payer;
+  final Member receiver;
   final double amount;
 
   SettlementTransaction({
-     this.sid,
-    required this.from,
-    required this.to,
+    required this.payer,
+    required this.receiver,
     required this.amount,
   });
 }

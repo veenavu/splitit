@@ -12,10 +12,13 @@ import 'package:splitit/screens/welcome/get_started.dart';
 import 'package:splitit/screens/welcome/splash.dart';
 import 'package:splitit/screens/dashboard/binding/friendsPage_binding.dart';
 
+import '../DatabaseHelper/hive_services.dart';
 import '../modelClass/models.dart';
 import '../screens/dashboard/pages/friends_page.dart';
 import '../screens/expense/editExpense_page.dart';
 import '../screens/expense/expenseDisply_page.dart';
+import '../screens/settlement/settlement_binding/settlement_binding.dart';
+import '../screens/settlement/settlement_page.dart';
 
 class AppPages {
   static final pages = [
@@ -67,6 +70,15 @@ class AppPages {
         // final group = args['group'] as Group;
         return EditExpensePage(/*expense: expense, group: group,*/);
       },
+    ),
+    GetPage(
+      name: '/settlement/:groupId',
+      page: () {
+        final groupId = int.parse(Get.parameters['groupId']!);
+        final group = ExpenseManagerService.getGroupById(groupId);
+        return SettlementPage(group: group!);
+      },
+      binding: SettlementBinding(),
     ),
   ];
 }
