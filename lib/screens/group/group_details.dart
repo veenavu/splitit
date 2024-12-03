@@ -28,22 +28,25 @@ class _GroupDetailsState extends State<GroupDetails> {
   double calculateNetAmount(Expense expense, String memberPhone) {
     double netAmount = 0.0;
 
-    // If the member is the payer
     if (expense.paidByMember.phone == memberPhone) {
-      // Add the total amount they paid
-      netAmount += expense.totalAmount;
+      // When member is the payer
+      // Calculate how much they get back (total amount minus their own share)
+      double totalLent = 0.0;
 
-      // Subtract their own share from splits
+      // Calculate total amount lent (sum of all other members' remaining splits)
       for (var split in expense.splits) {
-        if (split.member.phone == memberPhone) {
-          netAmount -= split.amount;
+        if (split.member.phone != memberPhone) {
+          totalLent += split.amount;
         }
       }
+
+      netAmount = totalLent; // This is what they get back
     } else {
-      // If they're not the payer, they only need to pay their split
+      // When member is not the payer, they only need to pay their split
       for (var split in expense.splits) {
         if (split.member.phone == memberPhone) {
           netAmount = -split.amount; // Negative because they owe this amount
+          break;
         }
       }
     }
