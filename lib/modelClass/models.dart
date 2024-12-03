@@ -398,6 +398,40 @@ class ExpenseSettlement extends HiveObject {
   });
 }
 
+@HiveType(typeId: 8)  // Use a unique type ID
+class Activity extends HiveObject {
+  @HiveField(0)
+  int? id;
+
+  @HiveField(1)
+  String type;  // 'expense_added', 'group_created', 'settlement', 'member_added'
+
+  @HiveField(2)
+  String title;
+
+  @HiveField(3)
+  String description;
+
+  @HiveField(4)
+  DateTime createdAt;
+
+  @HiveField(5)
+  Group? relatedGroup;
+
+  @HiveField(6)
+  Member? relatedMember;
+
+  Activity({
+    this.id,
+    required this.type,
+    required this.title,
+    required this.description,
+    DateTime? createdAt,
+    this.relatedGroup,
+    this.relatedMember,
+  }) : createdAt = createdAt ?? DateTime.now();
+}
+
 
 
 

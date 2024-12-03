@@ -352,6 +352,58 @@ class ExpenseSettlementAdapter extends TypeAdapter<ExpenseSettlement> {
           typeId == other.typeId;
 }
 
+class ActivityAdapter extends TypeAdapter<Activity> {
+  @override
+  final int typeId = 8;
+
+  @override
+  Activity read(BinaryReader reader) {
+    final numOfFields = reader.readByte();
+    final fields = <int, dynamic>{
+      for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
+    };
+    return Activity(
+      id: fields[0] as int?,
+      type: fields[1] as String,
+      title: fields[2] as String,
+      description: fields[3] as String,
+      createdAt: fields[4] as DateTime?,
+      relatedGroup: fields[5] as Group?,
+      relatedMember: fields[6] as Member?,
+    );
+  }
+
+  @override
+  void write(BinaryWriter writer, Activity obj) {
+    writer
+      ..writeByte(7)
+      ..writeByte(0)
+      ..write(obj.id)
+      ..writeByte(1)
+      ..write(obj.type)
+      ..writeByte(2)
+      ..write(obj.title)
+      ..writeByte(3)
+      ..write(obj.description)
+      ..writeByte(4)
+      ..write(obj.createdAt)
+      ..writeByte(5)
+      ..write(obj.relatedGroup)
+      ..writeByte(6)
+      ..write(obj.relatedMember);
+  }
+
+  @override
+  int get hashCode => typeId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ActivityAdapter &&
+          runtimeType == other.runtimeType &&
+          typeId == other.typeId;
+}
+
 class DivisionMethodAdapter extends TypeAdapter<DivisionMethod> {
   @override
   final int typeId = 3;

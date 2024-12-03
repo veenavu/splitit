@@ -3,6 +3,7 @@ import 'package:splitit/routes/app_routes.dart';
 import 'package:splitit/screens/auth/binding/auth_binding.dart';
 import 'package:splitit/screens/auth/login_page.dart';
 import 'package:splitit/screens/auth/sign_up.dart';
+import 'package:splitit/screens/dashboard/binding/activityPage_binding.dart';
 import 'package:splitit/screens/dashboard/binding/dashboard_binding.dart';
 import 'package:splitit/screens/dashboard/dashboard.dart';
 import 'package:splitit/screens/expense/add_expense_page.dart';
@@ -14,6 +15,8 @@ import 'package:splitit/screens/dashboard/binding/friendsPage_binding.dart';
 
 import '../DatabaseHelper/hive_services.dart';
 import '../modelClass/models.dart';
+import '../screens/dashboard/controller/activityPage_controller.dart';
+import '../screens/dashboard/pages/activity_page.dart';
 import '../screens/dashboard/pages/friends_page.dart';
 import '../screens/expense/editExpense_page.dart';
 import '../screens/expense/expenseDisply_page.dart';
@@ -80,5 +83,13 @@ class AppPages {
       },
       binding: SettlementBinding(),
     ),
+    GetPage(
+      name: Routes.activity,
+      page: () => const ActivitiesPage(),
+      binding: BindingsBuilder(() {
+        Get.lazyPut(() => ActivityController());
+      }),
+    ),
+
   ];
 }

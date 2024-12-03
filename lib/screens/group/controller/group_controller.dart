@@ -10,6 +10,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:splitit/DatabaseHelper/hive_services.dart';
 import 'package:splitit/modelClass/models.dart';
 
+import '../../dashboard/services/activityPage_services.dart';
+
 class AddNewGroupController extends GetxController {
   // Observable variables
   final groupNameController = TextEditingController();
@@ -133,6 +135,12 @@ class AddNewGroupController extends GetxController {
 
   // Group Saving
   Future<void> saveGroup() async {
+    Member currentUser= Member(
+      name: 'Veena V U',
+      phone: '9876543210',
+      imagePath: null,
+      // Add any new required fields here
+    );
     if (!validateInputs()) {
       Get.snackbar(
         'Error',
@@ -156,12 +164,13 @@ class AddNewGroupController extends GetxController {
       Profile? userProfile = ExpenseManagerService.getProfileByPhone(phone);
 
       if (userProfile != null) {
-        members.add(Member(
+        currentUser = Member(
           name: userProfile.name,
           phone: userProfile.phone,
           imagePath: userProfile.imagePath,
           // Add any new required fields here
-        ));
+        );
+        members.add(currentUser);
       }
 
       // Create and save group
@@ -174,6 +183,7 @@ class AddNewGroupController extends GetxController {
       );
 
       await ExpenseManagerService.saveTheGroup(group);
+
 
       Get.back();
       Get.snackbar(

@@ -10,6 +10,7 @@ import 'package:splitit/screens/dashboard/pages/friends_page.dart';
 import 'package:splitit/screens/dashboard/pages/group_list_page.dart';
 import 'package:splitit/screens/dashboard/pages/profile_page.dart';
 
+import 'activityPage_controller.dart';
 import 'friendsPage_controller.dart';
 
 class DashboardController extends GetxController {
@@ -27,7 +28,10 @@ class DashboardController extends GetxController {
       init: FriendsController(),
       builder: (controller) => const FriendsPage(),
     ),
-    const ActivitiesPage(),
+    GetBuilder<ActivityController>(
+      init: ActivityController(),
+      builder: (controller) => const ActivitiesPage(),
+    ),
     const ProfilePage(),
   ];
 

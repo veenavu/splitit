@@ -11,4 +11,6 @@ abstract class Routes {
   static const friends = '/friends';
   static const displayExpense = '/display-expense';
   static const ediitExpense = '/edit-expense';
+  static const settleExpense = '/settle-expense';
+  static const activity = '/activity';
 }

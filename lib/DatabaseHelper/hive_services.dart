@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 import '../modelClass/models.dart';
+import '../screens/dashboard/services/activityPage_services.dart';
 
 class ExpenseManagerService {
   static const String profileBoxName = 'profiles';
@@ -12,6 +13,7 @@ class ExpenseManagerService {
   static const String normalBox = 'normalBox';
   static const String counterBoxName = 'counters';
   static const String settlementBoxName = 'settlements';
+  static const String activityBoxName = 'activities';
 
   //Add a Map to track open Boxes
   static final Map<String, Box> _openBoxes = {};
@@ -30,6 +32,7 @@ class ExpenseManagerService {
       Hive.registerAdapter(ExpenseSplitAdapter());
       Hive.registerAdapter(SettlementAdapter()) ;
       Hive.registerAdapter(ExpenseSettlementAdapter());
+      Hive.registerAdapter(ActivityAdapter()) ;
 
       // Open Boxes
       await Hive.openBox<Profile>(profileBoxName);
@@ -39,6 +42,7 @@ class ExpenseManagerService {
       await Hive.openBox<int>(counterBoxName);
       await Hive.openBox(normalBox);
       await Hive.openBox<Settlement>(settlementBoxName);
+      await Hive.openBox<Activity>(activityBoxName);
     } catch (e) {
       print(e);
     }
@@ -95,6 +99,22 @@ class ExpenseManagerService {
       int nextId = _getNextId("group");
       group.id = nextId;
       await box.add(group);
+
+      // Get current user
+      final currentUserPhone = Hive.box(normalBox).get("mobile");
+      final currentUser = getProfileByPhone(currentUserPhone);
+
+      if (currentUser != null) {
+        // Log group creation activity
+        await ActivityService.logGroupCreated(
+            group,
+            Member(
+                name: currentUser.name,
+                phone: currentUser.phone,
+                imagePath: currentUser.imagePath
+            )
+        );
+      }
     } catch (e) {
       throw Exception('Failed to save group: ${e.toString()}');
     }
@@ -115,12 +135,13 @@ class ExpenseManagerService {
     return null;
   }
 
+
   static Future<void> updateGroup(Group group) async {
     try {
       final box = Hive.box<Group>(groupBoxName);
+      int? index;
 
       // Find the index of the group in the box
-      int? index;
       for (int i = 0; i < box.length; i++) {
         if (box.getAt(i)?.id == group.id) {
           index = i;
@@ -129,7 +150,68 @@ class ExpenseManagerService {
       }
 
       if (index != null) {
-        // Update the group at the found index
+        // Get the old group data for comparison
+        final oldGroup = box.getAt(index);
+
+        // Get current user
+        final currentUserPhone = Hive.box(normalBox).get("mobile");
+        final currentUser = getProfileByPhone(currentUserPhone);
+
+        if (currentUser != null && oldGroup != null) {
+          final editor = Member(
+              name: currentUser.name,
+              phone: currentUser.phone,
+              imagePath: currentUser.imagePath
+          );
+
+          // Check for name changes
+          if (oldGroup.groupName != group.groupName) {
+            await ActivityService.logGroupNameChanged(
+                group,
+                oldGroup.groupName,
+                group.groupName,
+                editor
+            );
+          }
+
+          // Check for type changes
+          if (oldGroup.category != group.category) {
+            await ActivityService.logGroupTypeChanged(
+                group,
+                oldGroup.category,
+                group.category,
+                editor
+            );
+          }
+
+          // Check for member changes
+          Set<String> oldMembers = oldGroup.members.map((m) => m.phone).toSet();
+          Set<String> newMembers = group.members.map((m) => m.phone).toSet();
+
+          // Log removed members
+          for (var oldMember in oldGroup.members) {
+            if (!newMembers.contains(oldMember.phone)) {
+              await ActivityService.logMemberRemoved(
+                  group,
+                  oldMember,
+                  editor
+              );
+            }
+          }
+
+          // Log added members
+          for (var newMember in group.members) {
+            if (!oldMembers.contains(newMember.phone)) {
+              await ActivityService.logMemberAdded(
+                  group,
+                  newMember,
+                  editor
+              );
+            }
+          }
+        }
+
+        // Update the group
         await box.putAt(index, group);
       } else {
         throw Exception('Group not found in database');
@@ -141,15 +223,34 @@ class ExpenseManagerService {
   }
 
   static Future<void> deleteGroup(Group group) async {
-    // First delete all expenses in the group
-    final expenses = getExpensesByGroup(group);
+    try {
+      // Get current user before deleting
+      final currentUserPhone = Hive.box(normalBox).get("mobile");
+      final currentUser = getProfileByPhone(currentUserPhone);
 
-    for (var expense in expenses) {
-      await deleteExpense(expense);
+      // Delete expenses first
+      final expenses = getExpensesByGroup(group);
+      for (var expense in expenses) {
+        await deleteExpense(expense);
+      }
+
+      // Log the deletion if we have a current user
+      if (currentUser != null) {
+        await ActivityService.logGroupDeleted(
+            group,
+            Member(
+                name: currentUser.name,
+                phone: currentUser.phone,
+                imagePath: currentUser.imagePath
+            )
+        );
+      }
+
+      // Finally delete the group
+      await group.delete();
+    } catch (e) {
+      throw Exception('Failed to delete group: ${e.toString()}');
     }
-
-    // Then delete the group itself
-    await group.delete();
   }
 
   static List<Group> getGroupsYouOwe(Member member) {
@@ -248,49 +349,51 @@ class ExpenseManagerService {
     List<double>? customAmounts,
     List<double>? percentages,
   }) async {
-    List<ExpenseSplit> splits;
+    try {
+      List<ExpenseSplit> splits;
+      switch (divisionMethod) {
+        case DivisionMethod.equal:
+          splits = _splitEqually(totalAmount, involvedMembers);
+          break;
+        case DivisionMethod.unequal:
+          if (customAmounts == null || customAmounts.length != involvedMembers.length) {
+            throw Exception('Custom amounts must be provided for unequal split');
+          }
+          splits = Expense.createSplitsFromAmounts(involvedMembers, customAmounts);
+          break;
+        case DivisionMethod.percentage:
+          if (percentages == null || percentages.length != involvedMembers.length) {
+            throw Exception('Percentages must be provided for percentage split');
+          }
+          splits = _splitByPercentage(totalAmount, involvedMembers, percentages);
+          break;
+      }
 
-    switch (divisionMethod) {
-      case DivisionMethod.equal:
-        splits = _splitEqually(totalAmount, involvedMembers);
-        break;
+      final expense = Expense(
+        totalAmount: totalAmount,
+        divisionMethod: divisionMethod,
+        paidByMember: paidByMember,
+        splits: splits,
+        group: group,
+        description: description,
+      );
 
-      case DivisionMethod.unequal:
-        if (customAmounts == null || customAmounts.length != involvedMembers.length) {
-          throw Exception('Custom amounts must be provided for unequal split');
-        }
-        if (customAmounts.fold<double>(0, (sum, amount) => sum + amount) != totalAmount) {
-          throw Exception('Sum of custom amounts must equal total amount');
-        }
-        splits = Expense.createSplitsFromAmounts(involvedMembers, customAmounts);
-        break;
+      if (expense.validateSplits()) {
+        final box = Hive.box<Expense>(expenseBoxName);
+        await box.add(expense);
+        await _updateMemberBalances(expense);
 
-      case DivisionMethod.percentage:
-        if (percentages == null || percentages.length != involvedMembers.length) {
-          throw Exception('Percentages must be provided for percentage split');
-        }
-        if (percentages.fold<double>(0, (sum, pct) => sum + pct) != 100) {
-          throw Exception('Percentages must sum to 100');
-        }
-        splits = _splitByPercentage(totalAmount, involvedMembers, percentages);
-        break;
-    }
+        // Log expense creation activity
+        await ActivityService.logExpenseAdded(
+          expense,
+          paidByMember,
+        );
 
-    final expense = Expense(
-      totalAmount: totalAmount,
-      divisionMethod: divisionMethod,
-      paidByMember: paidByMember,
-      splits: splits,
-      group: group,
-      description: description,
-    );
-
-    if (expense.validateSplits()) {
-      final box = Hive.box<Expense>(expenseBoxName);
-      await box.add(expense);
-      await _updateMemberBalances(expense);
-    } else {
-      throw Exception('Invalid splits: Total of splits does not match expense amount');
+      } else {
+        throw Exception('Invalid splits: Total of splits does not match expense amount');
+      }
+    } catch (e) {
+      throw Exception('Failed to create expense: ${e.toString()}');
     }
   }
 
@@ -305,50 +408,73 @@ class ExpenseManagerService {
     List<double>? customAmounts,
     List<double>? percentages,
   }) async {
-    // Reverse previous balance updates
-    await _reverseMemberBalances(expense);
+    try {
+      // Store old values for activity logging
+      final oldAmount = expense.totalAmount;
+      final oldPayer = expense.paidByMember;
+      final oldDescription = expense.description;
 
-    List<ExpenseSplit> splits;
-    switch (divisionMethod) {
-      case DivisionMethod.equal:
-        splits = _splitEqually(totalAmount, involvedMembers);
-        break;
+      // Reverse previous balance updates
+      await _reverseMemberBalances(expense);
 
-      case DivisionMethod.unequal:
-        if (customAmounts == null || customAmounts.length != involvedMembers.length) {
-          throw Exception('Custom amounts must be provided for unequal split');
+      List<ExpenseSplit> splits;
+      switch (divisionMethod) {
+        case DivisionMethod.equal:
+          splits = _splitEqually(totalAmount, involvedMembers);
+          break;
+        case DivisionMethod.unequal:
+          if (customAmounts == null || customAmounts.length != involvedMembers.length) {
+            throw Exception('Custom amounts must be provided for unequal split');
+          }
+          splits = Expense.createSplitsFromAmounts(involvedMembers, customAmounts);
+          break;
+        case DivisionMethod.percentage:
+          if (percentages == null || percentages.length != involvedMembers.length) {
+            throw Exception('Percentages must be provided for percentage split');
+          }
+          splits = _splitByPercentage(totalAmount, involvedMembers, percentages);
+          break;
+      }
+
+      // Update expense properties
+      expense
+        ..totalAmount = totalAmount
+        ..divisionMethod = divisionMethod
+        ..paidByMember = paidByMember
+        ..splits = splits
+        ..group = group
+        ..description = description;
+
+      if (expense.validateSplits()) {
+        await expense.save();
+        await _updateMemberBalances(expense);
+
+        // Build changes description for activity log
+        List<String> changes = [];
+        if (oldAmount != totalAmount) {
+          changes.add('amount changed from ₹${oldAmount.toStringAsFixed(2)} to ₹${totalAmount.toStringAsFixed(2)}');
         }
-        if (customAmounts.fold<double>(0, (sum, amount) => sum + amount) != totalAmount) {
-          throw Exception('Sum of custom amounts must equal total amount');
+        if (oldPayer.phone != paidByMember.phone) {
+          changes.add('payer changed from ${oldPayer.name} to ${paidByMember.name}');
         }
-        splits = Expense.createSplitsFromAmounts(involvedMembers, customAmounts);
-        break;
-
-      case DivisionMethod.percentage:
-        if (percentages == null || percentages.length != involvedMembers.length) {
-          throw Exception('Percentages must be provided for percentage split');
+        if (oldDescription != description) {
+          changes.add('description updated');
         }
-        if (percentages.fold<double>(0, (sum, pct) => sum + pct) != 100) {
-          throw Exception('Percentages must sum to 100');
+
+        if (changes.isNotEmpty) {
+          // Log expense update activity
+          await ActivityService.logExpenseEdited(
+            expense,
+            paidByMember,
+            changes.join(', '),
+          );
         }
-        splits = _splitByPercentage(totalAmount, involvedMembers, percentages);
-        break;
-    }
 
-    // Update expense properties
-    expense
-      ..totalAmount = totalAmount
-      ..divisionMethod = divisionMethod
-      ..paidByMember = paidByMember
-      ..splits = splits
-      ..group = group
-      ..description = description;
-
-    if (expense.validateSplits()) {
-      await expense.save();
-      await _updateMemberBalances(expense);
-    } else {
-      throw Exception('Invalid splits: Total of splits does not match expense amount');
+      } else {
+        throw Exception('Invalid splits: Total of splits does not match expense amount');
+      }
+    } catch (e) {
+      throw Exception('Failed to update expense: ${e.toString()}');
     }
   }
 
@@ -364,9 +490,29 @@ class ExpenseManagerService {
   }
 
   static Future<void> deleteExpense(Expense expense) async {
-    // Reverse the member balance updates
-    await _reverseMemberBalances(expense);
-    await expense.delete();
+    try {
+      // Get current user before deleting
+      final box = Hive.box(normalBox);
+      final currentUserPhone = box.get("mobile");
+      final currentUser = getProfileByPhone(currentUserPhone);
+
+      if (currentUser != null) {
+        // Log expense deletion activity
+        await ActivityService.logExpenseDeleted(
+          expense,
+          Member(
+            name: currentUser.name,
+            phone: currentUser.phone,
+          ),
+        );
+      }
+
+      // Reverse the member balance updates
+      await _reverseMemberBalances(expense);
+      await expense.delete();
+    } catch (e) {
+      throw Exception('Failed to delete expense: ${e.toString()}');
+    }
   }
 
   static String getGroupBalanceText(Member member, Group group) {
@@ -588,7 +734,12 @@ class ExpenseManagerService {
 
   // In ExpenseManagerService class, add these methods:
 
-  static Future<void> settleExpense(Expense expense, Member payer, Member receiver, double settledAmount) async {
+  static Future<void> settleExpense(
+      Expense expense,
+      Member payer,
+      Member receiver,
+      double settledAmount
+      ) async {
     try {
       // Find the split for the payer
       var payerSplit = expense.splits.firstWhere(
@@ -604,6 +755,14 @@ class ExpenseManagerService {
 
       // Update member balances
       await _updateMemberBalancesAfterSettlement(payer, receiver, settledAmount);
+
+      // Log settlement activity
+      await ActivityService.logSettlement(
+        payer,
+        receiver,
+        settledAmount,
+        expense.group != null ? [expense.group!] : null,
+      );
     } catch (e) {
       throw Exception('Failed to settle expense: ${e.toString()}');
     }
