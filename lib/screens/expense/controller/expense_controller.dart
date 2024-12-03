@@ -28,33 +28,14 @@ class ExpenseController extends GetxController {
 
 
 
-  //
-  // final _descriptionController = TextEditingController();
-  // final _amountController = TextEditingController();
-  // final Map<String, TextEditingController> _memberAmountControllers = {};
-  //
-  // final RxList<Member> members = <Member>[].obs;
-  // final RxList<Member> selectedMembers = <Member>[].obs;
-  // final RxList<Group> groups = <Group>[].obs;
-  //
-  // final Rxn<Group> selectedGroup = Rxn<Group>();
-  // final selectedPayer = Rx<Member?>(null);
-  // final RxString selectedSplitOption = 'Equally'.obs;
-  //
-  // late Expense selectedExpense;
+
 
   onExpenseSelected(Expense expense) {
     selectedExpense = expense;
     print(selectedExpense.description);
   }
 
-  // RxDouble remaining = 0.0.obs;
-  //
-  // TextEditingController get descriptionController => _descriptionController;
-  //
-  // TextEditingController get amountController => _amountController;
-  //
-  // Map<String, TextEditingController> get memberAmountControllers => _memberAmountControllers;
+
 
   void initializeExpenseData(Expense? expense) {
     // Clear previous data first
