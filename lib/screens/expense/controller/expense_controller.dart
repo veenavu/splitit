@@ -7,8 +7,8 @@ import 'package:splitit/screens/dashboard/controller/dashboard_controller.dart';
 import '../../dashboard/controller/friendsPage_controller.dart';
 
 class ExpenseController extends GetxController {
-  final _descriptionController = TextEditingController();
-  final _amountController = TextEditingController();
+  late final TextEditingController _descriptionController;
+  late final TextEditingController _amountController;
   final Map<String, TextEditingController> _memberAmountControllers = {};
 
   final RxList<Member> members = <Member>[].obs;
@@ -20,47 +20,66 @@ class ExpenseController extends GetxController {
   final RxString selectedSplitOption = 'Equally'.obs;
 
   late Expense selectedExpense;
+  RxDouble remaining = 0.0.obs;
+
+  TextEditingController get descriptionController => _descriptionController;
+  TextEditingController get amountController => _amountController;
+  Map<String, TextEditingController> get memberAmountControllers => _memberAmountControllers;
+
+
+
+  //
+  // final _descriptionController = TextEditingController();
+  // final _amountController = TextEditingController();
+  // final Map<String, TextEditingController> _memberAmountControllers = {};
+  //
+  // final RxList<Member> members = <Member>[].obs;
+  // final RxList<Member> selectedMembers = <Member>[].obs;
+  // final RxList<Group> groups = <Group>[].obs;
+  //
+  // final Rxn<Group> selectedGroup = Rxn<Group>();
+  // final selectedPayer = Rx<Member?>(null);
+  // final RxString selectedSplitOption = 'Equally'.obs;
+  //
+  // late Expense selectedExpense;
 
   onExpenseSelected(Expense expense) {
     selectedExpense = expense;
     print(selectedExpense.description);
   }
 
-  RxDouble remaining = 0.0.obs;
-
-  TextEditingController get descriptionController => _descriptionController;
-
-  TextEditingController get amountController => _amountController;
-
-  Map<String, TextEditingController> get memberAmountControllers => _memberAmountControllers;
+  // RxDouble remaining = 0.0.obs;
+  //
+  // TextEditingController get descriptionController => _descriptionController;
+  //
+  // TextEditingController get amountController => _amountController;
+  //
+  // Map<String, TextEditingController> get memberAmountControllers => _memberAmountControllers;
 
   void initializeExpenseData(Expense? expense) {
+    // Clear previous data first
+    _resetData();
+
     if (expense != null) {
-      // Initialize basic expense data
       _descriptionController.text = expense.description;
       _amountController.text = expense.totalAmount.toString();
       selectedGroup.value = expense.group;
       selectedPayer.value = expense.paidByMember;
 
-      // Set division method
       selectedSplitOption.value = expense.divisionMethod == DivisionMethod.equal ? 'Equally' : 'By Amount';
 
-      // Initialize members
       if (expense.group != null) {
         members.value = expense.group!.members;
       }
 
-      // Initialize selected members from splits
       selectedMembers.value = expense.splits.map((split) => split.member).toList();
 
-      // Initialize amount controllers for unequal split
       if (expense.divisionMethod == DivisionMethod.unequal) {
         _memberAmountControllers.clear();
         for (var split in expense.splits) {
           _memberAmountControllers[split.member.phone] = TextEditingController(text: split.amount.toStringAsFixed(2));
         }
 
-        // Add controllers for members without splits
         for (var member in members) {
           if (!_memberAmountControllers.containsKey(member.phone)) {
             _memberAmountControllers[member.phone] = TextEditingController(text: '0.00');
@@ -69,8 +88,6 @@ class ExpenseController extends GetxController {
 
         calculateRemaining();
       }
-    } else {
-      _resetData();
     }
   }
 
@@ -192,27 +209,33 @@ class ExpenseController extends GetxController {
     return true;
   }
 
+
   @override
   void onInit() {
     super.onInit();
+    // Initialize controllers in onInit
+    _descriptionController = TextEditingController();
+    _amountController = TextEditingController();
     fetchGroups();
   }
 
   @override
   void onClose() {
+    // Clean up controllers in onClose
     _descriptionController.dispose();
     _amountController.dispose();
-    memberAmountControllers.forEach((_, controller) => controller.dispose());
-    memberAmountControllers.clear();
+    _memberAmountControllers.forEach((_, controller) => controller.dispose());
+    _memberAmountControllers.clear();
     super.onClose();
   }
-
   void _resetData() {
     _descriptionController.text = '';
     _amountController.text = '';
-    // _memberAmountControllers.forEach((_, controller) => controller.text = '');
-    selectedPayer();
+    _memberAmountControllers.forEach((_, controller) => controller.dispose());
+    _memberAmountControllers.clear();
+    selectedPayer.value = null;
     selectedMembers.clear();
+    remaining.value = 0.0;
   }
 
   calculateRemaining() {
