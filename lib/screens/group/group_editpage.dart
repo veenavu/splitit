@@ -8,7 +8,7 @@ import 'package:splitit/modelClass/models.dart';
 import 'package:splitit/routes/app_routes.dart';
 import 'package:splitit/screens/dashboard/controller/dashboard_controller.dart';
 import 'package:splitit/screens/group/widgets/group_editpage_widgets/group_edit_widgets.dart';
-import 'package:splitit/utils/common_functions.dart';
+import 'package:splitit/screens/group/common_Widget.dart';
 
 
 class GroupEditPage extends StatefulWidget {

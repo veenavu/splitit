@@ -5,7 +5,7 @@ import 'package:splitit/screens/group/widgets/add_group_widgets/add_group_imageP
 import 'package:splitit/screens/group/widgets/add_group_widgets/add_group_name_input.dart';
 import 'package:splitit/screens/group/widgets/add_group_widgets/add_group_selected_contact_list.dart';
 import 'package:splitit/screens/group/widgets/add_group_widgets/add_group_type_selector.dart';
-import '../../utils/common_functions.dart';
+import 'package:splitit/screens/group/common_Widget.dart';
 import 'controller/group_controller.dart';
 
 

@@ -7,7 +7,7 @@ import 'package:flutter_contacts/contact.dart';
 
 import '../../../DatabaseHelper/hive_services.dart';
 import '../../../modelClass/models.dart';
-import '../../../utils/common_functions.dart';
+import 'package:splitit/screens/group/common_Widget.dart';
 
 class GroupEditController extends GetxController {
   final Group group;
