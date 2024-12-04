@@ -7,7 +7,9 @@ import 'package:splitit/DatabaseHelper/hive_services.dart';
 import 'package:splitit/modelClass/models.dart';
 import 'package:splitit/routes/app_routes.dart';
 import 'package:splitit/screens/dashboard/controller/dashboard_controller.dart';
+import 'package:splitit/screens/group/widgets/group_editpage_widgets/group_edit_widgets.dart';
 import 'package:splitit/utils/common_functions.dart';
+
 
 class GroupEditPage extends StatefulWidget {
   final Group groups;
@@ -22,7 +24,6 @@ class _GroupEditPageState extends State<GroupEditPage> {
   late TextEditingController _groupNameController;
   File? _imageFile;
   String? _selectedType;
-
   String? currentUserPhone;
   final List<String> _groupTypes = ['Trip', 'Home', 'Couple', 'Others'];
 
@@ -34,7 +35,6 @@ class _GroupEditPageState extends State<GroupEditPage> {
     if (widget.groups.groupImage.isNotEmpty) {
       _imageFile = File(widget.groups.groupImage);
     }
-    // Get current user's phone number
     final box = Hive.box(ExpenseManagerService.normalBox);
     currentUserPhone = box.get("mobile");
   }
@@ -45,7 +45,6 @@ class _GroupEditPageState extends State<GroupEditPage> {
     super.dispose();
   }
 
-  // Image picker function
   Future<void> _pickImage() async {
     try {
       final pickedImage = await ImagePicker().pickImage(source: ImageSource.gallery);
@@ -66,9 +65,7 @@ class _GroupEditPageState extends State<GroupEditPage> {
     }
   }
 
-  // Update group function
   Future<void> _updateTheGroup() async {
-    print('Entered _updateTheGroup in group edit page');
     try {
       if (_groupNameController.text.isEmpty) {
         Get.snackbar(
@@ -91,12 +88,9 @@ class _GroupEditPageState extends State<GroupEditPage> {
         );
         return;
       }
-      print("entered abov eupdate group function");
 
-      // Create a new Group instance with updated values
       final updatedGroup = Group(
         id: widget.groups.id,
-        // Keep the same ID
         groupName: _groupNameController.text,
         groupImage: _imageFile?.path ?? widget.groups.groupImage,
         category: _selectedType,
@@ -106,14 +100,9 @@ class _GroupEditPageState extends State<GroupEditPage> {
         createdAt: widget.groups.createdAt,
       );
 
-      // Update the group in the database
       await ExpenseManagerService.updateGroup(updatedGroup);
-      print("entered after eupdate group function");
-      // Refresh the dashboard
-
       Get.find<DashboardController>().loadGroups();
 
-      // Show success message
       Get.snackbar(
         'Success',
         'Group updated successfully',
@@ -121,13 +110,8 @@ class _GroupEditPageState extends State<GroupEditPage> {
         backgroundColor: Colors.green.withOpacity(0.1),
         colorText: Colors.green,
       );
-      print("entered before navigation");
 
       Get.offAllNamed(Routes.dashboard);
-      print("entered after navigation");
-
-      // // Navigate back
-      // Get.back(result: true);
     } catch (e) {
       Get.snackbar(
         'Error',
@@ -139,179 +123,15 @@ class _GroupEditPageState extends State<GroupEditPage> {
     }
   }
 
-  Widget _buildMembersList() {
-    return Padding(padding: EdgeInsets.fromLTRB(10, 10, 10, 100),
-      child: ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: widget.groups.members.length,
-      itemBuilder: (context, index) {
-        final member = widget.groups.members[index];
-        final isCurrentUser = member.phone == currentUserPhone;
-
-        return Card(
-          elevation: 2,
-          margin: const EdgeInsets.symmetric(vertical: 4),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: ListTile(
-            leading: CircleAvatar(
-              backgroundColor: isCurrentUser ? Colors.purple : Colors.purple.shade100,
-              child: Text(
-                member.name[0].toUpperCase(),
-                style: TextStyle(
-                  color: isCurrentUser ? Colors.white : Colors.purple,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            title: Text(
-              member.name + (isCurrentUser ? ' (You)' : ''),
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
-            subtitle: Text(
-              member.phone,
-              style: TextStyle(
-                color: Colors.grey.shade600,
-                fontSize: 14,
-              ),
-            ),
-            trailing: isCurrentUser
-                ? null
-                : IconButton(
-                    icon: const Icon(
-                      Icons.delete_outline,
-                      color: Colors.red,
-                    ),
-                    onPressed: () => _showDeleteMemberDialog(member, index),
-                  ),
-          ),
-        );
-      },
-    )
-    );
-  }
-
-  void _showDeleteMemberDialog(Member member, int index) {
-    // Get member's balance in the group
-    final double memberBalance = ExpenseManagerService.getGroupBalance(widget.groups, member);
-
-    showDialog(
+  void _handleDeleteMember(Member member, int index) {
+    GroupEditWidgets.showDeleteMemberDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15),
-          ),
-          title: Text(
-            'Remove ${member.name}',
-            style: const TextStyle(
-              color: Colors.deepPurple,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (memberBalance != 0)
-                Text(
-                  'Cannot remove ${member.name} as they have pending balance of ₹${memberBalance.abs().toStringAsFixed(2)}',
-                  style: const TextStyle(color: Colors.red),
-                )
-              else
-                Text(
-                  'Are you sure you want to remove ${member.name} from the group?',
-                  style: const TextStyle(fontSize: 16),
-                ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Get.back(),
-              child: const Text(
-                'Cancel',
-                style: TextStyle(color: Colors.grey),
-              ),
-            ),
-            if (memberBalance == 0)
-              TextButton(
-                onPressed: () async {
-                  try {
-                    // Remove member from the group
-                    widget.groups.members.removeAt(index);
-
-                    // Save the updated group
-                    await ExpenseManagerService.updateGroup(widget.groups);
-
-                    Get.back();
-
-                    // Show success message
-                    Get.snackbar(
-                      'Success',
-                      '${member.name} has been removed from the group',
-                      snackPosition: SnackPosition.BOTTOM,
-                      backgroundColor: Colors.green.withOpacity(0.1),
-                      colorText: Colors.green,
-                      duration: const Duration(seconds: 2),
-                    );
-
-                    // Refresh the UI
-                    setState(() {});
-                  } catch (e) {
-                    Get.back();
-                    Get.snackbar(
-                      'Error',
-                      'Failed to remove member: ${e.toString()}',
-                      snackPosition: SnackPosition.BOTTOM,
-                      backgroundColor: Colors.red.withOpacity(0.1),
-                      colorText: Colors.red,
-                      duration: const Duration(seconds: 3),
-                    );
-                  }
-                },
-                child: const Text(
-                  'Remove',
-                  style: TextStyle(
-                    color: Colors.red,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-          ],
-        );
+      member: member,
+      index: index,
+      group: widget.groups,
+      onMemberRemoved: () {
+        setState(() {});
       },
-    );
-  }
-
-  // Build group type selection chip
-  Widget _buildGroupTypeButton(String type) {
-    return RawChip(
-      label: Text(
-        type,
-        style: TextStyle(
-          color: _selectedType == type ? Colors.white : Colors.black,
-          fontWeight: FontWeight.bold,
-          fontSize: 14,
-        ),
-      ),
-      selected: _selectedType == type,
-      onSelected: (bool selected) {
-        setState(() {
-          _selectedType = selected ? type : null;
-        });
-      },
-      selectedColor: Colors.purple,
-      backgroundColor: Colors.grey.shade200,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      showCheckmark: false,
     );
   }
 
@@ -363,61 +183,15 @@ class _GroupEditPageState extends State<GroupEditPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Group Image
-              Center(
-                child: GestureDetector(
-                  onTap: _pickImage,
-                  child: Stack(
-                    children: [
-                      CircleAvatar(
-                        radius: 50,
-                        backgroundColor: Colors.purple.shade100,
-                        backgroundImage: _imageFile != null ? FileImage(_imageFile!) : null,
-                        child: _imageFile == null ? const Icon(Icons.group, size: 50, color: Colors.purple) : null,
-                      ),
-                      Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: CircleAvatar(
-                          radius: 18,
-                          backgroundColor: Colors.purple,
-                          child: Icon(
-                            _imageFile == null ? Icons.add_a_photo : Icons.edit,
-                            size: 18,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              GroupEditWidgets.buildGroupImagePicker(
+                imageFile: _imageFile,
+                onTap: _pickImage,
               ),
-
               const SizedBox(height: 24),
-
-              // Group Name TextField
-              TextField(
+              GroupEditWidgets.buildGroupNameField(
                 controller: _groupNameController,
-                decoration: InputDecoration(
-                  labelText: 'Group Name',
-                  hintText: 'Enter group name',
-                  filled: true,
-                  fillColor: Colors.purple.shade50,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.purple.shade200),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Colors.purple, width: 2),
-                  ),
-                  prefixIcon: const Icon(Icons.group, color: Colors.purple),
-                ),
               ),
-
               const SizedBox(height: 24),
-
-              // Group Type Selection
               const Text(
                 'Group Type',
                 style: TextStyle(
@@ -429,12 +203,17 @@ class _GroupEditPageState extends State<GroupEditPage> {
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8.0,
-                children: _groupTypes.map((type) => _buildGroupTypeButton(type)).toList(),
+                children: _groupTypes.map((type) => GroupEditWidgets.buildGroupTypeButton(
+                  type: type,
+                  selectedType: _selectedType,
+                  onSelected: (selected) {
+                    setState(() {
+                      _selectedType = selected ? type : null;
+                    });
+                  },
+                )).toList(),
               ),
-
               const SizedBox(height: 24),
-
-              // Members Section
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -449,9 +228,12 @@ class _GroupEditPageState extends State<GroupEditPage> {
                 ],
               ),
               const SizedBox(height: 8),
-
-              // Members List
-              _buildMembersList()
+              GroupEditWidgets.buildMembersList(
+                members: widget.groups.members,
+                currentUserPhone: currentUserPhone,
+                onDeleteMember: _handleDeleteMember,
+                context: context,
+              ),
             ],
           ),
         ),
@@ -464,7 +246,6 @@ class _GroupEditPageState extends State<GroupEditPage> {
               if (contacts != null && contacts.isNotEmpty) {
                 setState(() {
                   for (var contact in contacts) {
-                    // Check for duplicates
                     final phone = contact.phones.isNotEmpty ? contact.phones.first.number : '';
                     bool memberExists = widget.groups.members.any((member) => member.phone == phone);
 
