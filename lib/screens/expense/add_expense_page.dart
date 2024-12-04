@@ -1,9 +1,14 @@
-import 'dart:io';
-
+// add_expense_page.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:splitit/modelClass/models.dart';
 import 'package:splitit/screens/expense/controller/expense_controller.dart';
+
+import 'package:splitit/screens/expense/widgets/add_expense_widgets/Addexpense_details_card.dart';
+import 'package:splitit/screens/expense/widgets/add_expense_widgets/addExpense_group_selection.dart';
+import 'package:splitit/screens/expense/widgets/add_expense_widgets/addExpense_member_list.dart';
+import 'package:splitit/screens/expense/widgets/add_expense_widgets/addExpense_split_option.dart';
+import 'package:splitit/utils/common_functions.dart';
 
 class AddExpensePage extends StatelessWidget {
   final Expense? expense;
@@ -25,484 +30,124 @@ class AddExpensePage extends StatelessWidget {
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
-      // Prevents keyboard from pushing content up
       backgroundColor: Colors.grey[100],
-      appBar: AppBar(
-        elevation: 4,
-        backgroundColor: Colors.transparent,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-          onPressed: () => Get.back(),
-        ),
-        title: const Text(
-          'New Expense',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 20,
-          ),
-        ),
-        actions: [
-          TextButton.icon(
-            onPressed: () => controller.saveExpense(expense),
-            icon: const Icon(Icons.check_circle_outline, color: Colors.white),
-            label: const Text('Save'),
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.white,
-              textStyle: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
-          ),
-        ],
-        flexibleSpace: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Colors.deepPurple.shade700,
-                Colors.purple.shade400,
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-        ),
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(
-            bottom: Radius.circular(20),
-          ),
-        ),
-      ),
+      appBar: _buildAppBar(controller),
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // Group Selection Card
-            Card(
-              margin: const EdgeInsets.all(16),
-              elevation: 4,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-                side: BorderSide(color: Colors.purple.shade200),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Select Group',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.deepPurple,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Obx(() => DropdownButtonFormField<Group>(
-                          value: controller.selectedGroup.value,
-                          icon: const Icon(
-                            Icons.expand_more_rounded,
-                            size: 20,
-                            color: Colors.deepPurple,
-                          ),
-                          isExpanded: true,
-                          decoration: InputDecoration(
-                            isDense: true,
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 20),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.purple.shade200),
-                            ),
-                            filled: true,
-                            fillColor: Colors.purple.shade50,
-                          ),
-                          hint: Text(
-                            "Choose a group",
-                            style: TextStyle(color: Colors.purple.shade300),
-                          ),
-                          onChanged: controller.onGroupChanged,
-                          items: controller.groups.map((Group group) {
-                            return DropdownMenuItem<Group>(
-                              value: group,
-                              child: Container(
-                                padding: const EdgeInsets.only(bottom: 8),
-                                child: Wrap(
-                                  children: [
-                                    CircleAvatar(
-                                      radius: 18,
-                                      backgroundImage: FileImage(File(group.groupImage)),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(
-                                          group.groupName,
-                                          style: const TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.black87,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ),
-                                        Text(
-                                          group.category ?? 'No category',
-                                          style: TextStyle(
-                                            color: Colors.grey[600],
-                                            fontSize: 12,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          }).toList(),
-                        )),
-                  ],
-                ),
-              ),
-            ),
-
-            // Expense Details Card
-            Card(
-              margin: const EdgeInsets.symmetric(horizontal: 16),
-              elevation: 4,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-                side: BorderSide(color: Colors.purple.shade100),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    TextField(
-                      controller: controller.amountController,
-                      keyboardType: TextInputType.number,
-                      style: const TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.deepPurple,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: '0.00',
-                        hintStyle: TextStyle(
-                          color: Colors.purple.shade200,
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        border: InputBorder.none,
-                        prefixIcon: Icon(
-                          Icons.currency_rupee,
-                          size: 28,
-                          color: Colors.purple.shade300,
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(vertical: 8),
-                      ),
-                      onChanged: (val) {
-                        controller.remaining.value = double.tryParse(val) ?? 0.0;
-                      },
-                    ),
-                    const Divider(
-                      height: 32,
-                      thickness: 1,
-                      color: Colors.purpleAccent,
-                    ),
-                    TextField(
-                      controller: controller.descriptionController,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        color: Colors.black87,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: 'What was this expense for?',
-                        hintStyle: TextStyle(
-                          color: Colors.purple.shade200,
-                          fontSize: 16,
-                        ),
-                        border: InputBorder.none,
-                        prefixIcon: Icon(
-                          Icons.receipt_outlined,
-                          size: 24,
-                          color: Colors.purple.shade300,
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            // Split Options Card
-            Card(
-              margin: const EdgeInsets.all(16),
-              elevation: 4,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-                side: BorderSide(color: Colors.purple.shade100),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Paid by',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.deepPurple,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Obx(() => DropdownButtonFormField<Member>(
-                                    value: controller.selectedPayer.value,
-                                    icon: const Icon(
-                                      Icons.expand_more_rounded,
-                                      size: 20,
-                                      color: Colors.deepPurple,
-                                    ),
-                                    isExpanded: true,
-                                    decoration: InputDecoration(
-                                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide(color: Colors.purple.shade200),
-                                      ),
-                                      filled: true,
-                                      fillColor: Colors.purple.shade50,
-                                    ),
-                                    hint: Text(
-                                      "Select",
-                                      style: TextStyle(color: Colors.purple.shade300),
-                                    ),
-                                    onChanged: (value) => controller.selectedPayer.value = value,
-                                    items: controller.members.map((Member member) {
-                                      return DropdownMenuItem<Member>(
-                                        value: member,
-                                        child: Text(
-                                          member.name,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: const TextStyle(fontSize: 14),
-                                        ),
-                                      );
-                                    }).toList(),
-                                  )),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Split',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.deepPurple,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Obx(() => DropdownButtonFormField<String>(
-                                    value: controller.selectedSplitOption.value,
-                                    icon: const Icon(
-                                      Icons.expand_more_rounded,
-                                      size: 20,
-                                      color: Colors.deepPurple,
-                                    ),
-                                    isExpanded: true,
-                                    decoration: InputDecoration(
-                                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide(color: Colors.purple.shade200),
-                                      ),
-                                      filled: true,
-                                      fillColor: Colors.purple.shade50,
-                                    ),
-                                    onChanged: controller.onSplitOptionChanged,
-                                    items: ['Equally', 'By Amount'].map((String value) {
-                                      return DropdownMenuItem<String>(
-                                        value: value,
-                                        child: Text(
-                                          value,
-                                          style: const TextStyle(fontSize: 14),
-                                        ),
-                                      );
-                                    }).toList(),
-                                  )),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            // Members List
-            Card(
-              margin: const EdgeInsets.all(16),
-              elevation: 4,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-                side: BorderSide(color: Colors.purple.shade100),
-              ),
-              child: Obx(() => ListView.separated(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: controller.members.length,
-                    separatorBuilder: (context, index) => Divider(
-                      color: Colors.purple.shade50,
-                      thickness: 1,
-                    ),
-                    itemBuilder: (_, index) {
-                      final member = controller.members[index];
-                      // final isSelected = controller.selectedMembers.contains(member);
-
-                      return ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: controller.selectedMembers.contains(member) ? Colors.purple.shade100 : Colors.grey.shade200,
-                          child: Icon(
-                            Icons.person_outline,
-                            color: controller.selectedMembers.contains(member) ? Colors.deepPurple : Colors.grey[600],
-                          ),
-                        ),
-                        title: Text(
-                          member.name,
-                          style: TextStyle(
-                            fontWeight: controller.selectedMembers.contains(member) ? FontWeight.bold : FontWeight.normal,
-                            fontSize: 16,
-                            color: controller.selectedMembers.contains(member) ? Colors.deepPurple : Colors.black87,
-                          ),
-                        ),
-                        trailing: Obx(
-                          () => controller.selectedSplitOption.value == 'By Amount'
-                              ? SizedBox(
-                                  width: 80,
-                                  child: TextField(
-                                      controller: controller.memberAmountControllers[member.phone],
-                                      keyboardType: TextInputType.number,
-                                      style: const TextStyle(fontSize: 14),
-                                      decoration: InputDecoration(
-                                        contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                        border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(8),
-                                          borderSide: BorderSide(color: Colors.purple.shade200),
-                                        ),
-                                        hintText: '0.00',
-                                        hintStyle: TextStyle(color: Colors.purple.shade300),
-                                        filled: true,
-                                        fillColor: Colors.purple.shade50,
-                                      ),
-                                      onChanged: (value) {
-                                        final amount = double.tryParse(value) ?? 0.0;
-                                        if (amount > 0) {
-                                          if (!controller.selectedMembers.contains(member)) {
-                                            controller.toggleMemberSelection(member);
-                                          }
-                                        } else {
-                                          if (controller.selectedMembers.contains(member)) {
-                                            controller.toggleMemberSelection(member);
-                                          }
-                                        }
-
-                                        controller.calculateRemaining();
-                                      }),
-                                )
-                              : AnimatedContainer(
-                                  duration: const Duration(milliseconds: 200),
-                                  height: 24,
-                                  width: 24,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: controller.selectedMembers.contains(member) ? Colors.deepPurple : Colors.transparent,
-                                    border: Border.all(
-                                      color: controller.selectedMembers.contains(member) ? Colors.deepPurple : Colors.grey,
-                                      width: 2,
-                                    ),
-                                  ),
-                                  child: Icon(
-                                    Icons.check,
-                                    size: 16,
-                                    color: controller.selectedMembers.contains(member) ? Colors.white : Colors.transparent,
-                                  ),
-                                ),
-                        ),
-                        onTap: () => controller.toggleMemberSelection(member),
-                      );
-                    },
-                  )),
-            ),
+            ExpenseGroupSelection(controller: controller),
+            ExpenseDetailsCard(controller: controller),
+            ExpenseSplitOptions(controller: controller),
+            MembersList(controller: controller),
           ],
         ),
       ),
-      bottomNavigationBar: Obx(() {
-        double totalEntered = controller.memberAmountControllers.values.map((c) => double.tryParse(c.text) ?? 0.0).fold(0.0, (sum, amount) => sum + amount);
+      bottomNavigationBar: _buildBottomBar(context, controller),
+    );
+  }
 
-        double totalAmount = double.tryParse(controller.amountController.text) ?? 0.0;
-        double remaining = totalAmount - totalEntered;
-
-        return Visibility(
-          visible: controller.selectedSplitOption.value == 'By Amount',
-          child: Container(
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardColor,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.2),
-                  blurRadius: 6,
-                  offset: const Offset(0, -2),
-                ),
-              ],
+  PreferredSizeWidget _buildAppBar(ExpenseController controller) {
+    return AppBar(
+      elevation: 4,
+      backgroundColor: Colors.transparent,
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+        onPressed: () => Get.back(),
+      ),
+      title: const Text(
+        'New Expense',
+        style: TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+          fontSize: 20,
+        ),
+      ),
+      actions: [
+        TextButton.icon(
+          onPressed: () => controller.saveExpense(expense),
+          icon: const Icon(Icons.check_circle_outline, color: Colors.white),
+          label: const Text('Save'),
+          style: TextButton.styleFrom(
+            foregroundColor: Colors.white,
+            textStyle: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 16).copyWith(bottom: MediaQuery.of(context).viewInsets.bottom),
-            child: SafeArea(
-              child: SizedBox(
-                height: 60,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          ),
+        ),
+      ],
+      flexibleSpace: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Colors.deepPurple.shade700,
+              Colors.purple.shade400,
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+      ),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          bottom: Radius.circular(20),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBottomBar(BuildContext context, ExpenseController controller) {
+    return Obx(() {
+      if (controller.selectedSplitOption.value != 'By Amount') {
+        return const SizedBox.shrink(); // Return empty widget instead of null
+      }
+
+      double totalEntered = controller.memberAmountControllers.values.map((c) => double.tryParse(c.text) ?? 0.0).fold(0.0, (sum, amount) => sum + amount);
+
+      double totalAmount = double.tryParse(controller.amountController.text) ?? 0.0;
+      double remaining = totalAmount - totalEntered;
+
+      return Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.2),
+              blurRadius: 6,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        padding: EdgeInsets.symmetric(horizontal: 16).copyWith(bottom: MediaQuery.of(context).viewInsets.bottom),
+        child: SafeArea(
+          child: SizedBox(
+            height: 60,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
                   children: [
-                    Row(
-                      children: [
-                        Icon(Icons.account_balance_wallet, color: Theme.of(context).primaryColor),
-                        const SizedBox(width: 8),
-                        Text(
-                          "Total: ₹${totalAmount.toStringAsFixed(2)}",
-                          style: const TextStyle(fontSize: 16),
-                        ),
-                      ],
-                    ),
+                    Icon(Icons.account_balance_wallet, color: Theme.of(context).primaryColor),
+                    const SizedBox(width: 8),
                     Text(
-                      "Remaining: ₹${controller.remaining.toStringAsFixed(2)}",
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: remaining < 0 ? Colors.red : Theme.of(context).primaryColor,
-                      ),
+                      "Total: ₹${totalAmount.toStringAsFixed(2)}",
+                      style: const TextStyle(fontSize: 16),
                     ),
                   ],
                 ),
-              ),
+                Text(
+                  "Remaining: ₹${controller.remaining.toStringAsFixed(2)}",
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: remaining < 0 ? Colors.red : Theme.of(context).primaryColor,
+                  ),
+                ),
+              ],
             ),
           ),
-        );
-      }),
-    );
+        ),
+      );
+    });
   }
 }
