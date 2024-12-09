@@ -38,10 +38,13 @@ class DashboardController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    loadGroups();
-    getProfile();
-    getBalanceText();
-   // filteredGroups.value = groups;
+    // First load the user profile
+    getProfile().then((_) {
+      // Then load groups after profile is loaded
+      loadGroups();
+      // Get balance text after groups are loaded
+      getBalanceText();
+    });
   }
 
   Future<void> loadGroups() async {
@@ -49,6 +52,10 @@ class DashboardController extends GetxController {
     try {
       final allGroups = ExpenseManagerService.getAllGroups();
       groups.value = allGroups;
+      applyFilter();
+      if (Get.isRegistered<ActivityController>()) {
+        Get.find<ActivityController>().loadActivities();
+      }
 
       // Ensure balances are up to date
       for (var group in groups) {
@@ -63,7 +70,7 @@ class DashboardController extends GetxController {
       }
 
       getBalanceText();
-      applyFilter();
+     // applyFilter();
       update();
     } catch (e) {
       print('Error loading groups: $e');
