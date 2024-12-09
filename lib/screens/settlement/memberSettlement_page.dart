@@ -25,7 +25,7 @@ class MemberSettlementPage extends GetView<MemberSettlementController> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Settle with ${member.name}'),
+        title: Text('Settle with ${member.name}', style: const TextStyle(color: Colors.white)),
         backgroundColor: Colors.purple,
       ),
       body: Column(
@@ -174,7 +174,7 @@ class MemberSettlementPage extends GetView<MemberSettlementController> {
       ),
         child: controller.isProcessing.value
             ? const CircularProgressIndicator(color: Colors.white)
-            : const Text('Record Settlement'),
+            : const Text('Record Settlement', style: TextStyle(color: Colors.white)),
       ))
 
 
