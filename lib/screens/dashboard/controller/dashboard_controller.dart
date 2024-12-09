@@ -41,6 +41,7 @@ class DashboardController extends GetxController {
     loadGroups();
     getProfile();
     getBalanceText();
+    filteredGroups.value = groups;
   }
 
   Future<void> loadGroups() async {

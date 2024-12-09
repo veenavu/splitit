@@ -119,7 +119,7 @@ class _GroupDetailsState extends State<GroupDetails> {
           );
         },
       ),
-      body: Column(
+      body:expenses.isEmpty ? const Center(child: Text('No expenses found')) : Column(
         children: [
           ActionButtonsContainer(groupItem: widget.groupItem),
           Expanded(
