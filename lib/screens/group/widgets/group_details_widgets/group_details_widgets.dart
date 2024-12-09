@@ -214,20 +214,20 @@ class ExpenseListItem extends StatelessWidget {
   }
 }
 
-class GroupBottomNavigationBar extends StatelessWidget {
-  const GroupBottomNavigationBar({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return BottomNavigationBar(
-      items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.group), label: 'Groups'),
-        BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Friends'),
-        BottomNavigationBarItem(icon: Icon(Icons.history), label: 'Activity'),
-        BottomNavigationBarItem(icon: Icon(Icons.account_circle), label: 'Account'),
-      ],
-      selectedItemColor: const Color(0xff5f0967),
-      unselectedItemColor: Colors.grey,
-    );
-  }
-}
+// class GroupBottomNavigationBar extends StatelessWidget {
+//   const GroupBottomNavigationBar({Key? key}) : super(key: key);
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     return BottomNavigationBar(
+//       items: const [
+//         BottomNavigationBarItem(icon: Icon(Icons.group), label: 'Groups'),
+//         BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Friends'),
+//         BottomNavigationBarItem(icon: Icon(Icons.history), label: 'Activity'),
+//         BottomNavigationBarItem(icon: Icon(Icons.account_circle), label: 'Account'),
+//       ],
+//       selectedItemColor: const Color(0xff5f0967),
+//       unselectedItemColor: Colors.grey,
+//     );
+//   }
+// }

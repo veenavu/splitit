@@ -121,7 +121,7 @@ class _GroupDetailsState extends State<GroupDetails> {
       ),
       body:expenses.isEmpty ? const Center(child: Text('No expenses found')) : Column(
         children: [
-          ActionButtonsContainer(groupItem: widget.groupItem),
+         // ActionButtonsContainer(groupItem: widget.groupItem),
           Expanded(
             child: ListView.builder(
               itemCount: expenses.length,
@@ -144,7 +144,7 @@ class _GroupDetailsState extends State<GroupDetails> {
           ),
         ],
       ),
-      bottomNavigationBar: const GroupBottomNavigationBar(),
+     // bottomNavigationBar: const GroupBottomNavigationBar(),
     );
   }
 }
