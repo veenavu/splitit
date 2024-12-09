@@ -5,6 +5,7 @@ import '../../DatabaseHelper/hive_services.dart';
 import '../../modelClass/models.dart';
 import '../dashboard/controller/dashboard_controller.dart';
 import '../dashboard/controller/friendsPage_controller.dart';
+import '../dashboard/services/activityPage_services.dart';
 import '../expense/controller/expense_controller.dart';
 
 class SettlementService {
@@ -15,37 +16,79 @@ class SettlementService {
     required double amount,
     required List<Group> groups,
   }) async {
-    // Get all unsettled expenses involving both members from specified groups
-    List<Expense> unsettledExpenses = _getUnsettledExpenses(
-      payer: payer,
-      receiver: receiver,
-      groups: groups,
-    );
+    try {
+      // Get unsettled expenses
+      List<Expense> unsettledExpenses = _getUnsettledExpenses(
+        payer: payer,
+        receiver: receiver,
+        groups: groups,
+      );
 
-    // Sort expenses by creation date (oldest first)
-    unsettledExpenses.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+      // Sort expenses by date
+      unsettledExpenses.sort((a, b) => a.createdAt.compareTo(b.createdAt));
 
-    // Process the settlement
-    final settlementResult = await _processSettlement(
-      payer: payer,
-      receiver: receiver,
-      amount: amount,
-      expenses: unsettledExpenses,
-    );
+      // Process the settlement
+      final settlementResult = await _processSettlement(
+        payer: payer,
+        receiver: receiver,
+        amount: amount,
+        expenses: unsettledExpenses,
+      );
 
-    // Create and save the settlement record
-    final settlement = Settlement(
-      payer: payer,
-      receiver: receiver,
-      amount: amount,
-      expenseSettlements: settlementResult.expenseSettlements,
-    );
+      // Create settlement record
+      final settlement = Settlement(
+        payer: payer,
+        receiver: receiver,
+        amount: amount,
+        expenseSettlements: settlementResult.expenseSettlements,
+      );
 
-    // Save the settlement
-    final box = Hive.box<Settlement>(ExpenseManagerService.settlementBoxName);
-    await box.add(settlement);
+      // Update member balances in Hive
+      await _updateMemberBalances(
+        payer: payer,
+        receiver: receiver,
+        amount: amount,
+      );
 
-    return settlement;
+      // Save the settlement
+      final box = Hive.box<Settlement>(ExpenseManagerService.settlementBoxName);
+      await box.add(settlement);
+      await ActivityService.logSettlement(
+          payer,
+          receiver,
+          amount,
+          groups.isNotEmpty ? groups : null
+      );
+
+      return settlement;
+    } catch (e) {
+      print('Error in recordSettlement: $e');
+      rethrow;
+    }
+  }
+
+
+  static Future<void> _updateMemberBalances({
+    required Member payer,
+    required Member receiver,
+    required double amount,
+  }) async {
+    final membersBox = Hive.box<Member>(ExpenseManagerService.memberBoxName);
+
+    // Update payer's balance
+    final payerInBox = membersBox.get(payer.phone);
+    if (payerInBox != null) {
+      payerInBox.totalAmountOwedByMe = (payerInBox.totalAmountOwedByMe - amount).roundToDouble();
+      if (payerInBox.totalAmountOwedByMe < 0) payerInBox.totalAmountOwedByMe = 0;
+      await payerInBox.save();
+    }
+
+    // Update receiver's balance
+    final receiverInBox = membersBox.get(receiver.phone);
+    if (receiverInBox != null) {
+      receiverInBox.totalAmountOwedByMe = (receiverInBox.totalAmountOwedByMe + amount).roundToDouble();
+      await receiverInBox.save();
+    }
   }
 
   static Future<void> _safelyUpdateExpense(Expense expense) async {
@@ -91,6 +134,7 @@ class SettlementService {
           ? unsettledAmount
           : remainingAmount;
 
+      // Create settlement record for this expense
       expenseSettlements.add(
         ExpenseSettlement(
           expense: expense,
@@ -98,24 +142,28 @@ class SettlementService {
         ),
       );
 
+      // Update expense splits
       if (expense.paidByMember.phone == receiver.phone) {
         var payerSplit = _findSplit(expense.splits, payer.phone);
         if (payerSplit != null) {
           payerSplit.amount = (payerSplit.amount - settleAmount).roundToDouble();
           if (payerSplit.amount < 0) payerSplit.amount = 0;
-          await _safelyUpdateExpense(expense);  // Safe update after modifying split
+          await _safelyUpdateExpense(expense);
         }
       } else if (expense.paidByMember.phone == payer.phone) {
         var receiverSplit = _findSplit(expense.splits, receiver.phone);
         if (receiverSplit != null) {
           receiverSplit.amount = (receiverSplit.amount - settleAmount).roundToDouble();
           if (receiverSplit.amount < 0) receiverSplit.amount = 0;
-          await _safelyUpdateExpense(expense);  // Safe update after modifying split
+          await _safelyUpdateExpense(expense);
         }
       }
 
       remainingAmount -= settleAmount;
     }
+
+    // Update group balances
+    await _updateGroupBalances(payer, receiver, expenseSettlements);
 
     return SettlementResult(
       expenseSettlements: expenseSettlements,
@@ -189,7 +237,15 @@ class SettlementService {
       await _updateExpenseSplits(settlement);
 
       // Step 3: Update group balances
-      await _updateGroupBalances(settlement);
+     // await _updateGroupBalances(settlement);
+
+      await ActivityService.logSettlement(
+          payer,
+          receiver,
+          amount,
+          groups.isNotEmpty ? groups : null
+      );
+
 
       // Step 4: Update UI components
       await _updateUIComponents();
@@ -251,35 +307,41 @@ class SettlementService {
   }
 
 
-  static Future<void> _updateGroupBalances(Settlement settlement) async {
-    try {
-      // Group settlements by group for efficient updates
-      Map<int?, double> settledAmountsByGroup = {};
+  static Future<void> _updateGroupBalances(
+      Member payer,
+      Member receiver,
+      List<ExpenseSettlement> settlements,
+      ) async {
+    // Group settlements by group
+    Map<int?, double> settledAmountsByGroup = {};
 
-      for (var expenseSettlement in settlement.expenseSettlements) {
-        final groupId = expenseSettlement.expense.group?.id;
-        if (groupId != null) {
-          settledAmountsByGroup[groupId] = (settledAmountsByGroup[groupId] ?? 0) +
-              expenseSettlement.settledAmount;
-        }
+    for (var settlement in settlements) {
+      final groupId = settlement.expense.group?.id;
+      if (groupId != null) {
+        settledAmountsByGroup[groupId] = (settledAmountsByGroup[groupId] ?? 0) +
+            settlement.settledAmount;
       }
+    }
 
-      // Update each affected group
-      for (var entry in settledAmountsByGroup.entries) {
-        final group = ExpenseManagerService.getGroupById(entry.key!);
-        if (group != null) {
-          // Recalculate balances for the group
-          for (var member in group.members) {
-            final balance = group.getMemberBalance(member);
-            member.totalAmountOwedByMe = balance < 0 ? -balance : 0;
-            await member.save();
+    // Update each group's balances
+    for (var entry in settledAmountsByGroup.entries) {
+      final group = ExpenseManagerService.getGroupById(entry.key!);
+      if (group != null) {
+        // Recalculate and update member balances within the group
+        for (var member in group.members) {
+          final balance = group.getMemberBalance(member);
+          if (member.phone == payer.phone || member.phone == receiver.phone) {
+            final membersBox = Hive.box<Member>(ExpenseManagerService.memberBoxName);
+            final memberInBox = membersBox.get(member.phone);
+            if (memberInBox != null) {
+              memberInBox.totalAmountOwedByMe = balance < 0 ? -balance : 0;
+              await memberInBox.save();
+            }
           }
-          await ExpenseManagerService.updateGroup(group);
         }
+        // Update the group itself
+        await ExpenseManagerService.updateGroup(group);
       }
-    } catch (e) {
-      print('Error updating group balances: $e');
-      rethrow;
     }
   }
 
