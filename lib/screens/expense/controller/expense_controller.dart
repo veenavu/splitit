@@ -36,23 +36,37 @@ class ExpenseController extends GetxController {
   }
 
 
-
   void initializeExpenseData(Expense? expense) {
     // Clear previous data first
     _resetData();
 
     if (expense != null) {
+      print('Initializing expense data for: ${expense.description}');
+
+      // Set basic info
       _descriptionController.text = expense.description;
       _amountController.text = expense.totalAmount.toString();
+
+      // Set group first
       selectedGroup.value = expense.group;
-      selectedPayer.value = expense.paidByMember;
 
-      selectedSplitOption.value = expense.divisionMethod == DivisionMethod.equal ? 'Equally' : 'By Amount';
-
+      // Set members from group
       if (expense.group != null) {
-        members.value = expense.group!.members;
+        print('Setting members from group: ${expense.group!.groupName}');
+        members.value = expense.group!.members.toList();
+      } else {
+        print('No group associated with this expense');
+        members.value = [];
       }
 
+      // Important: Set selectedPayer after members are set
+      Future.microtask(() {
+        print('Setting payer: ${expense.paidByMember.name}');
+        selectedPayer.value = expense.paidByMember;
+      });
+
+      // Set split options
+      selectedSplitOption.value = expense.divisionMethod == DivisionMethod.equal ? 'Equally' : 'By Amount';
       selectedMembers.value = expense.splits.map((split) => split.member).toList();
 
       if (expense.divisionMethod == DivisionMethod.unequal) {
@@ -61,6 +75,7 @@ class ExpenseController extends GetxController {
           _memberAmountControllers[split.member.phone] = TextEditingController(text: split.amount.toStringAsFixed(2));
         }
 
+        // Ensure all members have controllers
         for (var member in members) {
           if (!_memberAmountControllers.containsKey(member.phone)) {
             _memberAmountControllers[member.phone] = TextEditingController(text: '0.00');
@@ -69,6 +84,8 @@ class ExpenseController extends GetxController {
 
         calculateRemaining();
       }
+    } else {
+      print('No expense provided for initialization');
     }
   }
 
@@ -85,84 +102,41 @@ class ExpenseController extends GetxController {
     try {
       final totalAmount = double.tryParse(_amountController.text) ?? 0.0;
       final description = _descriptionController.text;
+      final divisionMethod = selectedSplitOption.value == 'By Amount' ?
+      DivisionMethod.unequal : DivisionMethod.equal;
 
-      if (selectedSplitOption.value == 'By Amount') {
-        // Handle unequal split
-        final customAmounts = selectedMembers.map((member) {
-          final controller = _memberAmountControllers[member.phone];
-          if (controller == null) {
-            throw Exception('No amount controller found for member ${member.name}');
-          }
-          return double.tryParse(controller.text) ?? 0.0;
-        }).toList();
-
-        // Validate total matches sum of splits
-        final sumOfSplits = customAmounts.reduce((a, b) => a + b);
-        if ((sumOfSplits - totalAmount).abs() > 0.01) {
-          Get.snackbar(
-            'Error',
-            'Sum of split amounts (${sumOfSplits.toStringAsFixed(2)}) must equal total amount (${totalAmount.toStringAsFixed(2)})',
-            snackPosition: SnackPosition.BOTTOM,
-          );
-          return;
-        }
-
-        if (existingExpense != null) {
-          selectedExpense = existingExpense;
-          await ExpenseManagerService.updateExpense(
+      if (existingExpense != null) {
+        // Update existing expense
+        await ExpenseManagerService.updateExpense(
             expense: existingExpense,
             totalAmount: totalAmount,
-            divisionMethod: DivisionMethod.unequal,
+            divisionMethod: divisionMethod,
             paidByMember: selectedPayer.value!,
             involvedMembers: selectedMembers,
-            customAmounts: customAmounts,
             description: description,
             group: selectedGroup.value,
-          );
-        } else {
-          await ExpenseManagerService.createExpense(
-            totalAmount: totalAmount,
-            divisionMethod: DivisionMethod.unequal,
-            paidByMember: selectedPayer.value!,
-            involvedMembers: selectedMembers,
-            customAmounts: customAmounts,
-            description: description,
-            group: selectedGroup.value,
-          );
-        }
+            customAmounts: divisionMethod == DivisionMethod.unequal ?
+            _getCustomAmounts() : null
+        );
       } else {
-        // Handle equal split
-        if (existingExpense != null) {
-          selectedExpense = existingExpense;
-          await ExpenseManagerService.updateExpense(
-            expense: existingExpense,
+        // Create new expense
+        await ExpenseManagerService.createExpense(
             totalAmount: totalAmount,
-            divisionMethod: DivisionMethod.equal,
+            divisionMethod: divisionMethod,
             paidByMember: selectedPayer.value!,
             involvedMembers: selectedMembers,
             description: description,
             group: selectedGroup.value,
-          );
-        } else {
-          await ExpenseManagerService.createExpense(
-            totalAmount: totalAmount,
-            divisionMethod: DivisionMethod.equal,
-            paidByMember: selectedPayer.value!,
-            involvedMembers: selectedMembers,
-            description: description,
-            group: selectedGroup.value,
-          );
-        }
+            customAmounts: divisionMethod == DivisionMethod.unequal ?
+            _getCustomAmounts() : null
+        );
       }
-      // In your expense controller after saving/updating/deleting an expense
+
+      // Update UI
       Get.put(FriendsController()).loadMembers();
-
-// In your settlement controller after completing a settlement
-      Get.find<FriendsController>().loadMembers();
-
-      // Refresh the dashboard after saving
       Get.find<DashboardController>().getBalanceText();
       Get.back();
+
     } catch (e) {
       Get.snackbar(
         'Error',
@@ -190,6 +164,16 @@ class ExpenseController extends GetxController {
     return true;
   }
 
+  List<double> _getCustomAmounts() {
+    return selectedMembers.map((member) {
+      final controller = memberAmountControllers[member.phone];
+      if (controller == null) {
+        return 0.0;
+      }
+      return double.tryParse(controller.text) ?? 0.0;
+    }).toList();
+  }
+
 
   @override
   void onInit() {
@@ -210,12 +194,13 @@ class ExpenseController extends GetxController {
     super.onClose();
   }
   void _resetData() {
+    print('Resetting expense data');
     _descriptionController.text = '';
     _amountController.text = '';
-    _memberAmountControllers.forEach((_, controller) => controller.dispose());
-    _memberAmountControllers.clear();
     selectedPayer.value = null;
     selectedMembers.clear();
+    _memberAmountControllers.forEach((_, controller) => controller.dispose());
+    _memberAmountControllers.clear();
     remaining.value = 0.0;
   }
 
@@ -322,14 +307,24 @@ class ExpenseController extends GetxController {
   }
 
   void onGroupChanged(Group? newGroup) {
+    print('Group changed to: ${newGroup?.groupName}');
     selectedGroup.value = newGroup;
+
+    // Clear payer first
+    selectedPayer.value = null;
+
     if (newGroup != null) {
       members.value = newGroup.members.toList();
+      print('Updated members list: ${members.length} members');
 
+      // Reset member selections
+      selectedMembers.clear();
       for (var member in members) {
-        toggleMemberSelection(member);
+        selectedMembers.add(member);
       }
-      selectedPayer.value = null;
+    } else {
+      members.clear();
+      selectedMembers.clear();
     }
   }
 

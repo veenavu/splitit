@@ -42,7 +42,7 @@ class Profile extends HiveObject with EquatableMixin {
 
 // Member Model
 @HiveType(typeId: 1)
-class Member extends HiveObject with EquatableMixin {
+class Member extends HiveObject {
   @HiveField(0)
   int? id;
 
@@ -64,39 +64,37 @@ class Member extends HiveObject with EquatableMixin {
   @HiveField(6)
   DateTime createdAt;
 
+  @HiveField(7)
+  Map<String, double> balancesByGroup; // Track balances per group
+
+  @HiveField(8)
+  List<Transaction> transactionHistory; // Track all transactions
+
   Member({
-    this.id ,
+    this.id,
     required this.name,
     required this.phone,
     this.imagePath,
     this.groupsIncluded,
     this.totalAmountOwedByMe = 0.0,
     DateTime? createdAt,
-  }) : createdAt = createdAt ?? DateTime.now();
+    Map<String, double>? balancesByGroup,
+    List<Transaction>? transactionHistory,
+  }) : createdAt = createdAt ?? DateTime.now(),
+        balancesByGroup = balancesByGroup ?? {},
+        transactionHistory = transactionHistory ?? [];
 
-  // Helper method to get member's expenses in a specific group
-  List<Expense> getExpensesInGroup(Group group) {
-    return group.expenses
-        .where((expense) => expense.isMemberInvolved(this))
-        .toList();
+  // Add methods to manage balances
+  void updateBalance(String groupId, double amount) {
+    balancesByGroup[groupId] = (balancesByGroup[groupId] ?? 0.0) + amount;
+    _recalculateTotalBalance();
   }
 
-
-
-  int? getMemberId(){
-    return id;
+  void _recalculateTotalBalance() {
+    totalAmountOwedByMe = balancesByGroup.values.fold(0.0, (sum, balance) => sum + balance);
   }
-
-  // Helper method to get total amount spent in a group
-  double getTotalSpentInGroup(Group group) {
-    return group.expenses
-        .where((expense) => expense.paidByMember.key == key)
-        .fold(0.0, (sum, expense) => sum + expense.totalAmount);
-  }
-
-  @override
-  List<Object?> get props => [name, phone, imagePath, groupsIncluded, totalAmountOwedByMe, createdAt];
 }
+
 
 // Group Model
 @HiveType(typeId: 2)
@@ -283,6 +281,15 @@ class Expense extends HiveObject {
   @HiveField(10)
   List<String>? attachments;
 
+  @HiveField(11)
+  ExpenseStatus status;
+
+  @HiveField(12)
+  double settledAmount;
+
+  @HiveField(13)
+  List<Settlement> settlements;
+
   Expense({
     this.id,
     required this.totalAmount,
@@ -295,7 +302,31 @@ class Expense extends HiveObject {
     this.note,
     this.attachments,
     DateTime? createdAt,
-  }) : createdAt = createdAt ?? DateTime.now();
+    this.status = ExpenseStatus.active,
+    this.settledAmount = 0.0,
+    List<Settlement>? settlements,
+  }) : createdAt = createdAt ?? DateTime.now(),
+        settlements = settlements ?? [];
+
+
+  void addSettlement(Settlement settlement) {
+    settlements.add(settlement);
+    settledAmount += settlement.amount;
+
+    if (settledAmount >= totalAmount) {
+      status = ExpenseStatus.fullySettled;
+    } else if (settledAmount > 0) {
+      status = ExpenseStatus.partiallySettled;
+    }
+  }
+
+  // Add validation method
+  bool isValid() {
+    return totalAmount > 0 &&
+        splits.isNotEmpty &&
+        validateSplits() &&
+        settledAmount <= totalAmount;
+  }
 
   // Create splits from members and amounts
   static List<ExpenseSplit> createSplitsFromAmounts(
@@ -368,6 +399,12 @@ class Settlement extends HiveObject {
   @HiveField(5)
   final List<ExpenseSettlement> expenseSettlements;
 
+  @HiveField(6)
+  final String status; // 'partial' or 'complete'
+
+  @HiveField(7)
+  final double remainingAmount;
+
   Settlement({
     this.id,
     required this.payer,
@@ -375,13 +412,14 @@ class Settlement extends HiveObject {
     required this.amount,
     required this.expenseSettlements,
     DateTime? settledAt,
+    this.status = 'complete',
+    this.remainingAmount = 0.0,
   }) : settledAt = settledAt ?? DateTime.now();
 
-  String getSettlementStatus(){
-    return payer.name == receiver.name ? 'Self Settlement' :  'Group Settlement';
+  // Add validation method
+  bool isValid() {
+    return amount > 0 && expenseSettlements.isNotEmpty;
   }
-  DateTime get date => settledAt;
-
 }
 
 @HiveType(typeId: 7)
@@ -431,6 +469,61 @@ class Activity extends HiveObject {
     this.relatedMember,
   }) : createdAt = createdAt ?? DateTime.now();
 }
+
+@HiveType(typeId: 9)
+class Transaction extends HiveObject {
+  @HiveField(0)
+  final int? id;
+
+  @HiveField(1)
+  final String type; // 'expense' or 'settlement'
+
+  @HiveField(2)
+  final double amount;
+
+  @HiveField(3)
+  final Member payer;
+
+  @HiveField(4)
+  final Member receiver;
+
+  @HiveField(5)
+  final DateTime timestamp;
+
+  @HiveField(6)
+  final Group? group;
+
+  @HiveField(7)
+  final String? description;
+
+  @HiveField(8)
+  final String status; // 'pending', 'completed', 'cancelled'
+
+  Transaction({
+    this.id,
+    required this.type,
+    required this.amount,
+    required this.payer,
+    required this.receiver,
+    required this.timestamp,
+    this.group,
+    this.description,
+    this.status = 'completed',
+  });
+}
+
+@HiveType(typeId: 10)
+enum ExpenseStatus {
+  @HiveField(0)
+  active,
+  @HiveField(1)
+  partiallySettled,
+  @HiveField(2)
+  fullySettled,
+  @HiveField(3)
+  cancelled
+}
+
 
 
 

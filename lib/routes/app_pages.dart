@@ -9,6 +9,7 @@ import 'package:splitit/screens/dashboard/dashboard.dart';
 import 'package:splitit/screens/expense/add_expense_page.dart';
 import 'package:splitit/screens/group/add_group.dart';
 import 'package:splitit/screens/group/gruop_binding/group_binding.dart';
+import 'package:splitit/screens/profiles/controllers/staticstics_controller.dart';
 import 'package:splitit/screens/welcome/get_started.dart';
 import 'package:splitit/screens/welcome/splash.dart';
 import 'package:splitit/screens/dashboard/binding/friendsPage_binding.dart';
@@ -20,8 +21,14 @@ import '../screens/dashboard/pages/activity_page.dart';
 import '../screens/dashboard/pages/friends_page.dart';
 import '../screens/expense/editExpense_page.dart';
 import '../screens/expense/expenseDisply_page.dart';
+import '../screens/profiles/bindings/account_seeings_binding.dart';
+import '../screens/profiles/bindings/statistics_binding.dart';
+import '../screens/profiles/pages/account_settings_page.dart';
+import '../screens/profiles/pages/statictics.dart';
 import '../screens/settlement/settlement_binding/settlement_binding.dart';
+import '../screens/settlement/settlement_binding/settlement_history_binding.dart';
 import '../screens/settlement/settlement_page.dart';
+import '../screens/settlement/settlemnt_history.dart';
 
 class AppPages {
   static final pages = [
@@ -90,6 +97,29 @@ class AppPages {
         Get.lazyPut(() => ActivityController());
       }),
     ),
+
+    GetPage(
+        name: Routes.settlementhistory,
+        page: () => const SettlementHistoryPage(),
+        binding: SettlementHistoryBinding(),
+    ),
+
+
+    GetPage(
+        name: Routes.accountSettings,
+        page: () => const AccountSettingsPage(),
+      binding: AccountSettingsBinding(),
+    ),
+
+    GetPage(
+        name: Routes.statistics,
+        page: () => const StatisticsPage(),
+       binding: StatisticsBinding(),
+    ),
+
+
+
+
 
   ];
 }

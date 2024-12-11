@@ -29,101 +29,97 @@ class FriendsController extends GetxController {
   Future<void> loadMembers() async {
     try {
       isLoading.value = true;
-      final currentUserPhone = userProfile.value?.phone;
-      if (currentUserPhone == null) return;
+      if (userProfile.value == null) return;
 
-      // Get all expenses from all groups
-      List<Expense> allExpenses = ExpenseManagerService.getAllExpenses();
+      final currentUser = Member(
+        name: userProfile.value!.name,
+        phone: userProfile.value!.phone,
+      );
 
-      // Create maps to store member data
-      Map<String, Member> uniqueMembers = {};
-      Map<String, double> memberTotalBalances = {};
+      Map<String, Map<String, dynamic>> memberBalanceMap = {};
+      final allGroups = ExpenseManagerService.getAllGroups();
 
-      // Process all expenses
-      for (var expense in allExpenses) {
-        try {
-          // When current user is the payer
-          if (expense.paidByMember.phone == currentUserPhone) {
-            // Get all splits except current user's
+      // Process each group
+      for (var group in allGroups) {
+        final expenses = ExpenseManagerService.getExpensesByGroup(group);
+
+        // Process each expense in the group
+        for (var expense in expenses) {
+          // Skip if the expense doesn't involve the current user
+          if (!isUserInvolvedInExpense(expense, currentUser.phone)) continue;
+
+          // Process payer
+          if (expense.paidByMember.phone == currentUser.phone) {
+            // Current user paid, others owe them
             for (var split in expense.splits) {
-              if (split.member.phone != currentUserPhone) {
-                uniqueMembers[split.member.phone] = split.member;
-                memberTotalBalances[split.member.phone] = (memberTotalBalances[split.member.phone] ?? 0) + split.amount;
+              if (split.member.phone != currentUser.phone) {
+                _updateMemberBalance(memberBalanceMap, split.member, -split.amount);
               }
             }
-          }
-
-          // When someone else paid
-          if (expense.paidByMember.phone != currentUserPhone) {
-            // Add payer to unique members
-            uniqueMembers[expense.paidByMember.phone] = expense.paidByMember;
-
-            // Find current user's split
-            var currentUserSplit = expense.splits.firstWhere(
-                    (split) => split.member.phone == currentUserPhone,
-                orElse: () => ExpenseSplit(member: expense.paidByMember, amount: 0)
+          } else if (expense.paidByMember.phone != currentUser.phone) {
+            // Someone else paid, check if current user owes them
+            final currentUserSplit = expense.splits.firstWhereOrNull(
+                    (split) => split.member.phone == currentUser.phone
             );
-
-            // Subtract what current user owes to the payer
-            memberTotalBalances[expense.paidByMember.phone] =
-                (memberTotalBalances[expense.paidByMember.phone] ?? 0) - currentUserSplit.amount;
+            if (currentUserSplit != null) {
+              _updateMemberBalance(memberBalanceMap, expense.paidByMember, currentUserSplit.amount);
+            }
           }
-        } catch (e) {
-          print('Error processing expense: ${e.toString()}');
-          continue;
         }
       }
 
-      // Convert to list format for the view
-      List<Map<String, dynamic>> updatedBalances = uniqueMembers.entries.map((entry) {
+      // Convert the map to the required format
+      memberBalances.value = memberBalanceMap.entries.map((entry) {
         return {
-          'member': entry.value,
-          'balance': memberTotalBalances[entry.key] ?? 0.0,
+          'member': entry.value['member'] as Member,
+          'balance': entry.value['balance'] as double,
         };
       }).toList();
 
-      // Sort by absolute balance value (highest first)
-      updatedBalances.sort((a, b) =>
-          b['balance'].abs().compareTo(a['balance'].abs())
+      // Sort by absolute balance amount
+      memberBalances.sort((a, b) =>
+          (b['balance'] as double).abs().compareTo((a['balance'] as double).abs())
       );
-
-      // Update the observable list
-      memberBalances.value = updatedBalances;
-      update(); // Force UI update
 
     } catch (e) {
       print('Error loading members: $e');
-      rethrow; // Propagate error for handling in UI
     } finally {
       isLoading.value = false;
     }
   }
 
-  double getMemberBalance(Member member) {
-    try {
-      final memberData = memberBalances.firstWhere(
-            (data) => (data['member'] as Member).phone == member.phone,
-        orElse: () => {'balance': 0.0},
-      );
-      return memberData['balance'] ?? 0.0;
-    } catch (e) {
-      print('Error getting member balance: $e');
-      return 0.0;
+  bool isUserInvolvedInExpense(Expense expense, String userPhone) {
+    return expense.paidByMember.phone == userPhone ||
+        expense.splits.any((split) => split.member.phone == userPhone);
+  }
+
+  void _updateMemberBalance(
+      Map<String, Map<String, dynamic>> balanceMap,
+      Member member,
+      double amount
+      ) {
+    if (!balanceMap.containsKey(member.phone)) {
+      balanceMap[member.phone] = {
+        'member': member,
+        'balance': 0.0,
+      };
     }
+    balanceMap[member.phone]!['balance'] =
+        (balanceMap[member.phone]!['balance'] as double) + amount;
   }
 
   String getBalanceText(double balance) {
     if (balance > 0) {
-      return 'owes you ₹${balance.abs().toStringAsFixed(2)}';
-    } else if (balance < 0) {
       return 'you owe ₹${balance.abs().toStringAsFixed(2)}';
+    } else if (balance < 0) {
+      return 'owes you ₹${balance.abs().toStringAsFixed(2)}';
     }
     return 'settled up';
   }
 
   Color getBalanceColor(double balance) {
-    if (balance > 0) return Colors.green;
-    if (balance < 0) return Colors.red;
+    if (balance > 0) return Colors.red;    // You owe them
+    if (balance < 0) return Colors.green;  // They owe you
     return Colors.grey;
   }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../modelClass/models.dart';
+import '../../../routes/app_routes.dart';
 import '../../settlement/memberSettlement_page.dart';
 import '../../settlement/settleement_controller/memberSettlement_controller.dart';
 import '../../settlement/settlement_binding/settlement_binding.dart';
@@ -53,9 +54,9 @@ class FriendsPage extends GetView<FriendsController> {
               ),
               const Spacer(),
               IconButton(
-                icon: const Icon(Icons.search),
+                icon: const Icon(Icons.list_alt_outlined),
                 onPressed: () {
-                  // TODO: Implement search functionality
+                  Get.toNamed(Routes.settlementhistory);
                 },
               ),
             ],

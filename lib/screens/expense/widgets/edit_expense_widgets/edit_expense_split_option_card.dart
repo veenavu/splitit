@@ -12,6 +12,80 @@ class SplitOptionsCard extends StatelessWidget {
     required this.controller,
   }) : super(key: key);
 
+
+  Widget _buildPayerDropdown() {
+    return Obx(() {
+      final currentMembers = controller.members;
+      final currentPayer = controller.selectedPayer.value;
+
+      // Debug prints to help diagnose the issue
+      print('Current members: ${currentMembers.map((m) => '${m.name}:${m.phone}')}');
+      print('Selected payer: ${currentPayer?.name}:${currentPayer?.phone}');
+
+      // If no members, show a placeholder
+      if (currentMembers.isEmpty) {
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.purple.shade200),
+            borderRadius: BorderRadius.circular(12),
+            color: Colors.purple.shade50,
+          ),
+          child: Text(
+            "No members available",
+            style: TextStyle(color: Colors.purple.shade300),
+          ),
+        );
+      }
+
+      // Create unique items using phone number as key
+      final items = currentMembers.map((Member member) {
+        return DropdownMenuItem<String>(
+          value: member.phone, // Use phone as unique identifier
+          child: Text(
+            member.name,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 14),
+          ),
+        );
+      }).toList();
+
+      return DropdownButtonFormField<String>(
+        value: currentPayer?.phone, // Use phone number as value
+        icon: const Icon(
+          Icons.expand_more_rounded,
+          size: 20,
+          color: Colors.deepPurple,
+        ),
+        isExpanded: true,
+        decoration: InputDecoration(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.purple.shade200),
+          ),
+          filled: true,
+          fillColor: Colors.purple.shade50,
+        ),
+        hint: Text(
+          "Select payer",
+          style: TextStyle(color: Colors.purple.shade300),
+        ),
+        onChanged: (String? phoneNumber) {
+          if (phoneNumber != null) {
+            final selectedMember = currentMembers.firstWhere(
+                  (m) => m.phone == phoneNumber,
+              orElse: () => currentMembers.first,
+            );
+            controller.selectedPayer.value = selectedMember;
+          }
+        },
+        items: items,
+      );
+    });
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -41,39 +115,9 @@ class SplitOptionsCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      Obx(() => DropdownButtonFormField<Member>(
-                            value: controller.selectedPayer.value,
-                            icon: const Icon(
-                              Icons.expand_more_rounded,
-                              size: 20,
-                              color: Colors.deepPurple,
-                            ),
-                            isExpanded: true,
-                            decoration: InputDecoration(
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: Colors.purple.shade200),
-                              ),
-                              filled: true,
-                              fillColor: Colors.purple.shade50,
-                            ),
-                            hint: Text(
-                              "Select",
-                              style: TextStyle(color: Colors.purple.shade300),
-                            ),
-                            onChanged: (value) => controller.selectedPayer.value = value,
-                            items: controller.members.map((Member member) {
-                              return DropdownMenuItem<Member>(
-                                value: member,
-                                child: Text(
-                                  member.name,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(fontSize: 14),
-                                ),
-                              );
-                            }).toList(),
-                          )),
+                      // In edit_expense_split_option_card.dart
+
+                      _buildPayerDropdown(),
                     ],
                   ),
                 ),

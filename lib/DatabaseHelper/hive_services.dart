@@ -14,6 +14,7 @@ class ExpenseManagerService {
   static const String counterBoxName = 'counters';
   static const String settlementBoxName = 'settlements';
   static const String activityBoxName = 'activities';
+  static const String transactionBoxName = 'transactions';
 
   //Add a Map to track open Boxes
   static final Map<String, Box> _openBoxes = {};
@@ -33,6 +34,8 @@ class ExpenseManagerService {
       Hive.registerAdapter(SettlementAdapter()) ;
       Hive.registerAdapter(ExpenseSettlementAdapter());
       Hive.registerAdapter(ActivityAdapter()) ;
+      Hive.registerAdapter(TransactionAdapter());
+      Hive.registerAdapter(ExpenseStatusAdapter());
 
       // Open Boxes
       await Hive.openBox<Profile>(profileBoxName);
@@ -43,10 +46,203 @@ class ExpenseManagerService {
       await Hive.openBox(normalBox);
       await Hive.openBox<Settlement>(settlementBoxName);
       await Hive.openBox<Activity>(activityBoxName);
+      await Hive.openBox<Transaction>(transactionBoxName);
+      await _validateDataIntegrity();
     } catch (e) {
       print(e);
     }
   }
+  static Future<void> _validateDataIntegrity() async {
+    try {
+      final expensesBox = Hive.box<Expense>(expenseBoxName);
+      final settlementsBox = Hive.box<Settlement>(settlementBoxName);
+
+      // Validate expenses
+      for (var expense in expensesBox.values) {
+        if (!expense.isValid()) {
+          print('Invalid expense found: ${expense.id}');
+          // Handle invalid data (log, repair, or delete)
+        }
+      }
+
+      // Validate settlements
+      for (var settlement in settlementsBox.values) {
+        if (!settlement.isValid()) {
+          print('Invalid settlement found: ${settlement.id}');
+          // Handle invalid data
+        }
+      }
+    } catch (e) {
+      print('Error validating data integrity: $e');
+    }
+  }
+
+  static Future<void> recordPartialSettlement({
+    required Member payer,
+    required Member receiver,
+    required double amount,
+    required List<Expense> expenses,
+  }) async {
+    try {
+      // Validate settlement amount
+      double totalOwed = calculateTotalOwed(payer, receiver);
+      if (amount > totalOwed) {
+        throw Exception('Settlement amount exceeds total owed amount');
+      }
+
+      // Create settlement record
+      List<ExpenseSettlement> expenseSettlements = [];
+      double remainingAmount = amount;
+
+      for (var expense in expenses) {
+        if (remainingAmount <= 0) break;
+
+        double unsettledAmount = calculateUnsettledAmount(expense, payer);
+        if (unsettledAmount <= 0) continue;
+
+        double settleAmount = unsettledAmount < remainingAmount ?
+        unsettledAmount : remainingAmount;
+
+        expenseSettlements.add(ExpenseSettlement(
+          expense: expense,
+          settledAmount: settleAmount,
+        ));
+
+        // Update expense
+        expense.addSettlement(Settlement(
+          payer: payer,
+          receiver: receiver,
+          amount: settleAmount,
+          expenseSettlements: [expenseSettlements.last],
+        ));
+
+        remainingAmount -= settleAmount;
+      }
+
+      // Create and save settlement record
+      final settlement = Settlement(
+        payer: payer,
+        receiver: receiver,
+        amount: amount,
+        expenseSettlements: expenseSettlements,
+        status: remainingAmount > 0 ? 'partial' : 'complete',
+        remainingAmount: remainingAmount,
+      );
+
+      final settlementBox = Hive.box<Settlement>(settlementBoxName);
+      await settlementBox.add(settlement);
+
+      // Create transaction record
+      final transaction = Transaction(
+        type: 'settlement',
+        amount: amount,
+        payer: payer,
+        receiver: receiver,
+        timestamp: DateTime.now(),
+        description: 'Settlement payment',
+      );
+
+      final transactionBox = Hive.box<Transaction>(transactionBoxName);
+      await transactionBox.add(transaction);
+
+      // Update member balances
+      await _updateBalancesAfterSettlement(payer, receiver, amount);
+
+    } catch (e) {
+      print('Error recording settlement: $e');
+      rethrow;
+    }
+  }
+
+
+  static Future<void> _updateBalancesAfterSettlement(
+      Member payer,
+      Member receiver,
+      double amount,
+      ) async {
+    try {
+      final membersBox = Hive.box<Member>(memberBoxName);
+
+      // Update payer's balance
+      final payerMember = membersBox.get(payer.phone);
+      if (payerMember != null) {
+        payerMember.totalAmountOwedByMe -= amount;
+        await payerMember.save();
+      }
+
+      // Update receiver's balance
+      final receiverMember = membersBox.get(receiver.phone);
+      if (receiverMember != null) {
+        receiverMember.totalAmountOwedByMe += amount;
+        await receiverMember.save();
+      }
+
+    } catch (e) {
+      print('Error updating balances after settlement: $e');
+      rethrow;
+    }
+  }
+
+
+  static double calculateTotalOwed(Member payer, Member receiver) {
+    double total = 0.0;
+
+    // Calculate from expenses
+    final expenses = getAllExpenses().where((expense) =>
+    (expense.paidByMember.phone == receiver.phone &&
+        expense.splits.any((split) => split.member.phone == payer.phone)) ||
+        (expense.paidByMember.phone == payer.phone &&
+            expense.splits.any((split) => split.member.phone == receiver.phone))
+    );
+
+    for (var expense in expenses) {
+      if (expense.paidByMember.phone == receiver.phone) {
+        final payerSplit = expense.splits.firstWhere(
+              (split) => split.member.phone == payer.phone,
+          orElse: () => ExpenseSplit(member: payer, amount: 0),
+        );
+        total += payerSplit.amount;
+      }
+    }
+
+    // Subtract existing settlements
+    final settlements = Hive.box<Settlement>(settlementBoxName).values.where(
+            (settlement) => settlement.payer.phone == payer.phone &&
+            settlement.receiver.phone == receiver.phone
+    );
+
+    total -= settlements.fold(0.0, (sum, settlement) => sum + settlement.amount);
+
+    return total;
+  }
+
+  // Add method to get transaction history between members
+  static List<Transaction> getTransactionHistory(Member member1, Member member2) {
+    final transactionBox = Hive.box<Transaction>(transactionBoxName);
+
+    return transactionBox.values.where((transaction) =>
+    (transaction.payer.phone == member1.phone &&
+        transaction.receiver.phone == member2.phone) ||
+        (transaction.payer.phone == member2.phone &&
+            transaction.receiver.phone == member1.phone)
+    ).toList()
+      ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+  }
+
+  static double calculateUnsettledAmount(Expense expense, Member member) {
+    if (!expense.splits.any((split) => split.member.phone == member.phone)) {
+      return 0.0;
+    }
+
+    final split = expense.splits.firstWhere(
+            (split) => split.member.phone == member.phone
+    );
+
+    return split.amount - expense.settlements.where(
+            (settlement) => settlement.payer.phone == member.phone
+    ).fold(0.0, (sum, settlement) => sum + settlement.amount);
+  }
+
 
   static int _getNextId(String type) {
     final box = Hive.box<int>(counterBoxName);

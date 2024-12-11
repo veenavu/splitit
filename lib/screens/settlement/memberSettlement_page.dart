@@ -18,19 +18,19 @@ class MemberSettlementPage extends GetView<MemberSettlementController> {
 
   @override
   Widget build(BuildContext context) {
-    final isUserOwing = totalBalance < 0;
-
     // Initialize controller with member data
-    controller.loadGroupBalances(member, isUserOwing);
+    controller.initializeWithMember(member, totalBalance);
+    final isUserOwing = controller.isUserOwing(totalBalance);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Settle with ${member.name}', style: const TextStyle(color: Colors.white)),
+        title: Text('Settle with ${member.name}',
+            style: const TextStyle(color: Colors.white)),
         backgroundColor: Colors.purple,
       ),
       body: Column(
         children: [
-          _buildSettlementHeader(isUserOwing),
+          _buildSettlementHeader(),
           _buildCustomAmountSection(),
           _buildGroupsList(),
           _buildSettleButton(isUserOwing),
@@ -39,16 +39,14 @@ class MemberSettlementPage extends GetView<MemberSettlementController> {
     );
   }
 
-  Widget _buildSettlementHeader(bool isUserOwing) {
+  Widget _buildSettlementHeader() {
     return Container(
       padding: const EdgeInsets.all(16),
       color: Colors.purple.shade50,
       child: Column(
         children: [
           Text(
-            isUserOwing
-                ? 'You owe ${member.name}'
-                : '${member.name} owes you',
+            controller.getBalanceText(totalBalance),
             style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -60,7 +58,7 @@ class MemberSettlementPage extends GetView<MemberSettlementController> {
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
-              color: isUserOwing ? Colors.red : Colors.green,
+              color: totalBalance > 0 ? Colors.red : Colors.green,
             ),
           ),
         ],
@@ -87,18 +85,23 @@ class MemberSettlementPage extends GetView<MemberSettlementController> {
               const Text('Enter custom amount'),
             ],
           ),
-          Obx(() => controller.isCustomAmount.value
-              ? TextField(
-            decoration: const InputDecoration(
-              labelText: 'Amount',
-              prefixText: '₹',
-            ),
-            keyboardType: TextInputType.number,
-            onChanged: (value) {
-              controller.customAmount.value = double.tryParse(value) ?? 0;
-            },
-          )
-              : const SizedBox.shrink(),
+          Obx(
+                () => controller.isCustomAmount.value
+                ? TextField(
+              decoration: const InputDecoration(
+                labelText: 'Amount',
+                prefixText: '₹',
+                border: OutlineInputBorder(),
+              ),
+              keyboardType: TextInputType.number,
+              controller: TextEditingController(
+                  text: totalBalance.abs().toString()
+              ),
+              onChanged: (value) {
+                controller.customAmount.value = double.tryParse(value) ?? 0;
+              },
+            )
+                : const SizedBox.shrink(),
           ),
         ],
       ),
@@ -120,18 +123,21 @@ class MemberSettlementPage extends GetView<MemberSettlementController> {
             child: ListTile(
               title: Text(group.groupName),
               subtitle: Text(
-                isSettled
-                    ? 'Settled'
-                    : '₹${balance.abs().toStringAsFixed(2)}',
+                isSettled ? 'Settled' : controller.getBalanceText(balance),
                 style: TextStyle(
-                  color: isSettled
-                      ? Colors.grey
-                      : balance < 0 ? Colors.red : Colors.green,
+                  color: isSettled ? Colors.grey :
+                  balance > 0 ? Colors.red : Colors.green,
                 ),
               ),
-              trailing: isSettled
-                  ? const Icon(Icons.check_circle, color: Colors.green)
-                  : null,
+              trailing: isSettled ?
+              const Icon(Icons.check_circle, color: Colors.green) :
+              Text(
+                '₹${balance.abs().toStringAsFixed(2)}',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: balance > 0 ? Colors.red : Colors.green,
+                ),
+              ),
             ),
           );
         },
@@ -146,48 +152,44 @@ class MemberSettlementPage extends GetView<MemberSettlementController> {
         onPressed: controller.isProcessing.value
             ? null
             : () {
-              final amount = controller.isCustomAmount.value
-                  ? controller.customAmount.value
-                  : totalBalance.abs();
+          final amount = controller.isCustomAmount.value
+              ? controller.customAmount.value
+              : totalBalance.abs();
 
-              final selectedGroups = controller.groupBalances
-                  .where((g) => !g['isSettled'])
-                  .map((g) => g['group'] as Group)
-                  .toList();
+          final selectedGroups = controller.groupBalances
+              .where((g) => !g['isSettled'])
+              .map((g) => g['group'] as Group)
+              .toList();
 
-              controller.recordSettlement(
-                payer: isUserOwing
-                    ? controller.currentUser.value!.toMember()
-                    : member,
-                receiver: isUserOwing
-                    ? member
-                    : controller.currentUser.value!.toMember(),
-                amount: amount,
-                selectedGroups: selectedGroups,
-              );
-              Get.back();
-
+          controller.recordSettlement(
+            payer: isUserOwing
+                ? Member(
+              name: controller.currentUser.value!.name,
+              phone: controller.currentUser.value!.phone,
+              imagePath: controller.currentUser.value!.imagePath,
+            )
+                : member,
+            receiver: isUserOwing
+                ? member
+                : Member(
+              name: controller.currentUser.value!.name,
+              phone: controller.currentUser.value!.phone,
+              imagePath: controller.currentUser.value!.imagePath,
+            ),
+            amount: amount,
+            selectedGroups: selectedGroups,
+          );
+          Get.back();
         },
-    style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.purple,
-        minimumSize: const Size(double.infinity, 50),
-      ),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.purple,
+          minimumSize: const Size(double.infinity, 50),
+        ),
         child: controller.isProcessing.value
             ? const CircularProgressIndicator(color: Colors.white)
-            : const Text('Record Settlement', style: TextStyle(color: Colors.white)),
-      ))
-
-
-    );
-  }
-}
-
-extension ProfileToMember on Profile {
-  Member toMember() {
-    return Member(
-      name: name,
-      phone: phone,
-      imagePath: imagePath,
+            : const Text('Record Settlement',
+            style: TextStyle(color: Colors.white)),
+      )),
     );
   }
 }

@@ -13,4 +13,8 @@ abstract class Routes {
   static const ediitExpense = '/edit-expense';
   static const settleExpense = '/settle-expense';
   static const activity = '/activity';
+  static const settlementhistory = '/settlementhistory';
+  static const accountSettings = '/account-settings';
+  static const statistics = '/statistics';
+
 }

@@ -70,13 +70,15 @@ class MemberAdapter extends TypeAdapter<Member> {
       groupsIncluded: (fields[4] as List?)?.cast<Group>(),
       totalAmountOwedByMe: fields[5] as double,
       createdAt: fields[6] as DateTime?,
+      balancesByGroup: (fields[7] as Map?)?.cast<String, double>(),
+      transactionHistory: (fields[8] as List?)?.cast<Transaction>(),
     );
   }
 
   @override
   void write(BinaryWriter writer, Member obj) {
     writer
-      ..writeByte(7)
+      ..writeByte(9)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -90,7 +92,11 @@ class MemberAdapter extends TypeAdapter<Member> {
       ..writeByte(5)
       ..write(obj.totalAmountOwedByMe)
       ..writeByte(6)
-      ..write(obj.createdAt);
+      ..write(obj.createdAt)
+      ..writeByte(7)
+      ..write(obj.balancesByGroup)
+      ..writeByte(8)
+      ..write(obj.transactionHistory);
   }
 
   @override
@@ -224,13 +230,16 @@ class ExpenseAdapter extends TypeAdapter<Expense> {
       note: fields[9] as String?,
       attachments: (fields[10] as List?)?.cast<String>(),
       createdAt: fields[7] as DateTime?,
+      status: fields[11] as ExpenseStatus,
+      settledAmount: fields[12] as double,
+      settlements: (fields[13] as List?)?.cast<Settlement>(),
     );
   }
 
   @override
   void write(BinaryWriter writer, Expense obj) {
     writer
-      ..writeByte(11)
+      ..writeByte(14)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -252,7 +261,13 @@ class ExpenseAdapter extends TypeAdapter<Expense> {
       ..writeByte(9)
       ..write(obj.note)
       ..writeByte(10)
-      ..write(obj.attachments);
+      ..write(obj.attachments)
+      ..writeByte(11)
+      ..write(obj.status)
+      ..writeByte(12)
+      ..write(obj.settledAmount)
+      ..writeByte(13)
+      ..write(obj.settlements);
   }
 
   @override
@@ -283,13 +298,15 @@ class SettlementAdapter extends TypeAdapter<Settlement> {
       amount: fields[3] as double,
       expenseSettlements: (fields[5] as List).cast<ExpenseSettlement>(),
       settledAt: fields[4] as DateTime?,
+      status: fields[6] as String,
+      remainingAmount: fields[7] as double,
     );
   }
 
   @override
   void write(BinaryWriter writer, Settlement obj) {
     writer
-      ..writeByte(6)
+      ..writeByte(8)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -301,7 +318,11 @@ class SettlementAdapter extends TypeAdapter<Settlement> {
       ..writeByte(4)
       ..write(obj.settledAt)
       ..writeByte(5)
-      ..write(obj.expenseSettlements);
+      ..write(obj.expenseSettlements)
+      ..writeByte(6)
+      ..write(obj.status)
+      ..writeByte(7)
+      ..write(obj.remainingAmount);
   }
 
   @override
@@ -404,6 +425,64 @@ class ActivityAdapter extends TypeAdapter<Activity> {
           typeId == other.typeId;
 }
 
+class TransactionAdapter extends TypeAdapter<Transaction> {
+  @override
+  final int typeId = 9;
+
+  @override
+  Transaction read(BinaryReader reader) {
+    final numOfFields = reader.readByte();
+    final fields = <int, dynamic>{
+      for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
+    };
+    return Transaction(
+      id: fields[0] as int?,
+      type: fields[1] as String,
+      amount: fields[2] as double,
+      payer: fields[3] as Member,
+      receiver: fields[4] as Member,
+      timestamp: fields[5] as DateTime,
+      group: fields[6] as Group?,
+      description: fields[7] as String?,
+      status: fields[8] as String,
+    );
+  }
+
+  @override
+  void write(BinaryWriter writer, Transaction obj) {
+    writer
+      ..writeByte(9)
+      ..writeByte(0)
+      ..write(obj.id)
+      ..writeByte(1)
+      ..write(obj.type)
+      ..writeByte(2)
+      ..write(obj.amount)
+      ..writeByte(3)
+      ..write(obj.payer)
+      ..writeByte(4)
+      ..write(obj.receiver)
+      ..writeByte(5)
+      ..write(obj.timestamp)
+      ..writeByte(6)
+      ..write(obj.group)
+      ..writeByte(7)
+      ..write(obj.description)
+      ..writeByte(8)
+      ..write(obj.status);
+  }
+
+  @override
+  int get hashCode => typeId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is TransactionAdapter &&
+          runtimeType == other.runtimeType &&
+          typeId == other.typeId;
+}
+
 class DivisionMethodAdapter extends TypeAdapter<DivisionMethod> {
   @override
   final int typeId = 3;
@@ -444,6 +523,55 @@ class DivisionMethodAdapter extends TypeAdapter<DivisionMethod> {
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is DivisionMethodAdapter &&
+          runtimeType == other.runtimeType &&
+          typeId == other.typeId;
+}
+
+class ExpenseStatusAdapter extends TypeAdapter<ExpenseStatus> {
+  @override
+  final int typeId = 10;
+
+  @override
+  ExpenseStatus read(BinaryReader reader) {
+    switch (reader.readByte()) {
+      case 0:
+        return ExpenseStatus.active;
+      case 1:
+        return ExpenseStatus.partiallySettled;
+      case 2:
+        return ExpenseStatus.fullySettled;
+      case 3:
+        return ExpenseStatus.cancelled;
+      default:
+        return ExpenseStatus.active;
+    }
+  }
+
+  @override
+  void write(BinaryWriter writer, ExpenseStatus obj) {
+    switch (obj) {
+      case ExpenseStatus.active:
+        writer.writeByte(0);
+        break;
+      case ExpenseStatus.partiallySettled:
+        writer.writeByte(1);
+        break;
+      case ExpenseStatus.fullySettled:
+        writer.writeByte(2);
+        break;
+      case ExpenseStatus.cancelled:
+        writer.writeByte(3);
+        break;
+    }
+  }
+
+  @override
+  int get hashCode => typeId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ExpenseStatusAdapter &&
           runtimeType == other.runtimeType &&
           typeId == other.typeId;
 }

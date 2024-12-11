@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:splitit/modelClass/models.dart';
 import 'package:splitit/screens/dashboard/controller/dashboard_controller.dart';
 import 'package:splitit/screens/dashboard/widgets/bottom_action.dart';
 import 'package:splitit/screens/dashboard/widgets/expense_list_item.dart';
 import 'package:splitit/screens/dashboard/widgets/total_owed.dart';
 import 'package:splitit/screens/group/group_details.dart';
+
+import '../../../DatabaseHelper/hive_services.dart';
 
 class GroupListPage extends StatelessWidget {
   const GroupListPage({super.key});
@@ -116,7 +119,14 @@ class GroupListPage extends StatelessWidget {
                       },
                       child: ExpenseListItem(
                         title: groupItem.groupName,
-                        subtitle: controller.getGroupBalanceText(groupItem),
+                        subtitle: ExpenseManagerService.getGroupBalanceText(
+                            Member(
+                                name: controller.userProfile.value!.name,
+                                phone: controller.userProfile.value!.phone,
+                                id: controller.userProfile.value!.id
+                            ),
+                            groupItem  // Pass the group as second parameter
+                        ),
                         showGroupImage: index % 2 == 0 ? false : true,
                         details: const [],
                         icon: Icons.article,

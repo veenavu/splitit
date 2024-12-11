@@ -9,7 +9,9 @@ import 'package:splitit/screens/dashboard/pages/activity_page.dart';
 import 'package:splitit/screens/dashboard/pages/friends_page.dart';
 import 'package:splitit/screens/dashboard/pages/group_list_page.dart';
 import 'package:splitit/screens/dashboard/pages/profile_page.dart';
+import 'package:splitit/screens/profiles/controllers/settings_Controller.dart';
 
+import '../../profiles/pages/account_settings_page.dart';
 import 'activityPage_controller.dart';
 import 'friendsPage_controller.dart';
 
@@ -32,7 +34,10 @@ class DashboardController extends GetxController {
       init: ActivityController(),
       builder: (controller) => const ActivitiesPage(),
     ),
-    const ProfilePage(),
+    GetBuilder<AccountSettingsController>(
+      init: AccountSettingsController(),
+        builder: (controller) => const AccountSettingsPage(),)
+    //const ProfilePage(),
   ];
 
   @override
@@ -53,6 +58,8 @@ class DashboardController extends GetxController {
       final allGroups = ExpenseManagerService.getAllGroups();
       groups.value = allGroups;
       applyFilter();
+      // getBalanceText();
+      // update();
       if (Get.isRegistered<ActivityController>()) {
         Get.find<ActivityController>().loadActivities();
       }
