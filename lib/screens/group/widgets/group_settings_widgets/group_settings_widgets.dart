@@ -6,9 +6,9 @@ class GroupImageWidget extends StatelessWidget {
   final String groupImage;
 
   const GroupImageWidget({
-    Key? key,
+    super.key,
     required this.groupImage,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -56,9 +56,9 @@ class GroupNameDisplay extends StatelessWidget {
   final String groupName;
 
   const GroupNameDisplay({
-    Key? key,
+    super.key,
     required this.groupName,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -98,9 +98,9 @@ class MemberCountDisplay extends StatelessWidget {
   final int memberCount;
 
   const MemberCountDisplay({
-    Key? key,
+    super.key,
     required this.memberCount,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -135,10 +135,10 @@ class MemberListItem extends StatelessWidget {
   final String balanceSubtitle;
 
   const MemberListItem({
-    Key? key,
+    super.key,
     required this.member,
     required this.balanceSubtitle,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -194,11 +194,11 @@ class GroupAppBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback onDelete;
 
   const GroupAppBar({
-    Key? key,
+    super.key,
     required this.onBack,
     required this.onEdit,
     required this.onDelete,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

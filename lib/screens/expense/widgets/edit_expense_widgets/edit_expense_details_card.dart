@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 
 import '../../controller/expense_controller.dart';
 
@@ -7,9 +6,9 @@ class ExpenseDetailsCard extends StatelessWidget {
   final ExpenseController controller;
 
   const ExpenseDetailsCard({
-    Key? key,
+    super.key,
     required this.controller,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

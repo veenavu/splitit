@@ -4,9 +4,9 @@ class GroupNameInput extends StatelessWidget {
   final TextEditingController controller;
 
   const GroupNameInput({
-    Key? key,
+    super.key,
     required this.controller,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

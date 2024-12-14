@@ -8,9 +8,9 @@ class SplitOptionsCard extends StatelessWidget {
   final ExpenseController controller;
 
   const SplitOptionsCard({
-    Key? key,
+    super.key,
     required this.controller,
-  }) : super(key: key);
+  });
 
 
   Widget _buildPayerDropdown() {

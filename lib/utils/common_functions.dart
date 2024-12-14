@@ -95,9 +95,9 @@ class MemberAdding extends StatefulWidget {
   final Function(List<Contact>) onContactsSelected;
 
   const MemberAdding({
-    Key? key,
+    super.key,
     required this.onContactsSelected,
-  }) : super(key: key);
+  });
 
   @override
   State<MemberAdding> createState() => _MemberAddingState();
@@ -105,7 +105,7 @@ class MemberAdding extends StatefulWidget {
 
 class _MemberAddingState extends State<MemberAdding> {
   List<Contact> _contacts = [];
-  List<Contact> _selectedContacts = [];
+  final List<Contact> _selectedContacts = [];
   bool _isLoading = true;
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();

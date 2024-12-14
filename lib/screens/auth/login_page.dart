@@ -4,7 +4,6 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:splitit/routes/app_routes.dart';
 import 'package:splitit/screens/auth/controller/auth_controller.dart';
-import 'package:splitit/screens/auth/sign_up.dart';
 
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});

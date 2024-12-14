@@ -10,7 +10,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:splitit/DatabaseHelper/hive_services.dart';
 import 'package:splitit/modelClass/models.dart';
 
-import '../../dashboard/services/activityPage_services.dart';
 
 class AddNewGroupController extends GetxController {
   // Observable variables

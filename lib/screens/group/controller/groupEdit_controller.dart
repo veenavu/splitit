@@ -25,11 +25,6 @@ class GroupEditController extends GetxController {
     members.value = List.from(group.members);
   }
 
-  @override
-  void onInit() {
-    super.onInit();
-    // Additional initialization if needed
-  }
 
   void updateSelectedType(String? type) {
     if (type != null) {
@@ -153,7 +148,7 @@ class GroupEditController extends GetxController {
 class GroupEditPage extends GetView<GroupEditController> {
   final Group group;
 
-  const GroupEditPage({Key? key, required this.group}) : super(key: key);
+  const GroupEditPage({super.key, required this.group});
 
   @override
   Widget build(BuildContext context) {

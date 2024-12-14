@@ -11,10 +11,10 @@ class MemberSettlementPage extends GetView<MemberSettlementController> {
   final double totalBalance;
 
   const MemberSettlementPage({
-    Key? key,
+    super.key,
     required this.member,
     required this.totalBalance,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

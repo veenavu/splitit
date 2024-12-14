@@ -9,9 +9,9 @@ class ExpenseGroupSelection extends StatelessWidget {
   final ExpenseController controller;
 
   const ExpenseGroupSelection({
-    Key? key,
+    super.key,
     required this.controller,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -77,9 +77,9 @@ class GroupDropdownItem extends StatelessWidget {
   final Group group;
 
   const GroupDropdownItem({
-    Key? key,
+    super.key,
     required this.group,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

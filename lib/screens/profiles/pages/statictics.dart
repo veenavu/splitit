@@ -6,7 +6,7 @@ import '../../../modelClass/models.dart';
 import '../controllers/staticstics_controller.dart';
 
 class StatisticsPage extends GetView<StatisticsController> {
-  const StatisticsPage({Key? key}) : super(key: key);
+  const StatisticsPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -317,86 +317,4 @@ class StatisticsPage extends GetView<StatisticsController> {
     );
   }
 
-  // Widget _buildCategorySpendingSection() {
-  //   if (controller.categorySpending.isEmpty) {
-  //     return const SizedBox.shrink();
-  //   }
-  //
-  //   final categories = controller.categorySpending.keys.toList();
-  //   final spending = controller.categorySpending.values.toList();
-  //   final totalSpent = spending.reduce((a, b) => a + b);
-  //
-  //   return Card(
-  //     elevation: 4,
-  //     child: Padding(
-  //       padding: const EdgeInsets.all(16),
-  //       child: Column(
-  //         crossAxisAlignment: CrossAxisAlignment.start,
-  //         children: [
-  //           const Text(
-  //             'Spending by Category',
-  //             style: TextStyle(
-  //               fontSize: 18,
-  //               fontWeight: FontWeight.bold,
-  //             ),
-  //           ),
-  //           const SizedBox(height: 16),
-  //           SizedBox(
-  //             height: 200,
-  //             child: PieChart(
-  //               PieChartData(
-  //                 sections: List.generate(categories.length, (index) {
-  //                   final percentage = (spending[index] / totalSpent) * 100;
-  //                   return PieChartSectionData(
-  //                     color: Colors.primaries[index % Colors.primaries.length],
-  //                     value: spending[index],
-  //                     title: '${percentage.toStringAsFixed(1)}%',
-  //                     radius: 50,
-  //                     titleStyle: const TextStyle(
-  //                       color: Colors.white,
-  //                       fontWeight: FontWeight.bold,
-  //                     ),
-  //                   );
-  //                 }),
-  //                 sectionsSpace: 2,
-  //                 centerSpaceRadius: 40,
-  //               ),
-  //             ),
-  //           ),
-  //           const SizedBox(height: 16),
-  //           Column(
-  //             children: List.generate(categories.length, (index) {
-  //               return Padding(
-  //                 padding: const EdgeInsets.symmetric(vertical: 4),
-  //                 child: Row(
-  //                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  //                   children: [
-  //                     Row(
-  //                       children: [
-  //                         Container(
-  //                           width: 12,
-  //                           height: 12,
-  //                           decoration: BoxDecoration(
-  //                             color: Colors.primaries[index % Colors.primaries.length],
-  //                             shape: BoxShape.circle,
-  //                           ),
-  //                         ),
-  //                         const SizedBox(width: 8),
-  //                         Text(categories[index]),
-  //                       ],
-  //                     ),
-  //                     Text(
-  //                       controller.formatCurrency(spending[index]),
-  //                       style: const TextStyle(fontWeight: FontWeight.bold),
-  //                     ),
-  //                   ],
-  //                 ),
-  //               );
-  //             }),
-  //           ),
-  //         ],
-  //       ),
-  //     ),
-  //   );
-  // }
 }

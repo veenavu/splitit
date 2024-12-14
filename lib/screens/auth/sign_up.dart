@@ -1,18 +1,10 @@
-import 'dart:developer';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:hive/hive.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:splitit/DatabaseHelper/hive_services.dart';
-import 'package:splitit/modelClass/models.dart';
 import 'package:splitit/screens/auth/controller/auth_controller.dart';
-import 'package:splitit/screens/dashboard/dashboard.dart';
 
 class SignUpPage extends StatelessWidget {
   const SignUpPage({super.key});

@@ -11,10 +11,10 @@ class GroupDetailsAppBar extends StatelessWidget implements PreferredSizeWidget 
   final VoidCallback onSettingsTap;
 
   const GroupDetailsAppBar({
-    Key? key,
+    super.key,
     required this.groupItem,
     required this.onSettingsTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -67,9 +67,9 @@ class ActionButtonsContainer extends StatelessWidget {
   final Group groupItem;
 
   const ActionButtonsContainer({
-    Key? key,
+    super.key,
     required this.groupItem,
-  }) : super(key: key);
+  });
 
   Widget _buildButton(String text, Color color, {VoidCallback? onPressed}) {
     return ElevatedButton(
@@ -140,13 +140,13 @@ class ExpenseListItem extends StatelessWidget {
   final Function(Expense, String) calculateNetAmount;
 
   const ExpenseListItem({
-    Key? key,
+    super.key,
     required this.expense,
     required this.phoneNumber,
     required this.onTap,
     required this.onLongPress,
     required this.calculateNetAmount,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

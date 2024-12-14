@@ -8,7 +8,7 @@ import '../../modelClass/models.dart';
 class SettlementPage extends GetView<SettlementController> {
   final Group group;
 
-  const SettlementPage({Key? key, required this.group}) : super(key: key);
+  const SettlementPage({super.key, required this.group});
 
   @override
   Widget build(BuildContext context) {

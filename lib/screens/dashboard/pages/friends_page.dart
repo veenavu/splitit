@@ -4,12 +4,10 @@ import '../../../modelClass/models.dart';
 import '../../../routes/app_routes.dart';
 import '../../settlement/memberSettlement_page.dart';
 import '../../settlement/settleement_controller/memberSettlement_controller.dart';
-import '../../settlement/settlement_binding/settlement_binding.dart';
-import '../../settlement/settlement_page.dart';
 import '../controller/friendsPage_controller.dart';
 
 class FriendsPage extends GetView<FriendsController> {
-  const FriendsPage({Key? key}) : super(key: key);
+  const FriendsPage({super.key});
 
   @override
   Widget build(BuildContext context) {

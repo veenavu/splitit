@@ -8,7 +8,6 @@ import 'package:splitit/screens/expense/widgets/add_expense_widgets/Addexpense_d
 import 'package:splitit/screens/expense/widgets/add_expense_widgets/addExpense_group_selection.dart';
 import 'package:splitit/screens/expense/widgets/add_expense_widgets/addExpense_member_list.dart';
 import 'package:splitit/screens/expense/widgets/add_expense_widgets/addExpense_split_option.dart';
-import 'package:splitit/utils/common_functions.dart';
 
 class AddExpensePage extends StatelessWidget {
   final Expense? expense;
@@ -118,7 +117,7 @@ class AddExpensePage extends StatelessWidget {
             ),
           ],
         ),
-        padding: EdgeInsets.symmetric(horizontal: 16).copyWith(bottom: MediaQuery.of(context).viewInsets.bottom),
+        padding: const EdgeInsets.symmetric(horizontal: 16).copyWith(bottom: MediaQuery.of(context).viewInsets.bottom),
         child: SafeArea(
           child: SizedBox(
             height: 60,

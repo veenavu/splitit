@@ -7,9 +7,9 @@ class AmountValidationBar extends StatelessWidget {
   final ExpenseController controller;
 
   const AmountValidationBar({
-    Key? key,
+    super.key,
     required this.controller,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

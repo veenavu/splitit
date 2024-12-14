@@ -6,10 +6,10 @@ class GroupImagePicker extends StatelessWidget {
   final VoidCallback onTap;
 
   const GroupImagePicker({
-    Key? key,
+    super.key,
     required this.imagePath,
     required this.onTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

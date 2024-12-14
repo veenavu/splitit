@@ -5,7 +5,7 @@ import '../../../modelClass/models.dart';
 
 
 class SettlementHistoryPage extends GetView<SettlementHistoryController> {
-  const SettlementHistoryPage({Key? key}) : super(key: key);
+  const SettlementHistoryPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -131,7 +131,7 @@ class SettlementHistoryPage extends GetView<SettlementHistoryController> {
                 ],
               ),
             );
-          }).toList(),
+          }),
           const Divider(),
           Row(
             children: [

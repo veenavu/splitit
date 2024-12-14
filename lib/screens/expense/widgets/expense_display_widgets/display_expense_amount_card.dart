@@ -4,7 +4,7 @@ import '../../../../modelClass/models.dart';
 class ExpenseAmountCard extends StatelessWidget {
   final Expense expense;
 
-  const ExpenseAmountCard({Key? key, required this.expense}) : super(key: key);
+  const ExpenseAmountCard({super.key, required this.expense});
 
   @override
   Widget build(BuildContext context) {

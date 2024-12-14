@@ -10,7 +10,7 @@ import '../../routes/app_routes.dart';
 import '../dashboard/controller/dashboard_controller.dart';
 
 class ExpenseDisplayPage extends StatefulWidget {
-  const ExpenseDisplayPage({Key? key}) : super(key: key);
+  const ExpenseDisplayPage({super.key});
 
   @override
   State<ExpenseDisplayPage> createState() => _ExpenseDisplayPageState();

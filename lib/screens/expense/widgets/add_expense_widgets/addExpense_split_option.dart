@@ -8,9 +8,9 @@ class ExpenseSplitOptions extends StatelessWidget {
   final ExpenseController controller;
 
   const ExpenseSplitOptions({
-    Key? key,
+    super.key,
     required this.controller,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -44,9 +44,9 @@ class PayerDropdown extends StatelessWidget {
   final ExpenseController controller;
 
   const PayerDropdown({
-    Key? key,
+    super.key,
     required this.controller,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -104,9 +104,9 @@ class SplitOptionDropdown extends StatelessWidget {
   final ExpenseController controller;
 
   const SplitOptionDropdown({
-    Key? key,
+    super.key,
     required this.controller,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -6,10 +6,10 @@ class SelectedContactsList extends StatelessWidget {
   final Function(int) onRemove;
 
   const SelectedContactsList({
-    Key? key,
+    super.key,
     required this.contacts,
     required this.onRemove,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

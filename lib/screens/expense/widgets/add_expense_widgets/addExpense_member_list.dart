@@ -7,9 +7,9 @@ class MembersList extends StatelessWidget {
   final ExpenseController controller;
 
   const MembersList({
-    Key? key,
+    super.key,
     required this.controller,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -42,10 +42,10 @@ class MemberListTile extends StatelessWidget {
   final ExpenseController controller;
 
   const MemberListTile({
-    Key? key,
+    super.key,
     required this.member,
     required this.controller,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

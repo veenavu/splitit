@@ -1,3 +1,4 @@
+
 // DashboardController
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -8,13 +9,11 @@ import 'package:splitit/routes/app_routes.dart';
 import 'package:splitit/screens/dashboard/pages/activity_page.dart';
 import 'package:splitit/screens/dashboard/pages/friends_page.dart';
 import 'package:splitit/screens/dashboard/pages/group_list_page.dart';
-import 'package:splitit/screens/dashboard/pages/profile_page.dart';
 import 'package:splitit/screens/profiles/controllers/settings_Controller.dart';
 
 import '../../profiles/pages/account_settings_page.dart';
 import 'activityPage_controller.dart';
 import 'friendsPage_controller.dart';
-
 class DashboardController extends GetxController {
   RxList<Group> groups = RxList<Group>.empty(growable: true);
   RxInt selectedIndex = 0.obs;
@@ -22,7 +21,7 @@ class DashboardController extends GetxController {
   RxString balanceText = "Loading...".obs;
   RxInt selectedFilter = 0.obs; // 0: All, 1: You owe, 2: Owes you
   RxList<Group> filteredGroups = RxList<Group>.empty(growable: true);
-  var isLoading = false.obs; // Observable boolean for loading state
+  var isLoading = false.obs;
 
   final List<Widget> pages = [
     const GroupListPage(),
@@ -36,75 +35,57 @@ class DashboardController extends GetxController {
     ),
     GetBuilder<AccountSettingsController>(
       init: AccountSettingsController(),
-        builder: (controller) => const AccountSettingsPage(),)
-    //const ProfilePage(),
+      builder: (controller) => const AccountSettingsPage(),
+    ),
   ];
 
   @override
   void onInit() {
     super.onInit();
-    // First load the user profile
     getProfile().then((_) {
-      // Then load groups after profile is loaded
       loadGroups();
-      // Get balance text after groups are loaded
       getBalanceText();
+    });
+    ExpenseManagerService.recalculateAllBalances().then((_) {
+      // Refresh your UI here
+      update();
     });
   }
 
   Future<void> loadGroups() async {
     isLoading.value = true;
     try {
+      await ExpenseManagerService.recalculateAllBalances();
       final allGroups = ExpenseManagerService.getAllGroups();
       groups.value = allGroups;
       applyFilter();
-      // getBalanceText();
-      // update();
+
       if (Get.isRegistered<ActivityController>()) {
         Get.find<ActivityController>().loadActivities();
       }
 
-      // Ensure balances are up to date
-      for (var group in groups) {
-        if (userProfile.value != null) {
-          final currentMember = Member(
-            name: userProfile.value!.name,
-            phone: userProfile.value!.phone,
-          );
-          final balance = ExpenseManagerService.getGroupBalance(group, currentMember);
-          // Update any cached balance information
+      // Update balances
+      if (userProfile.value != null) {
+        final currentMember = Member(
+          name: userProfile.value!.name,
+          phone: userProfile.value!.phone,
+          id: userProfile.value!.getProfileId(),
+        );
+
+        // Calculate balances for each group
+        for (var group in groups) {
+          final balance = ExpenseManagerService.calculateGroupBalance(group, currentMember);
+          // Store or use balance information as needed
         }
       }
 
       getBalanceText();
-     // applyFilter();
       update();
+
     } catch (e) {
       print('Error loading groups: $e');
     } finally {
       isLoading.value = false;
-    }
-  }
-
-  void applyFilter() {
-    if (userProfile.value == null) return;
-
-    Member currentMember = Member(
-      // id: userProfile.value!.getProfileId(),
-      name: userProfile.value!.name,
-      phone: userProfile.value!.phone,
-    );
-
-    switch (selectedFilter.value) {
-      case 1: // You owe
-        filteredGroups.value = ExpenseManagerService.getGroupsYouOwe(currentMember);
-        break;
-      case 2: // Owes you
-        filteredGroups.value = ExpenseManagerService.getGroupsThatOweYou(currentMember);
-        break;
-      default: // All groups
-        filteredGroups.value = groups;
-        break;
     }
   }
 
@@ -113,7 +94,34 @@ class DashboardController extends GetxController {
     applyFilter();
   }
 
-  // Get filtered groups with balance info
+  void applyFilter() {
+    if (userProfile.value == null) return;
+
+    Member currentMember = Member(
+      name: userProfile.value!.name,
+      phone: userProfile.value!.phone,
+      id: userProfile.value!.getProfileId(),
+    );
+
+    switch (selectedFilter.value) {
+      case 1: // You owe
+        filteredGroups.value = groups.where((group) {
+          final balance = ExpenseManagerService.calculateGroupBalance(group, currentMember);
+          return balance.netAmount < 0; // You owe money in this group
+        }).toList();
+        break;
+      case 2: // Owes you
+        filteredGroups.value = groups.where((group) {
+          final balance = ExpenseManagerService.calculateGroupBalance(group, currentMember);
+          return balance.netAmount > 0; // Others owe you money in this group
+        }).toList();
+        break;
+      default: // All groups
+        filteredGroups.value = groups;
+        break;
+    }
+  }
+
   List<Map<String, dynamic>> getGroupsWithBalance() {
     if (userProfile.value == null) return [];
 
@@ -124,10 +132,10 @@ class DashboardController extends GetxController {
     );
 
     return filteredGroups.map((group) {
-      double balance = ExpenseManagerService.getGroupBalance(group, currentMember);
+      final balance = ExpenseManagerService.calculateGroupBalance(group, currentMember);
       return {
         'group': group,
-        'balance': balance,
+        'balance': balance.netAmount,
         'balanceText': ExpenseManagerService.getGroupBalanceText(currentMember, group),
       };
     }).toList();
@@ -137,7 +145,8 @@ class DashboardController extends GetxController {
     final box = Hive.box(ExpenseManagerService.normalBox);
     final phone = box.get("mobile");
 
-    userProfile.value = ExpenseManagerService.getProfileByPhone(phone) ?? Profile(id: 0, name: "User", email: "noob", phone: "2173123");
+    userProfile.value = ExpenseManagerService.getProfileByPhone(phone) ??
+        Profile(id: 0, name: "User", email: "noob", phone: "2173123");
   }
 
   void onStartGroup(VoidCallback? callback, BuildContext context) {
@@ -149,14 +158,13 @@ class DashboardController extends GetxController {
   void getBalanceText() {
     balanceText.value = userProfile.value != null
         ? ExpenseManagerService.getBalanceText(
-            Member(
-              id: userProfile.value!.getProfileId(),
-              name: userProfile.value!.name,
-              phone: userProfile.value!.phone,
-            ),
-          )
+      Member(
+        id: userProfile.value!.getProfileId(),
+        name: userProfile.value!.name,
+        phone: userProfile.value!.phone,
+      ),
+    )
         : "Loading...";
-    print(balanceText.value);
   }
 
   String getGroupBalanceText(Group group) {

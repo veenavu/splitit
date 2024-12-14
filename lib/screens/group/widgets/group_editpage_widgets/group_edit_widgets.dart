@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:splitit/DatabaseHelper/hive_services.dart';
 import 'package:splitit/modelClass/models.dart';
-import 'package:splitit/utils/common_functions.dart';
 
 class GroupEditWidgets {
   static Widget buildMembersList({

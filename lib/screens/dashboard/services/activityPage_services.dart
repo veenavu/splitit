@@ -78,8 +78,7 @@ class ActivityService {
     await _logActivity(
       type: 'expense_added',
       title: 'New Expense Added',
-      description: '${creator.name} added expense "${expense.description}" of ₹${expense.totalAmount.toStringAsFixed(2)}' +
-          (expense.group != null ? ' in group "${expense.group!.groupName}"' : ''),
+      description: '${creator.name} added expense "${expense.description}" of ₹${expense.totalAmount.toStringAsFixed(2)}${expense.group != null ? ' in group "${expense.group!.groupName}"' : ''}',
       relatedGroup: expense.group,
       relatedMember: creator,
     );

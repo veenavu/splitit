@@ -6,9 +6,9 @@ class ExpenseDetailsCard extends StatelessWidget {
   final ExpenseController controller;
 
   const ExpenseDetailsCard({
-    Key? key,
+    super.key,
     required this.controller,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -42,9 +42,9 @@ class AmountTextField extends StatelessWidget {
   final ExpenseController controller;
 
   const AmountTextField({
-    Key? key,
+    super.key,
     required this.controller,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -82,9 +82,9 @@ class DescriptionTextField extends StatelessWidget {
   final ExpenseController controller;
 
   const DescriptionTextField({
-    Key? key,
+    super.key,
     required this.controller,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

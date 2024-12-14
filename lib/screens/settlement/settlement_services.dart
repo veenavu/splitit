@@ -8,7 +8,6 @@ import '../../modelClass/models.dart';
 import '../dashboard/controller/dashboard_controller.dart';
 import '../dashboard/controller/friendsPage_controller.dart';
 import '../dashboard/services/activityPage_services.dart';
-import '../expense/controller/expense_controller.dart';
 
 class SettlementService {
 

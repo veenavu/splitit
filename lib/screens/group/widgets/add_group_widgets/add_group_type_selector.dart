@@ -6,11 +6,11 @@ class GroupTypeSelector extends StatelessWidget {
   final Function(String?) onTypeSelected;
 
   const GroupTypeSelector({
-    Key? key,
+    super.key,
     required this.groupTypes,
     required this.selectedType,
     required this.onTypeSelected,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

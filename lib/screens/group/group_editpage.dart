@@ -14,7 +14,7 @@ import 'package:splitit/screens/group/common_Widget.dart';
 class GroupEditPage extends StatefulWidget {
   final Group groups;
 
-  const GroupEditPage({Key? key, required this.groups}) : super(key: key);
+  const GroupEditPage({super.key, required this.groups});
 
   @override
   State<GroupEditPage> createState() => _GroupEditPageState();
