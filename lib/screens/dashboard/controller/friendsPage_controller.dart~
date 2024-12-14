@@ -1,0 +1,88 @@
+// In friendsPage_controller.dart
+
+import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
+
+import '../../../DatabaseHelper/hive_services.dart';
+import '../../../modelClass/models.dart';
+import 'package:get/get.dart';
+
+class FriendsController extends GetxController {
+  RxList<Member> allMembers = <Member>[].obs;
+  RxList<Map<String, dynamic>> memberBalances = <Map<String, dynamic>>[].obs;
+  final RxBool isLoading = true.obs;
+  Rxn<Profile> userProfile = Rxn<Profile>();
+
+  @override
+  void onInit() {
+    super.onInit();
+    loadUserProfile();
+    loadMembers();
+  }
+
+  Future<void> loadUserProfile() async {
+    final box = Hive.box(ExpenseManagerService.normalBox);
+    final phone = box.get("mobile");
+    userProfile.value = ExpenseManagerService.getProfileByPhone(phone);
+  }
+
+  Future<void> loadMembers() async {
+    try {
+      isLoading.value = true;
+      if (userProfile.value == null) return;
+
+      List<Map<String, dynamic>> balances = [];
+      final allGroups = ExpenseManagerService.getAllGroups();
+
+      for (var group in allGroups) {
+        for (var member in group.members) {
+          if (member.phone != userProfile.value!.phone) {
+            double balance = ExpenseManagerService.getGroupBalance(group, member);
+            balances.add({
+              'member': member,
+              'balance': balance,
+            });
+          }
+        }
+      }
+
+      memberBalances.value = balances;
+    } catch (e) {
+      print('Error loading members: $e');
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  double getMemberBalance(Member member) {
+    try {
+      final memberData = memberBalances.firstWhere(
+            (data) => (data['member'] as Member).phone == member.phone,
+        orElse: () => {'balance': 0.0},
+      );
+      return memberData['balance'] ?? 0.0;
+    } catch (e) {
+      print('Error getting member balance: $e');
+      return 0.0;
+    }
+  }
+
+  String getBalanceText(double balance) {
+    if (balance > 0) {
+      return 'owes you ₹${balance.abs().toStringAsFixed(2)}';
+    } else if (balance < 0) {
+      return 'you owe ₹${balance.abs().toStringAsFixed(2)}';
+    }
+    return 'settled up';
+  }
+
+  Color getBalanceColor(double balance) {
+    if (balance > 0) return Colors.green;
+    if (balance < 0) return Colors.red;
+    return Colors.grey;
+  }
+
+  void refreshData() {
+    loadMembers();
+  }
+}

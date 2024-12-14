@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../../DatabaseHelper/hive_services.dart';
 import '../../../modelClass/models.dart';
 import '../services/activityPage_services.dart';
+import '../services/activity_event_service.dart';
 
 class ActivityController extends GetxController {
   final RxList<Activity> activities = <Activity>[].obs;
@@ -13,12 +14,16 @@ class ActivityController extends GetxController {
   void onInit() {
     super.onInit();
     loadActivities();
+   //  ever(ActivityEventService.refreshActivities, (_) {
+   //    loadActivities();
+   //  });
   }
 
   Future<void> loadActivities() async {
     try {
       isLoading.value = true;
       activities.value = ActivityService.getAllActivities();
+     // activities.refresh();
     } catch (e) {
       print('Error loading activities: $e');
     } finally {
