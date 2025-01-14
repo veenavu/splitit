@@ -1,0 +1,501 @@
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+
+
+class HelpAndSupportPage extends StatelessWidget {
+  const HelpAndSupportPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Get.back(),
+        ),
+        title: const Text(
+          'Help & Support',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: Colors.purple,
+        elevation: 4,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.purple, Colors.deepPurple],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(bottom: Radius.circular(16)),
+        ),
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildSupportHeader(),
+            _buildQuickHelp(),
+            _buildFAQSection(),
+            _buildContactSupport(),
+            _buildHelpCategories(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSupportHeader() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.purple.shade50,
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(20),
+          bottomRight: Radius.circular(20),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'How can we help you?',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Colors.purple,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'Find answers to common questions or reach out to our support team',
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey.shade700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickHelp() {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Quick Help',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.purple,
+            ),
+          ),
+          const SizedBox(height: 16),
+          _buildQuickHelpCard(
+            icon: Icons.group_add,
+            title: 'Creating a Group',
+            content: 'Learn how to create and manage expense groups',
+            onTap: () => _showHelpDialog(
+              'Creating a Group',
+              '1. Tap the "+" button on the Groups screen\n'
+                  '2. Enter group name and select category\n'
+                  '3. Add members from your contacts\n'
+                  '4. Customize group settings if needed\n'
+                  '5. Save the group',
+            ),
+          ),
+          _buildQuickHelpCard(
+            icon: Icons.receipt_long,
+            title: 'Adding Expenses',
+            content: 'Learn how to add and split expenses',
+            onTap: () => _showHelpDialog(
+              'Adding Expenses',
+              '1. Select a group or create a new one\n'
+                  '2. Tap the "+" button to add expense\n'
+                  '3. Enter amount and description\n'
+                  '4. Choose who paid and split method\n'
+                  '5. Adjust individual amounts if needed\n'
+                  '6. Save the expense',
+            ),
+          ),
+          _buildQuickHelpCard(
+            icon: Icons.currency_exchange,
+            title: 'Settling Up',
+            content: 'Learn how to settle expenses with group members',
+            onTap: () => _showHelpDialog(
+              'Settling Up',
+              '1. Go to the group or friend detail screen\n'
+                  '2. Tap "Settle Up" button\n'
+                  '3. Select the payment amount\n'
+                  '4. Choose settlement method\n'
+                  '5. Confirm the settlement\n'
+                  '6. Both parties will receive confirmation',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickHelpCard({
+    required IconData icon,
+    required String title,
+    required String content,
+    required VoidCallback onTap,
+  }) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.purple.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: Colors.purple, size: 24),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      content,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.arrow_forward_ios,
+                color: Colors.grey.shade400,
+                size: 16,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFAQSection() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Frequently Asked Questions',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.purple,
+            ),
+          ),
+          const SizedBox(height: 16),
+          _buildFAQItem(
+            'How do I split an expense unequally?',
+            'When adding an expense, choose "Split by Amount" or "Split by Percentage" '
+                'instead of equal split. You can then enter custom amounts for each person.',
+          ),
+          _buildFAQItem(
+            'Can I modify a recorded expense?',
+            'Yes, you can edit any expense by tapping on it and selecting the edit option. '
+                'Note that all group members will be notified of the change.',
+          ),
+          _buildFAQItem(
+            'What happens to my data if I uninstall the app?',
+            'Your data is securely stored and will be available when you reinstall and '
+                'log back in with the same account.',
+          ),
+          _buildFAQItem(
+            'How are settlements handled?',
+            'The app helps calculate who owes whom, but actual money transfers happen '
+                'outside the app. Once settled, you can mark it as complete in the app.',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFAQItem(String question, String answer) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: ExpansionTile(
+        title: Text(
+          question,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+          ),
+        ),
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text(
+              answer,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey.shade700,
+                height: 1.5,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContactSupport() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Contact Support',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.purple,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Card(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  _buildContactItem(
+                    icon: Icons.email_outlined,
+                    title: 'Email Support',
+                    subtitle: 'support@splitit.com',
+                    onTap: () => _launchEmail('support@splitit.com'),
+                  ),
+                  const Divider(height: 24),
+                  _buildContactItem(
+                    icon: Icons.chat_bubble_outline,
+                    title: 'Live Chat',
+                    subtitle: 'Available 24/7',
+                    onTap: () => _showComingSoonDialog(),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContactItem({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.purple.shade50,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: Colors.purple),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Icon(
+            Icons.arrow_forward_ios,
+            color: Colors.grey.shade400,
+            size: 16,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHelpCategories() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Help Categories',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.purple,
+            ),
+          ),
+          const SizedBox(height: 16),
+          GridView.count(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisCount: 2,
+            mainAxisSpacing: 16,
+            crossAxisSpacing: 16,
+            children: [
+              _buildHelpCategoryCard(
+                icon: Icons.book_outlined,
+                title: 'User Guide',
+                onTap: () => _showComingSoonDialog(),
+              ),
+              _buildHelpCategoryCard(
+                icon: Icons.security,
+                title: 'Privacy & Security',
+                onTap: () => _showComingSoonDialog(),
+              ),
+              _buildHelpCategoryCard(
+                icon: Icons.update,
+                title: 'Updates & Changes',
+                onTap: () => _showComingSoonDialog(),
+              ),
+              _buildHelpCategoryCard(
+                icon: Icons.feedback_outlined,
+                title: 'Send Feedback',
+                onTap: () => _showComingSoonDialog(),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHelpCategoryCard({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 32, color: Colors.purple),
+              const SizedBox(height: 12),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showHelpDialog(String title, String content) {
+    Get.dialog(
+      AlertDialog(
+        title: Text(title),
+        content: Text(content),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showComingSoonDialog() {
+    Get.dialog(
+      AlertDialog(
+        title: const Text('Coming Soon'),
+        content: const Text(
+          'This feature will be available in a future update. Stay tuned!',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _launchEmail(String email) async {
+    final Uri emailUri = Uri(
+      scheme: 'mailto',
+      path: email,
+      queryParameters: {
+        'subject': 'SplitIt Support Request',
+      },
+    );
+
+    try {
+      await launchUrl(emailUri);
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Could not launch email client',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
+  }
+}

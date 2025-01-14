@@ -1,0 +1,196 @@
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:splitit/DatabaseHelper/hive_services.dart';
+import 'package:splitit/screens/dashboard/controller/dashboard_controller.dart';
+import 'package:splitit/screens/dashboard/controller/friendsPage_controller.dart';
+import 'package:splitit/screens/settlement/settleement_controller/memberSettlement_controller.dart';
+
+import '../../modelClass/models.dart';
+
+
+class MemberSettlementPage extends GetView<MemberSettlementController> {
+  final Member member;
+  final double totalBalance;
+  final Map<String, double>? groupBalances;
+
+  const MemberSettlementPage({
+    super.key,
+    required this.member,
+    required this.totalBalance,
+    required this.groupBalances,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    controller.initializeWithMember(member, totalBalance);
+    final isUserOwing = controller.isUserOwing(totalBalance);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          'Settle with ${member.name}',
+          style: const TextStyle(color: Colors.white),
+        ),
+        backgroundColor: Colors.purple,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.purple, Colors.deepPurple],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
+      ),
+      body: Column(
+        children: [
+          _buildSettlementHeader(),
+          _buildCustomAmountSection(),
+          _buildGroupsList(),
+          _buildSettleButton(isUserOwing),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSettlementHeader() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      color: Colors.purple.shade50,
+      child: Column(
+        children: [
+          Text(
+            controller.getBalanceText(totalBalance),
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '₹${totalBalance.abs().toStringAsFixed(2)}',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: totalBalance > 0 ? Colors.red : Colors.green,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCustomAmountSection() {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Obx(() => Checkbox(
+                value: controller.isCustomAmount.value,
+                onChanged: (value) {
+                  controller.isCustomAmount.value = value ?? false;
+                  if (!value!) {
+                    controller.customAmount.value = totalBalance.abs();
+                    controller.customAmountController.clear();
+                    controller.isValidAmount.value = true;
+                  }
+                },
+                activeColor: Colors.purple,
+              )),
+              const Text('Enter custom amount'),
+            ],
+          ),
+          Obx(() => controller.isCustomAmount.value
+              ? Container(
+            margin: const EdgeInsets.only(top: 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                  controller: controller.customAmountController,
+                  decoration: InputDecoration(
+                    labelText: 'Amount',
+                    hintText: 'Enter amount (max: ₹${controller.maxSettlementAmount.toStringAsFixed(2)})',
+                    prefixText: '₹',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.purple.shade200),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.purple, width: 2),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: controller.isValidAmount.value ?
+                        Colors.purple.shade200 : Colors.red.shade300,
+                      ),
+                    ),
+                    filled: true,
+                    fillColor: Colors.purple.shade50,
+                    errorText: !controller.isValidAmount.value ?
+                    'Amount must be between 0 and ₹${controller.maxSettlementAmount.toStringAsFixed(2)}' : null,
+                  ),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  onChanged: (value) {
+                    if (controller.validateCustomAmount(value)) {
+                      controller.customAmount.value = double.parse(value);
+                    }
+                  },
+                ),
+              ],
+            ),
+          )
+              : const SizedBox.shrink(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGroupsList() {
+    return Expanded(
+      child: Obx(() => ListView.builder(
+        itemCount: controller.groupBalances.length,
+        itemBuilder: (context, index) {
+          final groupData = controller.groupBalances[index];
+          final group = groupData['group'] as Group;
+          final balance = groupData['balance'] as double;
+          final isSettled = groupData['isSettled'] as bool;
+
+          return Visibility(
+            visible: group.members.any((mem)=> mem.phone == member.phone),
+            child: Card(
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: ListTile(
+                title: Text(group.groupName),
+                subtitle: Text(
+                  isSettled ? 'Settled' : controller.getBalanceText(balance, member: member),
+                  style: TextStyle(
+                    color: isSettled ? Colors.grey :
+                    balance < 0 ? Colors.red : Colors.green,
+                  ),
+                ),
+                trailing: isSettled
+                    ? const Icon(Icons.check_circle, color: Colors.green)
+                    : Text(
+                  '₹${balance.abs().toStringAsFixed(2)}',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: balance < 0 ? Colors.red : Colors.green,
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      )),
+    );
+  }
+
+
+}

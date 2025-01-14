@@ -1,0 +1,566 @@
+import 'package:equatable/equatable.dart';
+import 'package:get/get.dart';
+import 'package:hive/hive.dart';
+part 'models.g.dart';
+
+
+// Profile Model
+@HiveType(typeId: 0)
+class Profile extends HiveObject with EquatableMixin {
+  @HiveField(0)
+  int? id;
+
+  @HiveField(1)
+  String name;
+
+  @HiveField(2)
+  String? imagePath;
+
+  @HiveField(3)
+  String email;
+
+  @HiveField(4)
+  String phone;
+
+  Profile({
+    this.id,
+    required this.name,
+    this.imagePath,
+    required this.email,
+    required this.phone,
+  });
+
+  int? getProfileId(){
+    return id;
+  }
+
+  @override
+  // TODO: implement props
+  List<Object?> get props => [name, imagePath, email, phone];
+}
+
+// Member Model
+@HiveType(typeId: 1)
+class Member extends HiveObject {
+  @HiveField(0)
+  int? id;
+
+  @HiveField(1)
+  String name;
+
+  @HiveField(2)
+  String phone;
+
+  @HiveField(3)
+  String? imagePath;
+
+  @HiveField(4)
+  List<Group>? groupsIncluded;
+
+  @HiveField(5)
+  double totalAmountOwedByMe;
+
+  @HiveField(6)
+  DateTime createdAt;
+
+  @HiveField(7)
+  Map<String, double> balancesByGroup; // Track balances per group
+
+  @HiveField(8)
+  List<Transaction> transactionHistory; // Track all transactions
+
+  Member({
+    this.id,
+    required this.name,
+    required this.phone,
+    this.imagePath,
+    this.groupsIncluded,
+    this.totalAmountOwedByMe = 0.0,
+    DateTime? createdAt,
+    Map<String, double>? balancesByGroup,
+    List<Transaction>? transactionHistory,
+  }) : createdAt = createdAt ?? DateTime.now(),
+        balancesByGroup = balancesByGroup ?? {},
+        transactionHistory = transactionHistory ?? [];
+
+  // Add methods to manage balances
+  void updateBalance(String groupId, double amount) {
+    balancesByGroup[groupId] = (balancesByGroup[groupId] ?? 0.0) + amount;
+    _recalculateTotalBalance();
+  }
+
+  void _recalculateTotalBalance() {
+    totalAmountOwedByMe = balancesByGroup.values.fold(0.0, (sum, balance) => sum + balance);
+  }
+}
+
+// Group Model
+@HiveType(typeId: 2)
+class Group extends HiveObject with EquatableMixin{
+
+  @HiveField(0)
+  int? id;
+
+  @HiveField(1)
+  String groupName;
+
+  @HiveField(2)
+  String groupImage;
+
+  @HiveField(3)
+  String? category;
+
+  @HiveField(4)
+  List<Member> members;
+
+  @HiveField(5)
+  List<Expense> expenses;
+
+  @HiveField(6)
+  DateTime createdAt;
+
+  @HiveField(7)
+  List<String>? categories;
+
+  Group({
+    this.id,
+    required this.groupName,
+    required this.groupImage,
+    this.category,
+    required this.members,
+    List<Expense>? expenses,
+    this.categories,
+    DateTime? createdAt,
+  })  : expenses = expenses ?? [],
+        createdAt = createdAt ?? DateTime.now();
+
+  // Helper method to get total group expenses
+  double get totalExpenses =>
+      expenses.fold(0.0, (sum, expense) => sum + expense.totalAmount);
+
+  // Helper method to get member's balance in the group
+  double getMemberBalance(Member member) {
+    double paid = expenses
+        .where((e) => e.paidByMember.key == member.key)
+        .fold(0.0, (sum, e) => sum + e.totalAmount);
+
+    double owed = expenses.fold(0.0, (sum, expense) {
+      var memberSplit = expense.splits
+          .firstWhere((split) => split.member.key == member.key,
+          orElse: () => ExpenseSplit( member: member, amount: 0))
+          .amount;
+      return sum + memberSplit;
+    });
+
+    return paid - owed;
+  }
+  int? getGroupId(){
+    return id;
+  }
+
+  // Helper method to add expense category
+  void addCategory(String category) {
+    categories ??= [];
+    if (!categories!.contains(category)) {
+      categories!.add(category);
+    }
+  }
+
+  // Method to categorize the group's expense status
+  String getGroupStatus(Member member) {
+    if (expenses.isEmpty) {
+      return "No Expense"; // No transactions in the group
+    }
+
+    double balance = getMemberBalance(member);
+
+    if (balance == 0) {
+      return "Settled"; // No balance, meaning all expenses are settled
+    } else if (balance < 0) {
+      return "Owed"; // The member owes money in the group
+    } else {
+      return "Lent"; // The member has lent money to others
+    }
+  }
+
+  @override
+  List<Object?> get props => [
+    groupName,
+    groupImage,
+    category,
+    members,
+    expenses,
+    createdAt,
+    categories
+  ];
+}
+
+// Division Method Enum
+@HiveType(typeId: 3)
+enum DivisionMethod {
+  @HiveField(0)
+  equal,
+  @HiveField(1)
+  unequal,
+  @HiveField(2)
+  percentage
+}
+
+
+// ExpenseSplit Model
+@HiveType(typeId: 4)
+class ExpenseSplit extends HiveObject {
+  @HiveField(0)
+  int? id;
+
+  @HiveField(1)
+  Member member;
+
+  @HiveField(2)
+  double amount;
+
+  @HiveField(3)
+  double? percentage;
+
+  ExpenseSplit({
+    this.id,
+    required this.member,
+    required this.amount,
+    this.percentage,
+  });
+
+  // Create a copy of ExpenseSplit with new values
+  ExpenseSplit copyWith({
+    Member? member,
+    double? amount,
+    double? percentage,
+  }) {
+    return ExpenseSplit(
+      member: member ?? this.member,
+      amount: amount ?? this.amount,
+      percentage: percentage ?? this.percentage,
+    );
+  }
+}
+
+// Expense Model
+@HiveType(typeId: 5)
+class Expense extends HiveObject {
+  @HiveField(0)
+  int? id;
+
+  @HiveField(1)
+  double totalAmount;
+
+  @HiveField(2)
+  DivisionMethod divisionMethod;
+
+  @HiveField(3)
+  Member paidByMember;
+
+  @HiveField(4)
+  List<ExpenseSplit> splits;
+
+  @HiveField(5)
+  Group? group;
+
+  @HiveField(6)
+  String description;
+
+  @HiveField(7)
+  DateTime createdAt;
+
+  @HiveField(8)
+  String? category;
+
+  @HiveField(9)
+  String? note;
+
+  @HiveField(10)
+  List<String>? attachments;
+
+  @HiveField(11)
+  ExpenseStatus status;
+
+  @HiveField(12)
+  double settledAmount;
+
+  @HiveField(13)
+  List<Settlement> settlements;
+
+  Expense({
+    this.id,
+    required this.totalAmount,
+    required this.divisionMethod,
+    required this.paidByMember,
+    required this.splits,
+    this.group,
+    required this.description,
+    this.category,
+    this.note,
+    this.attachments,
+    DateTime? createdAt,
+    this.status = ExpenseStatus.active,
+    this.settledAmount = 0.0,
+    List<Settlement>? settlements,
+  }) : createdAt = createdAt ?? DateTime.now(),
+        settlements = settlements ?? [];
+
+
+  void addSettlement(Settlement settlement) {
+    settlements.add(settlement);
+    settledAmount += settlement.amount;
+
+    if (settledAmount >= totalAmount) {
+      status = ExpenseStatus.fullySettled;
+    } else if (settledAmount > 0) {
+      status = ExpenseStatus.partiallySettled;
+    }
+  }
+
+  // Add validation method
+  bool isValid() {
+    return totalAmount > 0 &&
+        splits.isNotEmpty &&
+        validateSplits() &&
+        settledAmount <= totalAmount;
+  }
+
+  // Create splits from members and amounts
+  static List<ExpenseSplit> createSplitsFromAmounts(
+      List<Member> members,
+      List<double> amounts,
+      ) {
+    if (members.length != amounts.length) {
+      throw Exception('Members and amounts must have the same length');
+    }
+
+    return List.generate(
+      members.length,
+          (i) => ExpenseSplit(
+        member: members[i],
+        amount: amounts[i],
+
+        percentage: null,
+      ),
+    );
+  }
+
+  // Validate splits total matches expense amount
+  bool validateSplits() {
+    double totalSplitAmount = splits.fold(0, (sum, split) => sum + split.amount);
+    return (totalSplitAmount - totalAmount).abs() < 0.01;
+  }
+
+  // Get split for a specific member
+  ExpenseSplit? getSplitForMember(Member member) {
+    return splits.firstWhereOrNull((split) => split.member.key == member.key);
+  }
+
+  // Check if a member is involved
+  bool isMemberInvolved(Member member) {
+    return splits.any((split) => split.member.key == member.key) ||
+        paidByMember.key == member.key;
+  }
+
+  // Update amounts for unequal split
+  void updateUnequalSplits(List<Member> members, List<double> amounts) {
+    if (divisionMethod != DivisionMethod.unequal) {
+      throw Exception('Can only update amounts for unequal split');
+    }
+
+    splits = createSplitsFromAmounts(members, amounts);
+    if (!validateSplits()) {
+      throw Exception('Split amounts do not match total expense amount');
+    }
+  }
+}
+
+
+@HiveType(typeId: 6)
+class Settlement extends HiveObject {
+  @HiveField(0)
+  final int? id;
+
+  @HiveField(1)
+  final Member payer;
+
+  @HiveField(2)
+  final Member receiver;
+
+  @HiveField(3)
+  late final double amount;
+
+  @HiveField(4)
+  final DateTime settledAt;
+
+  @HiveField(5)
+  final List<ExpenseSettlement> expenseSettlements;
+
+  @HiveField(6)
+  final String status; // 'partial' or 'complete'
+
+  @HiveField(7)
+  final double remainingAmount;
+
+  Settlement({
+    this.id,
+    required this.payer,
+    required this.receiver,
+    required this.amount,
+    required this.expenseSettlements,
+    DateTime? settledAt,
+    this.status = 'complete',
+    this.remainingAmount = 0.0,
+  }) : settledAt = settledAt ?? DateTime.now();
+
+  bool validateSettlement() {
+    double totalSettled = 0.0;
+    for (var expenseSettlement in expenseSettlements) {
+      totalSettled += expenseSettlement.settledAmount;
+
+      // Validate against the expense
+      final expense = expenseSettlement.expense;
+      if (expense.paidByMember.phone == payer.phone) {
+        // If payer is the one who paid the expense, this is invalid
+        return false;
+      }
+
+      // Find the payer's split, return false if not found
+      final payerSplit = expense.splits.firstWhere(
+            (split) => split.member.phone == payer.phone,
+        orElse: () => ExpenseSplit(
+          member: payer,
+          amount: 0,
+        ),
+      );
+
+      // Validate settlement amount doesn't exceed what's owed
+      if (expenseSettlement.settledAmount > payerSplit.amount) {
+        return false;
+      }
+    }
+
+    // Validate total settled amount matches settlement amount
+    return (totalSettled - amount).abs() < 0.01;
+  }
+
+  // Keep existing isValid method
+  bool isValid() {
+    return amount > 0 && expenseSettlements.isNotEmpty;
+  }
+}
+
+@HiveType(typeId: 7)
+class ExpenseSettlement extends HiveObject {
+  @HiveField(0)
+  final Expense expense;
+
+  @HiveField(1)
+  final double settledAmount;
+
+  ExpenseSettlement({
+    required this.expense,
+    required this.settledAmount,
+  });
+}
+
+@HiveType(typeId: 8)  // Use a unique type ID
+class Activity extends HiveObject {
+  @HiveField(0)
+  int? id;
+
+  @HiveField(1)
+  String type;  // 'expense_added', 'group_created', 'settlement', 'member_added'
+
+  @HiveField(2)
+  String title;
+
+  @HiveField(3)
+  String description;
+
+  @HiveField(4)
+  DateTime createdAt;
+
+  @HiveField(5)
+  Group? relatedGroup;
+
+  @HiveField(6)
+  Member? relatedMember;
+
+  Activity({
+    this.id,
+    required this.type,
+    required this.title,
+    required this.description,
+    DateTime? createdAt,
+    this.relatedGroup,
+    this.relatedMember,
+  }) : createdAt = createdAt ?? DateTime.now();
+}
+
+@HiveType(typeId: 9)
+class Transaction extends HiveObject {
+  @HiveField(0)
+  final int? id;
+
+  @HiveField(1)
+  final String type; // 'expense' or 'settlement'
+
+  @HiveField(2)
+  final double amount;
+
+  @HiveField(3)
+  final Member payer;
+
+  @HiveField(4)
+  final Member receiver;
+
+  @HiveField(5)
+  final DateTime timestamp;
+
+  @HiveField(6)
+  final Group? group;
+
+  @HiveField(7)
+  final String? description;
+
+  @HiveField(8)
+  final String status; // 'pending', 'completed', 'cancelled'
+
+  Transaction({
+    this.id,
+    required this.type,
+    required this.amount,
+    required this.payer,
+    required this.receiver,
+    required this.timestamp,
+    this.group,
+    this.description,
+    this.status = 'completed',
+  });
+}
+
+@HiveType(typeId: 10)
+enum ExpenseStatus {
+  @HiveField(0)
+  active,
+  @HiveField(1)
+  partiallySettled,
+  @HiveField(2)
+  fullySettled,
+  @HiveField(3)
+  cancelled
+}
+
+class SettlementTransaction {
+  final Member payer;
+  final Member receiver;
+  final double amount;
+
+  SettlementTransaction({
+    required this.payer,
+    required this.receiver,
+    required this.amount,
+  });
+}
